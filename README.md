@@ -117,7 +117,7 @@ Asegurate de contar con el siguiente software instalado de forma nativa:
 **1. Clonar el repositorio oficial:**
 
 ```bash
-git clone https://github.com/TU_ORGANIZACION_O_USUARIO/proa-conecta.git
+git clone https://github.com/LosDesprogramadores/PROAConecta
 cd proa-conecta
 ```
 
