@@ -37,16 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-<<<<<<< HEAD:backend/proaconecta/proaconecta/settings.py
-    'rest_framework',
-    'corsheaders',
-    'sarasa'
-=======
     'academico',
     'usuario',
     'foro',
     'notificacion',
->>>>>>> refs/remotes/origin/develop:backend/proa/proa/settings.py
 ]
 
 MIDDLEWARE = [
