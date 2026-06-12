@@ -1,4 +1,27 @@
-env/
+# Entorno virtual
 venv/
+env/
+<<<<<<< HEAD
+venv/
+=======
+
+# Archivos de Python
+>>>>>>> Marcelo
 __pycache__/
 
+# Archivos de IDE
+.vscode/
+.idea/
+
+
+#Migraciones
+migrations/
+
+#db
+db.sqlite3
+*.sqlite3
+**/db.sqlite3
+**/*.sqlite3
+
+# Archivos de variables de entorno específicos para producción o secretos
+.env
