@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { MainLayout } from './layouts/main-layout/main-layout';
-import { Home } from './pages/home/home';
+import { Home } from './views/home/home';
 
 export const routes: Routes = [
     {
