@@ -1,1 +1,70 @@
 /* You can add global styles to this file, and also import other style files */
+/* ===========================
+   🎨 Colores globales
+   =========================== */
+:root {
+  --color-primary: #185FA5;
+  --color-primary-400: #378ADD;
+  --color-light: #B5D4F4;
+  --color-surface: #E6F1FB;
+  --color-text-primary: #2C2C2A;
+  --color-text-secondary: #5F5E5A;
+  --color-border: #D3D1C7;
+  --color-background: #F1EFE8;
+  --color-success: #116534;
+  --color-warning: #185FA5;
+  --color-danger: #A32D2D;
+  --color-white: #FFFFFF;
+}
+
+/* ===========================
+   🅰️ Tipografía global
+   =========================== */
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+
+/* Encabezados */
+h1 {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--color-text-primary);
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: var(--color-text-primary);
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Texto general */
+p {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* ===========================
+   🧩 Utilidades
+   =========================== */
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-surface { background-color: var(--color-surface); }
+.bg-light { background-color: var(--color-light); }
