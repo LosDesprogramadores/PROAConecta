@@ -4,6 +4,7 @@ class Materia(models.Model):
     docente = models.ForeignKey(
         'usuario.Docente',
         on_delete=models.SET_NULL,
+        null=True,
         related_name='materias'
     )
     titulo = models.CharField(max_length=150)
