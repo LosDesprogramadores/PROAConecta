@@ -1,14 +1,12 @@
-from django.db import models
+from django.db import models 
 
 class Materia(models.Model):
     docente = models.ForeignKey(
         'usuario.Docente',
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
         related_name='materias'
     )
-    nombre = models.CharField(max_length=150)
+    titulo = models.CharField(max_length=150)
     descripcion = models.TextField(null=True, blank=True)
     criterios_evaluacion = models.TextField(null=True, blank=True)
     anio = models.PositiveSmallIntegerField()
@@ -18,7 +16,7 @@ class Materia(models.Model):
         db_table = 'materia'
 
     def __str__(self):
-        return f'{self.nombre} - {self.curso}'
+        return f'{self.titulo} - {self.curso}'
     
 
 class Inscripcion(models.Model):

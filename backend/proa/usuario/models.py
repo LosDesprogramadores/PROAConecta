@@ -7,7 +7,7 @@ class Persona(models.Model):
     apellido = models.CharField(max_length=100)
 
     dni = models.CharField(
-        max_length=10,
+        max_length=11,
         unique=True
     )
 
@@ -41,6 +41,11 @@ class Usuario(AbstractUser):
         blank=True
     )
 
+    nombre_usuario = models.CharField(
+        unique=True,
+        null=True
+    )
+
     email = models.EmailField(
         unique=True,
         null=True,
@@ -55,6 +60,10 @@ class Usuario(AbstractUser):
     oauth_id = models.CharField(
         max_length=255,
         blank=True
+    )
+
+    activo = models.BooleanField(
+        default=True
     )
 
     fecha_creacion = models.DateTimeField(
@@ -127,10 +136,6 @@ class Administrador(models.Model):
         on_delete=models.CASCADE
     )
 
-    nivel_acceso = models.CharField(
-        max_length=50
-    )
-
     def __str__(self):
         return str(self.persona)
 
@@ -147,7 +152,8 @@ class Docente(models.Model):
     )
 
     especialidad = models.CharField(
-        max_length=100
+        max_length=100,
+        blank=True
     )
 
     legajo = models.CharField(

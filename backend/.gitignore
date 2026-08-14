@@ -1,12 +1,9 @@
 # Entorno virtual
 venv/
 env/
-<<<<<<< HEAD
-venv/
-=======
+.venv/
 
 # Archivos de Python
->>>>>>> Marcelo
 __pycache__/
 
 # Archivos de IDE

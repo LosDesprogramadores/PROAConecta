@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'usuario',
     'foro',
     'notificacion',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
