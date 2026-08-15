@@ -42,6 +42,7 @@ class Usuario(AbstractUser):
     )
 
     nombre_usuario = models.CharField(
+        max_length=11,
         unique=True,
         null=True
     )
