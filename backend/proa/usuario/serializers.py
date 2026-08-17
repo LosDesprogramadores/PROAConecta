@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Rol, Persona, Administrador, Usuario, UsuarioRol, Docente, Estudiante
+from .models import Rol, Persona, Administrador, Docente, Estudiante
 
 
 class RolSerializer(serializers.ModelSerializer):
@@ -17,13 +17,18 @@ class AdministradorSerializer(serializers.ModelSerializer):
         model = Administrador
         fields = '__all__'
 
-class UsuarioSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+##en construccion# no esta terminado ni usuario, ni rol usuario#
 
+##no esta terminado ni usuario, ni rol usuario##
+
+#class UsuarioRol(serializers.ModelSerializer):#
+
+class DocenteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Usuario
-        fields = [
-            'id', 'password', 'persona', 'nombre_usuario', 'email', 'oauth_provider', 'oauth_id', 'activo',
-            'fecha_creacion', 'ultimo_acceso'
-        ]
+        model = Docente
+        fields = '__all__'
 
+class EstudianteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estudiante
+        fields = '__all__'
