@@ -1,1 +1,138 @@
-<p>navbar works!</p>
+<header class="w-full px-3 sm:px-6 pt-3">
+  <nav class="w-full rounded-2xl bg-gradient-to-b from-slate-200/90 to-slate-300/80 backdrop-blur-md shadow-md border border-white/40 transition-all duration-300">
+    <div class="flex h-16 items-center justify-between px-6 sm:px-8">
+      
+      <div class="flex items-center gap-8">
+        <a routerLink="/" class="flex items-center gap-3 group focus:outline-none">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-700 to-blue-900 shadow-sm text-white font-black text-xl transition-transform duration-300 group-hover:scale-105">
+            P
+          </div>
+          <span class="text-xl font-bold tracking-tight text-slate-800 transition-colors duration-200 group-hover:text-sky-700">
+            PROA<span class="text-sky-600">Conecta</span>
+          </span>
+        </a>
+
+        <div class="hidden md:flex items-center gap-1">
+          @for (link of navLinks; track link.path) {
+            <a 
+              [routerLink]="link.path" 
+              routerLinkActive="text-sky-700 font-semibold bg-white/50 shadow-xs"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="relative px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-sky-700 hover:bg-white/40 transition-all duration-200 ease-out">
+              {{ link.label }}
+            </a>
+          }
+        </div>
+      </div>
+
+      <div class="hidden md:flex items-center gap-4">
+        
+        <div class="flex items-center gap-1 border-r border-slate-300/80 pr-4">
+    
+          <button type="button" class="p-2 rounded-full text-slate-600 hover:text-slate-900 hover:bg-white/50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500" title="Mensajes">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+            </svg>
+          </button>
+
+          <button type="button" class="relative p-2 rounded-full text-slate-600 hover:text-slate-900 hover:bg-white/50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500" title="Notificaciones">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+            </svg>
+            @if (unreadCount() > 0) {
+              <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                {{ unreadCount() }}
+              </span>
+            }
+          </button> 
+        </div>
+
+        <span class="text-sm font-semibold text-slate-700 select-none">
+          {{ userName() }}
+        </span>
+
+        <div class="relative">
+          <button 
+            id="user-menu-button"
+            type="button" 
+            (click)="toggleProfileMenu()"
+            class="relative flex rounded-full p-0.5 ring-2 ring-transparent hover:ring-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200">
+            <img class="h-9 w-9 rounded-full object-cover shadow-sm border border-white" [src]="userAvatar()" alt="Foto de perfil">
+          </button>
+
+          <div 
+            id="user-menu-dropdown"
+            [class.opacity-100]="isProfileMenuOpen()"
+            [class.scale-100]="isProfileMenuOpen()"
+            [class.pointer-events-auto]="isProfileMenuOpen()"
+            [class.opacity-0]="!isProfileMenuOpen()"
+            [class.scale-95]="!isProfileMenuOpen()"
+            [class.pointer-events-none]="!isProfileMenuOpen()"
+            class="absolute right-0 mt-3 w-52 origin-top-right rounded-xl bg-white/95 backdrop-blur-md p-1.5 shadow-xl border border-slate-100 transition-all duration-200 ease-out z-50">
+            
+            <a routerLink="/perfil" (click)="closeMenus()" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors">
+              Mi Perfil
+            </a>
+            <a routerLink="/configuracion" (click)="closeMenus()" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors">
+              Configuración
+            </a>
+            <hr class="my-1 border-slate-100">
+            <button type="button" (click)="closeMenus()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex md:hidden items-center gap-2">
+        <button 
+          type="button" 
+          (click)="toggleMobileMenu()"
+          class="p-2 rounded-lg text-slate-700 hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors" 
+          aria-label="Abrir menú">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            @if (!isMobileMenuOpen()) {
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            } @else {
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            }
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <div 
+      [class.max-h-96]="isMobileMenuOpen()"
+      [class.opacity-100]="isMobileMenuOpen()"
+      [class.max-h-0]="!isMobileMenuOpen()"
+      [class.opacity-0]="!isMobileMenuOpen()"
+      class="md:hidden overflow-hidden transition-all duration-300 ease-in-out px-4 pb-4">
+      
+      <div class="space-y-1 pt-2 border-t border-slate-300/60">
+        @for (link of navLinks; track link.path) {
+          <a 
+            [routerLink]="link.path" 
+            (click)="closeMenus()"
+            routerLinkActive="bg-white/60 text-sky-700 font-semibold"
+            class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
+            {{ link.label }}
+          </a>
+        }
+      </div>
+
+      <div class="pt-4 mt-2 border-t border-slate-300/60 flex items-center justify-between px-2">
+        <div class="flex items-center gap-3">
+          <img class="h-9 w-9 rounded-full object-cover" [src]="userAvatar()" alt="Perfil">
+          <span class="text-sm font-semibold text-slate-800">{{ userName() }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            {{ unreadCount() }} notif.
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
