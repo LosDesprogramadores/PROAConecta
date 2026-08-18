@@ -31,6 +31,7 @@ export class Navbar implements OnInit {
       next: (data) => {
         this.response.set(data);
         this.loading.set(false);
+        console.log('API connection status:', data.status, '-', data.message)
       },
       error: (error) => {
         console.error('Error checking connection:', error);
