@@ -1,1 +1,17 @@
-<p>footer works!</p>
+<div class="fixed bottom-5 right-5 z-50 flex flex-col items-end">
+  @if (abierto()) {
+    <div class="mb-3 w-60 rounded-xl bg-white border border-border text-xs p-4 shadow-lg">
+      <p class="text-black">© {{ anioActual }} PROA Conecta — PROA Embalse</p>
+      <p class="mt-1 text-black/60">Desarrollado por Los Desprogramadores</p>
+    </div>
+  }
+
+  <button
+    (click)="toggle()"
+    type="button"
+    class="w-11 h-11 aspect-square shrink-0 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary-400 transition-colors"
+    [attr.aria-expanded]="abierto()"
+    aria-label="Información del sitio">
+    <span class="text-lg font-semibold leading-none">?</span>
+  </button>
+</div>

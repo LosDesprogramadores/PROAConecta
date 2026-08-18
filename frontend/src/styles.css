@@ -3,7 +3,7 @@
 /* ===========================
    🎨 Colores globales
    =========================== */
-:root {
+@theme {
   --color-primary: #185FA5;
   --color-primary-400: #378ADD;
   --color-light: #B5D4F4;
@@ -21,6 +21,7 @@
 /* ===========================
    🅰️ Tipografía global
    =========================== */
+   @layer base{
 body {
   font-family: 'Inter', sans-serif;
   font-size: 15px;
@@ -28,7 +29,7 @@ body {
   line-height: 1.6;
   color: var(--color-text-primary);
   background-color: var(--color-background);
-}
+}}
 
 /* Encabezados */
 h1 {
