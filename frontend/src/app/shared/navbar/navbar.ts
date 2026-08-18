@@ -1,5 +1,7 @@
-import { Component, HostListener, signal } from '@angular/core';
+import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { ApiService } from '../../core/services/api.service';
+import { HealthStatus } from '../../core/models/api-response.interface';
 
 @Component({
   selector: 'app-navbar',
@@ -7,9 +9,11 @@ import { RouterModule } from '@angular/router';
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-export class Navbar {
-
-isMobileMenuOpen = signal<boolean>(false);
+export class Navbar implements OnInit {
+  private apiService = inject(ApiService);
+  response = signal<HealthStatus | null>(null);
+  loading = signal<boolean>(true);
+  isMobileMenuOpen = signal<boolean>(false);
   isProfileMenuOpen = signal<boolean>(false);
   unreadCount = signal<number>(4);
 
@@ -21,6 +25,20 @@ isMobileMenuOpen = signal<boolean>(false);
     { label: 'Foros', path: '/foros' },
     { label: 'Actividades', path: '/actividades' }
   ];
+
+  ngOnInit(): void {
+    this.apiService.checkConnection().subscribe({
+      next: (data) => {
+        this.response.set(data);
+        this.loading.set(false);
+      },
+      error: (error) => {
+        console.error('Error checking connection:', error);
+        this.response.set({ status: 'error', message: 'Failed to connect to the API' });
+        this.loading.set(false);
+      }
+    });
+  }
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(v => !v);
