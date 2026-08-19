@@ -1,10 +1,15 @@
 from django.contrib.auth import authenticate, login
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Rol, Persona, Administrador, Docente, Estudiante
-from .serializers import RolSerializer, PersonaSerializer, AdministradorSerializer, DocenteSerializer, EstudianteSerializer, DNITokenObtainPairSerializer
+from .serializers import RolSerializer, PersonaSerializer, AdministradorSerializer, DocenteSerializer, EstudianteSerializer, DNITokenObtainPairSerializer, UsuarioSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+
+class UsuarioCreateView(generics.CreateAPIView):
+    serializer_class = UsuarioSerializer
 
 class DNITokenObtainPairView(TokenObtainPairView):
     serializer_class = DNITokenObtainPairSerializer
