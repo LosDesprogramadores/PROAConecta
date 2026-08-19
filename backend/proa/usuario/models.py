@@ -77,7 +77,7 @@ class Usuario(AbstractUser):
     )
 
     def __str__(self):
-        return self.username
+        return self.persona.dni
 
     class Meta:
             verbose_name = 'Usuario'
