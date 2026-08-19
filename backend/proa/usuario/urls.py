@@ -9,8 +9,7 @@ router.register(r'personas', PersonaViewSet, basename='persona')
 router.register(r'administrador', AdministradorViewSet, basename='administrador')
 router.register(r'docente', DocenteViewSet, basename='docente')
 router.register(r'estudiante', EstudianteViewSet, basename='estudiante')
-router.register(r'usuarios', UsuarioViewSet, basename='usuario')
-router.register(r'usuario-roles', UsuarioRolViewSet, basename='usuario-rol')
+#router.register(r'usuario-roles', UsuarioRolViewSet, basename='usuario-rol')
 
 urlpatterns = [
     path('auth/login/', DNITokenObtainPairView.as_view(), name='login'),
