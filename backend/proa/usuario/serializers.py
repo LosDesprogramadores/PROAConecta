@@ -75,37 +75,6 @@ class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
             'access': str(refresh.access_token),
         }
 
-class UsuarioSerializer(serializers.ModelSerializer):
-    persona_id = serializers.PrimaryKeyRelatedField(
-        queryset=Persona.objects.all(),
-        source='persona',
-        write_only=True,
-    )
-
-    class Meta:
-        model = Usuario
-        fields = ['id', 'persona_id', 'password', 'email', 'activo']
-        extra_kwargs = {
-            'password': {'write_only': True, 'min_length': 8},
-        }
-
-    def validate_persona_id(self, persona):
-        if hasattr(persona, 'usuario') and persona.usuario is not None:
-            raise serializers.ValidationError('Esta persona ya tiene un usuario asociado.')
-        return persona
-
-    def create(self, validated_data):
-        persona = validated_data.pop('persona')
-        password = validated_data.pop('password')
-
-        usuario = Usuario.objects.create_user(
-            username=persona.dni,
-            password=password,
-            persona=persona,
-            **validated_data,
-        )
-        return usuario
-
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
