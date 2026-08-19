@@ -76,9 +76,10 @@ class Usuario(AbstractUser):
         blank=True
     )
 
-    def __str__(self):
-        return self.persona.dni
-
+    def str(self):
+            if self.persona:
+                return self.persona.dni
+            return self.username
     class Meta:
             verbose_name = 'Usuario'
             verbose_name_plural = 'Usuarios'
@@ -158,9 +159,21 @@ class Docente(models.Model):
     )
 
     legajo = models.CharField(
-        max_length=20,
-        unique=True
+        max_length=50,
+        unique=True,
+        blank=True
     )
+
+    def save(self, *args, **kwargs):
+        if not self.legajo:
+
+            ultimo_docente = Docente.objects.all().order_by('-id').first()
+            if ultimo_docente:
+                siguiente_numero = ultimo_docente.id + 1
+            else:
+                siguiente_numero = 1 
+            self.legajo = f"DOC-{siguiente_numero}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return str(self.persona)
@@ -174,9 +187,24 @@ class Estudiante(models.Model):
     )
 
     legajo = models.CharField(
-        max_length=20,
-        unique=True
+        max_length=50,
+        unique=True,
+        blank=True
     )
+
+    def save(self, *args, **kwargs):
+        if not self.legajo:
+            
+            ultimo_estudiante = Estudiante.objects.all().order_by('-id').first()
+            if ultimo_estudiante:
+                siguiente_numero = ultimo_estudiante.id + 1
+            else:
+                siguiente_numero = 1 
+            self.legajo = f"EST-{siguiente_numero}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return str(self.persona)
 
     def __str__(self):
         return str(self.persona)
