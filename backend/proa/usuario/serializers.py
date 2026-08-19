@@ -3,6 +3,16 @@ from django.contrib.auth import authenticate
 from .models import Rol, Persona, Administrador, Docente, Estudiante, Usuario
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+class UsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = '__all__'
+
+class UsuarioRolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UsuarioRol
+        fields = '__all__'
+
 class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def __init__(self, *args, **kwargs):
@@ -85,11 +95,6 @@ class AdministradorSerializer(serializers.ModelSerializer):
         model = Administrador
         fields = '__all__'
 
-##en construccion# no esta terminado ni usuario, ni rol usuario#
-
-##no esta terminado ni usuario, ni rol usuario##
-
-#class UsuarioRol(serializers.ModelSerializer):#
 
 class DocenteSerializer(serializers.ModelSerializer):
     class Meta:
