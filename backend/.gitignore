@@ -5,6 +5,7 @@ env/
 
 # Archivos de Python
 __pycache__/
+migrations/__pycache__/
 
 # Archivos de IDE
 .vscode/

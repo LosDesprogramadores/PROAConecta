@@ -1,6 +1,7 @@
+from django.db import transaction
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import Rol, Persona, Administrador, Docente, Estudiante, Usuario, UsuarioRol
+from .models import Rol, Persona, Usuario
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -12,7 +13,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['id', 'persona_id', 'password', 'email', 'activo']
+        fields = ['id', 'persona_id', 'password', 'activo']
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
         }
@@ -34,10 +35,6 @@ class UsuarioSerializer(serializers.ModelSerializer):
         )
         return usuario
 
-class UsuarioRolSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UsuarioRol
-        fields = '__all__'
 
 class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -80,23 +77,23 @@ class RolSerializer(serializers.ModelSerializer):
         model = Rol
         fields = '__all__'
 
+
 class  PersonaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Persona
         fields = '__all__'
 
-class AdministradorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Administrador
-        fields = '__all__'
+    def create(self, validated_data):
+        password = validated_data.get('dni')
+        dni = validated_data.get('dni')
+        with transaction.atomic():
+            persona = Persona.objects.create(**validated_data)
 
+            usuario = Usuario.objects.create_user(
+                username=dni,
+                password=password,
+                persona=persona,
+            )
+        return persona
+        
 
-class DocenteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Docente
-        fields = '__all__'
-
-class EstudianteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estudiante
-        fields = '__all__'

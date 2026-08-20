@@ -3,6 +3,13 @@ from django.contrib.auth.models import AbstractUser
 
 
 class Persona(models.Model):
+    rol = models.ForeignKey(
+        'Rol',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
 
@@ -16,6 +23,10 @@ class Persona(models.Model):
     tel_contacto = models.CharField(
         max_length=30,
         blank=True
+    )
+
+    email = models.EmailField(
+        unique=True
     )
 
     fecha_ingreso = models.DateField(
@@ -47,11 +58,7 @@ class Usuario(AbstractUser):
         null=True
     )
 
-    email = models.EmailField(
-        unique=True,
-        null=True,
-        blank=True
-    )
+
 
     oauth_provider = models.CharField(
         max_length=50,
@@ -105,31 +112,6 @@ class Rol(models.Model):
             verbose_name_plural = 'Roles'
 
 
-class UsuarioRol(models.Model):
-
-    usuario = models.ForeignKey(
-        Usuario,
-        on_delete=models.CASCADE
-    )
-
-    rol = models.ForeignKey(
-        Rol,
-        on_delete=models.CASCADE
-    )
-
-    fecha_asignacion = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    class Meta:
-        unique_together = (
-            'usuario',
-            'rol'
-        )
-
-    def __str__(self):
-        return f"{self.usuario} - {self.rol}"
-
 
 class Administrador(models.Model):
 
@@ -146,65 +128,3 @@ class Administrador(models.Model):
             verbose_name_plural = 'Administradores'        
 
 
-class Docente(models.Model):
-
-    persona = models.OneToOneField(
-        Persona,
-        on_delete=models.CASCADE
-    )
-
-    especialidad = models.CharField(
-        max_length=100,
-        blank=True
-    )
-
-    legajo = models.CharField(
-        max_length=50,
-        unique=True,
-        blank=True
-    )
-
-    def save(self, *args, **kwargs):
-        if not self.legajo:
-
-            ultimo_docente = Docente.objects.all().order_by('-id').first()
-            if ultimo_docente:
-                siguiente_numero = ultimo_docente.id + 1
-            else:
-                siguiente_numero = 1 
-            self.legajo = f"DOC-{siguiente_numero}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return str(self.persona)
-
-
-class Estudiante(models.Model):
-
-    persona = models.OneToOneField(
-        Persona,
-        on_delete=models.CASCADE
-    )
-
-    legajo = models.CharField(
-        max_length=50,
-        unique=True,
-        blank=True
-    )
-
-    def save(self, *args, **kwargs):
-        if not self.legajo:
-            
-            ultimo_estudiante = Estudiante.objects.all().order_by('-id').first()
-            if ultimo_estudiante:
-                siguiente_numero = ultimo_estudiante.id + 1
-            else:
-                siguiente_numero = 1 
-            self.legajo = f"EST-{siguiente_numero}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return str(self.persona)
-
-    def __str__(self):
-        return str(self.persona)
