@@ -1,0 +1,21 @@
+<section class="p-6">
+    <h2 class="text-2xl font-bold text-primary mb-6">Novedades</h2>
+
+    <!-- Si no hay noticias -->
+    @if (noticias().length === 0) {
+    <p class="text-slate-600">No hay novedades para mostrar.</p>
+    } @else {
+    <!-- Lista de noticias -->
+    <div class="space-y-6">
+        @for (noticia of noticias(); track noticia.titulo) {
+        <article class="rounded-xl bg-white shadow-md p-6 border border-slate-200">
+            <h3 class="text-xl font-semibold text-slate-800 mb-2">{{ noticia.titulo }}</h3>
+            <div class="text-sm text-slate-500 mb-4">
+                Publicado por {{ noticia.autor }} — {{ noticia.fecha }} a las {{ noticia.hora }}
+            </div>
+            <p class="text-slate-700">{{ noticia.contenido }}</p>
+        </article>
+        }
+    </div>
+    }
+</section>
