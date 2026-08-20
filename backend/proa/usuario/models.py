@@ -113,18 +113,4 @@ class Rol(models.Model):
 
 
 
-class Administrador(models.Model):
-
-    persona = models.OneToOneField(
-        Persona,
-        on_delete=models.CASCADE
-    )
-
-    def __str__(self):
-        return str(self.persona)
-
-    class Meta:
-            verbose_name = 'Administrador'
-            verbose_name_plural = 'Administradores'        
-
 
