@@ -11,6 +11,6 @@ export class Sidebar {
   links = [
     { label: 'Anuncios', path: '/dashboard/anuncios' },
     { label: 'Materias', path: '/dashboard/materias' },
-    { label: 'Alumnos', path: '/dashboard/alumnos' }
+    { label: 'Contacto', path: '/dashboard/contacto' }
   ];
 }

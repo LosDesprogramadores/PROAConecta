@@ -5,6 +5,7 @@ import { Login } from './views/login/login';
 import { DashboardLayout } from './layouts/dashboard-layout/dashboard-layout';
 import { Materias } from './views/dashboard-components/materias/materias';
 import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
+import { Contacto } from './views/dashboard-components/contacto/contacto';
 
 export const routes: Routes = [
     {
@@ -26,6 +27,7 @@ export const routes: Routes = [
             { path: '', component: Home },
             { path: 'anuncios', component: Anuncios },
             { path: 'materias', component: Materias },
+            { path: 'contacto', component: Contacto },
             { path: '', redirectTo: '', pathMatch: 'full' }
         ]
     }
