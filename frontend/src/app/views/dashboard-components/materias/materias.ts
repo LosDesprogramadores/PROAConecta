@@ -1,12 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component,signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-
-interface Materia {
-  nombre: string;
-  color: string; // usamos colores como ejemplo visual
-  path: string;  // ruta a la que lleva cada materia
-}
+import { Materia } from '../../../model/materia.model';
 
 @Component({
   selector: 'app-materias',

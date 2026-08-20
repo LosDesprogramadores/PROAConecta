@@ -6,6 +6,7 @@ import { DashboardLayout } from './layouts/dashboard-layout/dashboard-layout';
 import { Materias } from './views/dashboard-components/materias/materias';
 import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
 import { Contacto } from './views/dashboard-components/contacto/contacto';
+import { Welcome } from './views/dashboard-components/welcome/welcome';
 
 export const routes: Routes = [
     {
@@ -24,11 +25,11 @@ export const routes: Routes = [
         path: 'dashboard',
         component: DashboardLayout,
         children: [
-            { path: '', component: Home },
+            { path: 'welcome', component: Welcome },
             { path: 'anuncios', component: Anuncios },
             { path: 'materias', component: Materias },
             { path: 'contacto', component: Contacto },
-            { path: '', redirectTo: '', pathMatch: 'full' }
+            { path: '', redirectTo: 'welcome', pathMatch: 'full' }
         ]
     }
 ];
