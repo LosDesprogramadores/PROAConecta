@@ -30,7 +30,7 @@
         } @else {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
             @for (materia of materias().slice(0,2); track materia.nombre) {
-            <a [routerLink]="materia.path"
+            <a [routerLink]="'/view-materia/portada'"
                 class="w-full max-w-xs rounded-xl shadow-md p-6 text-center transition hover:shadow-lg cursor-pointer"
                 [ngClass]="materia.color">
                 <div
