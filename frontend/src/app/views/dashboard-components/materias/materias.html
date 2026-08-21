@@ -1,0 +1,23 @@
+<section class="p-6">
+    <h2 class="text-2xl font-bold text-primary mb-6">Mis Materias</h2>
+
+    <!-- Si no hay materias -->
+    @if (materias().length === 0) {
+    <p class="text-slate-600">No hay materias para mostrar.</p>
+    } @else {
+    <!-- Grid de materias -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        @for (materia of materias(); track materia.nombre) {
+        <a [routerLink]="materia.path"
+            class="rounded-xl shadow-md p-6 text-center transition hover:shadow-lg cursor-pointer"
+            [ngClass]="materia.color">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/50 flex items-center justify-center font-bold text-slate-800">
+                {{ materia.nombre.charAt(0) }}
+            </div>
+            <h3 class="text-lg font-semibold text-slate-800">{{ materia.nombre }}</h3>
+        </a>
+        }
+    </div>
+    }
+</section>

@@ -1,0 +1,20 @@
+<section class="p-6 space-y-6">
+    <h2 class="text-2xl font-bold text-primary">Contacto</h2>
+
+    <div class="rounded-xl bg-white shadow-md p-6 border border-slate-200 flex flex-col md:flex-row gap-6">
+        <!-- Imagen genérica -->
+        <div class="flex-shrink-0">
+            <img src="assets/secretaria.jpg" alt="Secretaría"
+                class="w-48 h-48 object-cover rounded-lg shadow" />
+        </div>
+
+        <!-- Información -->
+        <div class="flex-1 space-y-3">
+            <h3 class="text-xl font-semibold text-slate-800">{{ secretaria.nombre }}</h3>
+            <p class="text-slate-600"><strong>📍 Dirección:</strong> {{ secretaria.direccion }}</p>
+            <p class="text-slate-600"><strong>⏰ Horarios:</strong> {{ secretaria.horarios }}</p>
+            <p class="text-slate-600"><strong>📞 Teléfono:</strong> {{ secretaria.telefono }}</p>
+            <p class="text-slate-600"><strong>✉️ Email:</strong> {{ secretaria.email }}</p>
+        </div>
+    </div>
+</section>

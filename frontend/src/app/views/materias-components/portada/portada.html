@@ -1,0 +1,22 @@
+<section class="p-6 space-y-8">
+    <!-- Nombre de la materia -->
+    <h2 class="text-3xl font-bold text-primary">{{ materia?.nombre || materiaDemo.nombre }}</h2>
+    <p class="text-slate-600 text-lg">Docente a cargo: <span class="font-semibold">{{ materia?.docente ||
+            materiaDemo.docente }}</span></p>
+
+    <!-- Presentación -->
+    <div class="rounded-xl bg-white shadow-md p-6 border border-slate-200">
+        <h3 class="text-xl font-semibold text-slate-800 mb-4">Presentación</h3>
+        <p class="text-slate-700">{{ materia?.presentacion || materiaDemo.presentacion }}</p>
+    </div>
+
+    <!-- Cronograma / Temario -->
+    <div class="rounded-xl bg-white shadow-md p-6 border border-slate-200">
+        <h3 class="text-xl font-semibold text-slate-800 mb-4">Cronograma / Temario</h3>
+        <ul class="list-disc list-inside space-y-2 text-slate-700">
+            @for (tema of (materia?.cronograma || materiaDemo.cronograma); track tema) {
+            <li>{{ tema }}</li>
+            }
+        </ul>
+    </div>
+</section>
