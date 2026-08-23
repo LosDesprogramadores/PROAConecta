@@ -83,7 +83,7 @@ class Usuario(AbstractUser):
         blank=True
     )
 
-    def str(self):
+    def __str__(self):
             if self.persona:
                 return self.persona.dni
             return self.username
