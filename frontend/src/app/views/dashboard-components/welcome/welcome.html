@@ -1,8 +1,13 @@
 <section class="max-w-7xl mx-auto p-6 space-y-8">
-  <!-- Header de Bienvenida -->
-  <header class="border-b border-slate-200 pb-4">
-    <h2 class="text-2xl font-bold text-slate-800">Bienvenido</h2>
-    <p class="text-sm text-slate-500">Aquí tienes un resumen del estado académico reciente.</p>
+  <!-- Header de Bienvenida Personalizado -->
+  <header class="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-800">¡Hola, Juan! 👋</h2>
+      <p class="text-sm text-slate-500">Aquí tienes el resumen de tu actividad académica.</p>
+    </div>
+    <span class="text-xs font-medium text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
+      Ciclo Lectivo 2026
+    </span>
   </header>
 
   <!-- Métricas Rápidas (KPIs) -->
@@ -41,7 +46,7 @@
   <!-- Grilla Principal -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     
-    <!-- Columna Principal: Novedades -->
+    <!-- Columna Principal: Novedades (2/3) -->
     <main class="lg:col-span-2 space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-slate-800">Última novedad</h3>
@@ -78,36 +83,65 @@
       }
     </main>
 
-    <!-- Columna Secundaria: Materias -->
-    <aside class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-slate-800">Tus materias</h3>
-        <a routerLink="/dashboard/materias" 
-           class="text-sm font-medium text-primary hover:text-primary/80 transition flex items-center gap-1">
-          Ver todas <span aria-hidden="true">&rarr;</span>
-        </a>
+    <!-- Columna Secundaria: Materias y Próximas Entregas (1/3) -->
+    <aside class="space-y-6">
+      <!-- Módulo Materias -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-slate-800">Tus materias</h3>
+          <a routerLink="/dashboard/materias" 
+             class="text-sm font-medium text-primary hover:text-primary/80 transition flex items-center gap-1">
+            Ver todas <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+
+        @if (materias().length === 0) {
+          <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500 text-sm">
+            No hay materias asignadas.
+          </div> 
+        } @else {
+          <div class="grid grid-cols-1 gap-3">
+            @for (materia of materias().slice(0, 2); track materia.nombre) {
+              <a [routerLink]="'/view-materia/portada'"
+                 class="flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md transition cursor-pointer group">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                  {{ materia.nombre.charAt(0) }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="text-sm font-semibold text-slate-800 truncate">{{ materia.nombre }}</h4>
+                  <span class="text-xs text-slate-400 group-hover:text-primary transition-colors">Ver contenido &rarr;</span>
+                </div>
+              </a>
+            }
+          </div>
+        }
       </div>
 
-      @if (materias().length === 0) {
-        <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500 text-sm">
-          No hay materias asignadas.
-        </div> 
-      } @else {
-        <div class="grid grid-cols-1 gap-3">
-          @for (materia of materias().slice(0, 2); track materia.nombre) {
-            <a [routerLink]="'/view-materia/portada'"
-               class="flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md transition cursor-pointer group">
-              <div class="w-10 h-10 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
-                {{ materia.nombre.charAt(0) }}
-              </div>
-              <div class="min-w-0 flex-1">
-                <h4 class="text-sm font-semibold text-slate-800 truncate">{{ materia.nombre }}</h4>
-                <span class="text-xs text-slate-400 group-hover:text-primary transition-colors">Ver contenido &rarr;</span>
-              </div>
-            </a>
-          }
+      <!-- Módulo Próximas Entregas -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-slate-800">Próximas entregas</h3>
+        <div class="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+            <div>
+              <p class="text-xs font-semibold text-primary">Matemática</p>
+              <h5 class="text-sm font-medium text-slate-800">TP N°2 - Funciones</h5>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              Mañana
+            </span>
+          </div>
+
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold text-primary">Lengua</p>
+              <h5 class="text-sm font-medium text-slate-800">Análisis Sintáctico</h5>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+              28 Ago
+            </span>
+          </div>
         </div>
-      }
+      </div>
     </aside>
 
   </div>
