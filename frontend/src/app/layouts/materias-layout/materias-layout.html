@@ -15,3 +15,8 @@
         <app-footer></app-footer>
     </div>
 </div>
+
+<!-- Tabs o navegación -->
+@if (activeTab() === 'foro') {
+  <app-foro [materiaId]="materiaId" />
+}

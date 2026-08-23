@@ -9,6 +9,7 @@ import { Contacto } from './views/dashboard-components/contacto/contacto';
 import { Welcome } from './views/dashboard-components/welcome/welcome';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
+import { ForoComponent } from './views/materias-components/foro/foro';
 
 export const routes: Routes = [
     {
@@ -39,6 +40,7 @@ export const routes: Routes = [
         component: MateriasLayout,
         children: [
             { path: 'portada', component: Portada },
+            { path: 'foro', component: ForoComponent },
             { path: '', redirectTo: 'portada', pathMatch: 'full' }
         ]
     }

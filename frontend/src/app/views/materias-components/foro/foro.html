@@ -1,0 +1,155 @@
+<div class="foro-container">
+  <!-- Encabezado -->
+  <div class="foro-header">
+    <div class="foro-title-section">
+      <h2 class="foro-title">Foro</h2>
+      <p class="foro-subtitle">Avisos y novedades generales</p>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="foro-search">
+    <div class="search-wrapper">
+      <input
+        type="text"
+        placeholder="Buscar en los foros"
+        class="search-input"
+        (input)="buscar($event)"
+      />
+      <button class="search-button" type="button">
+        <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Estado cargando -->
+  @if (cargando()) {
+    <div class="loading-state">
+      <p>Cargando temas del foro...</p>
+    </div>
+  }
+
+  <!-- Tabla de temas -->
+  @if (!cargando() && temasFiltrados().length > 0) {
+    <div class="foro-table-wrapper">
+      <table class="foro-table">
+        <thead>
+          <tr class="table-header">
+            <th class="col-importante"></th>
+            <th class="col-titulo">Debate</th>
+            <th class="col-autor">Comenzado por</th>
+            <th class="col-ultimo">Último mensaje</th>
+            <th class="col-replicas">Replicas</th>
+            <th class="col-acciones"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tema of temasFiltrados(); track trackByTemaId($index, tema)) {
+            <tr class="table-row" (click)="abrirTema(tema)">
+              <!-- Icono importante/bloqueado -->
+              <td class="col-importante">
+                @if (tema.importante) {
+                  <span class="badge-importante" title="Tema importante">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m1 15h-2v-2h2v2m0-4h-2V7h2v6z"></path>
+                    </svg>
+                  </span>
+                }
+                @if (tema.bloqueado) {
+                  <span class="badge-bloqueado" title="Tema bloqueado">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5s-5 2.24-5 5v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"></path>
+                    </svg>
+                  </span>
+                }
+              </td>
+
+              <!-- Título del tema -->
+              <td class="col-titulo">
+                <div class="tema-info">
+                  <h3 class="tema-titulo">{{ tema.titulo }}</h3>
+                  @if (tema.importante) {
+                    <span class="label-importante">Bloqueado</span>
+                  }
+                </div>
+              </td>
+
+              <!-- Autor -->
+              <td class="col-autor">
+                <div class="autor-info">
+                  @if (tema.avatarUrl) {
+                    <img [src]="tema.avatarUrl" alt="{{ tema.autor }}" class="avatar-pequeño" />
+                  } @else {
+                    <div class="avatar-placeholder">{{ tema.autor.charAt(0).toUpperCase() }}</div>
+                  }
+                  <div class="autor-datos">
+                    <p class="autor-nombre">{{ tema.autor }}</p>
+                    <p class="autor-fecha">{{ formatearFecha(tema.fechaCreacion) }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Último mensaje -->
+              <td class="col-ultimo">
+                @if (tema.ultimaRespuesta) {
+                  <div class="ultimo-mensaje">
+                    <div class="ultimo-autor">
+                      @if (tema.ultimaRespuesta.avatarUrl) {
+                        <img [src]="tema.ultimaRespuesta.avatarUrl" alt="{{ tema.ultimaRespuesta.autor }}" class="avatar-pequeño" />
+                      } @else {
+                        <div class="avatar-placeholder">{{ tema.ultimaRespuesta.autor.charAt(0).toUpperCase() }}</div>
+                      }
+                    </div>
+                    <div class="ultimo-datos">
+                      <p class="ultimo-autor-nombre">{{ tema.ultimaRespuesta.autor }}</p>
+                      <p class="ultimo-fecha">{{ formatearFecha(tema.ultimaRespuesta.fecha) }}</p>
+                    </div>
+                  </div>
+                }
+              </td>
+
+              <!-- Número de réplicas -->
+              <td class="col-replicas">
+                <span class="replicas-badge">{{ tema.cantidadReplicas }}</span>
+              </td>
+
+              <!-- Acciones -->
+              <td class="col-acciones">
+                <button class="btn-menu" type="button" (click)="$event.stopPropagation()">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Sin resultados -->
+  @if (!cargando() && temasFiltrados().length === 0 && filtroTexto().length > 0) {
+    <div class="empty-state">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <p class="empty-text">No hay temas que coincidan con tu búsqueda</p>
+    </div>
+  }
+
+  <!-- Sin temas en general -->
+  @if (!cargando() && temas().length === 0 && filtroTexto().length === 0) {
+    <div class="empty-state">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <p class="empty-text">No hay temas en el foro aún</p>
+    </div>
+  }
+</div>

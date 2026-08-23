@@ -14,7 +14,7 @@ interface MateriaPortada {
   styleUrl: './portada.css',
 })
 export class Portada {
-@Input() materia!: MateriaPortada;
+@Input() materia?: MateriaPortada;
 
   // Hardcode de prueba
   materiaDemo: MateriaPortada = {
