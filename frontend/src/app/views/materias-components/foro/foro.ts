@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TemaForo } from '../../../model/tema-foro.model';
 
 @Component({
@@ -13,6 +14,8 @@ import { TemaForo } from '../../../model/tema-foro.model';
 export class ForoComponent implements OnInit {
   @Input() materiaId?: string;
 
+  private router = inject(Router);
+  
   // Signals
   temas = signal<TemaForo[]>([]);
   filtroTexto = signal('');
@@ -22,7 +25,7 @@ export class ForoComponent implements OnInit {
     this.cargarTemas();
   }
 
-cargarTemas() {
+  cargarTemas() {
     // TODO: Llamar a la API para obtener los temas del foro desde el backend
     setTimeout(() => {
       this.temas.set([
@@ -112,7 +115,6 @@ cargarTemas() {
   }
 
   buscar(input: string | Event): void {
-    // Manejar ambos tipos: string directo o evento del input
     const texto = typeof input === 'string' 
       ? input 
       : (input.target as HTMLInputElement).value;
@@ -131,8 +133,7 @@ cargarTemas() {
   }
 
   abrirTema(tema: TemaForo): void {
-    // TODO: Navegar al detalle del tema o abrir modal
-    console.log('Abrir tema:', tema.titulo);
+    this.router.navigate(['/view-materia/foro', tema.id]);
   }
 
   formatearFecha(fecha: Date): string {
@@ -142,7 +143,6 @@ cargarTemas() {
 
     const fechaObj = new Date(fecha);
 
-    // Comparar solo la fecha sin hora
     if (fechaObj.toDateString() === hoy.toDateString()) {
       return fechaObj.toLocaleTimeString('es-AR', { 
         hour: '2-digit', 

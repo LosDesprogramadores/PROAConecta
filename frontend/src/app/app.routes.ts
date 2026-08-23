@@ -10,6 +10,7 @@ import { Welcome } from './views/dashboard-components/welcome/welcome';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { ForoComponent } from './views/materias-components/foro/foro';
+import { ForoDetalleComponent } from './views/materias-components/foro-detalle/foro-detalle';
 
 export const routes: Routes = [
     {
@@ -22,7 +23,7 @@ export const routes: Routes = [
     },
     {
         path: 'login',
-        component: Login // Ruta independiente para el login
+        component: Login
     },
     {
         path: 'dashboard',
@@ -41,6 +42,8 @@ export const routes: Routes = [
         children: [
             { path: 'portada', component: Portada },
             { path: 'foro', component: ForoComponent },
+            // 2. Agregás la ruta del detalle del foro con parámetro dinámico :id
+            { path: 'foro/:id', component: ForoDetalleComponent },
             { path: '', redirectTo: 'portada', pathMatch: 'full' }
         ]
     }

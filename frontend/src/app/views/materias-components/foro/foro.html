@@ -48,7 +48,7 @@
         </thead>
         <tbody>
           @for (tema of temasFiltrados(); track trackByTemaId($index, tema)) {
-            <tr class="table-row" (click)="abrirTema(tema)">
+            <tr class="table-row cursor-pointer" (click)="abrirTema(tema)">
               <!-- Icono importante/bloqueado -->
               <td class="col-importante">
                 @if (tema.importante) {
@@ -70,8 +70,8 @@
               <!-- Título del tema -->
               <td class="col-titulo">
                 <div class="tema-info">
-                  <h3 class="tema-titulo">{{ tema.titulo }}</h3>
-                  @if (tema.importante) {
+                  <h3 class="tema-titulo hover:underline">{{ tema.titulo }}</h3>
+                  @if (tema.bloqueado) {
                     <span class="label-importante">Bloqueado</span>
                   }
                 </div>
