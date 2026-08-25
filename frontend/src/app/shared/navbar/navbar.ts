@@ -2,6 +2,7 @@ import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { HealthStatus } from '../../core/models/api-response.interface';
+import { ServiceAuth } from '../../services/service.auth';
 
 @Component({
   selector: 'app-navbar',
@@ -11,6 +12,7 @@ import { HealthStatus } from '../../core/models/api-response.interface';
 })
 export class Navbar implements OnInit {
   private apiService = inject(ApiService);
+  private serviceAuth = inject(ServiceAuth);
   response = signal<HealthStatus | null>(null);
   loading = signal<boolean>(true);
   isMobileMenuOpen = signal<boolean>(false);
@@ -52,6 +54,7 @@ export class Navbar implements OnInit {
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
     this.isProfileMenuOpen.set(false);
+    this.serviceAuth.logout();
   }
 
   @HostListener('document:click', ['$event'])

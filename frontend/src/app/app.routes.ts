@@ -11,6 +11,7 @@ import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { ForoComponent } from './views/materias-components/foro/foro';
 import { ForoDetalleComponent } from './views/materias-components/foro-detalle/foro-detalle';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
     {
@@ -28,6 +29,7 @@ export const routes: Routes = [
     {
         path: 'dashboard',
         component: DashboardLayout,
+        //canActivate: [authGuard],
         children: [
             { path: 'welcome', component: Welcome },
             { path: 'anuncios', component: Anuncios },
@@ -39,6 +41,7 @@ export const routes: Routes = [
     {
         path: 'view-materia',
         component: MateriasLayout,
+        //canActivate: [authGuard],
         children: [
             { path: 'portada', component: Portada },
             { path: 'foro', component: ForoComponent },

@@ -1,21 +1,17 @@
-<nav class="w-64 p-4 space-y-1">
-  <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Área personal</h2>
-  
-  <a routerLink="/dashboard/anuncios" 
-     routerLinkActive="bg-white text-primary shadow-sm font-semibold border-l-4 border-primary"
-     class="flex items-center px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-white/60 transition">
-     Anuncios
-  </a>
-  
-  <a routerLink="/dashboard/materias" 
-     routerLinkActive="bg-white text-primary shadow-sm font-semibold border-l-4 border-primary"
-     class="flex items-center px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-white/60 transition">
-     Materias
-  </a>
-  
-  <a routerLink="/dashboard/contacto" 
-     routerLinkActive="bg-white text-primary shadow-sm font-semibold border-l-4 border-primary"
-     class="flex items-center px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-white/60 transition">
-     Contacto
-  </a>
-</nav>
+<aside
+   class=" w-58 m-5 rounded-2xl bg-gradient-to-b from-slate-200/90 to-slate-300/80 backdrop-blur-md shadow-md border border-white/40 transition-all duration-300">
+   <div class="p-6 text-xl font-bold text-primary">
+      <a [routerLink]="'/dashboard/welcome'" routerLinkActive="text-sky-700 font-semibold"
+         [routerLinkActiveOptions]="{ exact: true }" class="block transition-colors hover:text-sky-700">
+         Area personal
+      </a>
+   </div>
+   <nav class="flex-1 px-4 space-y-2">
+      @for (link of links; track link.path) {
+      <a [routerLink]="link.path" routerLinkActive="bg-primary text-white font-semibold"
+         class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-light transition">
+         {{ link.label }}
+      </a>
+      }
+   </nav>
+</aside>
