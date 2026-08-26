@@ -12,6 +12,11 @@
             </span>
         </a>
 
+        @if (errorMessage()) {
+      <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg text-center font-medium">
+        {{ errorMessage() }}
+      </div>
+    }
 
         <div class="w-full bg-white rounded-2xl shadow-xl border border-slate-200/80 p-8 transition-all">
             <div class="space-y-6">
@@ -25,12 +30,12 @@
                     </p>
                 </div>
 
-                <form [formGroup]="loginForm" (ngSubmit)="login()" class="space-y-5">
+                <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
                     <div>
-                        <label for="dni" class="block mb-2 text-sm font-semibold text-slate-700">Tu DNI</label>
+                        <label for="dni" class="block mb-2 text-sm font-semibold text-slate-700">Tu Usuario</label>
                         <input type="text" id="dni" formControlName="dni"
                             class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full p-3 transition-all outline-none"
-                            placeholder="DNI">
+                            placeholder="Usuario">
                     </div>
 
                     <div>
@@ -50,7 +55,13 @@
                     </div>
 
                     <button type="submit"
+                    [disabled]="loginForm.invalid || isLoading()"
                         class="w-full text-white bg-sky-600 hover:bg-sky-700 focus:ring-4 focus:outline-none focus:ring-sky-300 font-semibold rounded-xl text-sm px-5 py-3 text-center shadow-md transition-all">
+                       @if (isLoading()) {
+          <span>Verificando...</span>
+        } @else {
+          <span>Ingresar</span>
+        }
                         Ingresar
                     </button>
                 </form>
