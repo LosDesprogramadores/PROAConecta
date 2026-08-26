@@ -12,6 +12,8 @@ import { Portada } from './views/materias-components/portada/portada';
 import { ForoComponent } from './views/materias-components/foro/foro';
 import { ForoDetalleComponent } from './views/materias-components/foro-detalle/foro-detalle';
 import { authGuard } from './guards/auth.guard';
+import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
+import { Estudiante } from './views/admin/estudiante/estudiante';
 
 export const routes: Routes = [
     {
@@ -49,5 +51,13 @@ export const routes: Routes = [
             { path: 'foro/:id', component: ForoDetalleComponent },
             { path: '', redirectTo: 'portada', pathMatch: 'full' }
         ]
+    },
+
+    {
+    path: 'dashboard-admin',
+    component : DashboardAdmin,
+    children : [
+        {path: 'admin/estudiantes', component: Estudiante}
+    ]
     }
 ];

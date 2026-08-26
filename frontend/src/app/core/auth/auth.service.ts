@@ -45,7 +45,10 @@ export class AuthService {
       })
     );
   }
+  rol(){
+    return this.currentUser()?.rolId;
 
+  }
   logout(): void {
     this.token.set(null);
     this.currentUser.set(null);

@@ -2,6 +2,7 @@ import { Component, inject , signal} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserRole } from '../../core/auth/auth.model';
 
 @Component({
   selector: 'app-login',
@@ -15,19 +16,16 @@ export class Login {
   private formbuilder = inject(FormBuilder);
   private router = inject(Router);
  
-// 2. Signals para manejar el estado visual (carga y error)
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
 
-  // 3. Definimos el formulario con sus validaciones
   loginForm = this.formbuilder .nonNullable.group({
     dni: ['', [Validators.required]],
     password: ['', [Validators.required]]
   });
 
-  // 4. Método que se ejecuta al presionar el botón "Ingresar"
   onSubmit(): void {
-    // Si el formulario no es válido, no hacemos nada
+   
     if (this.loginForm.invalid) return;
 
     this.isLoading.set(true);
@@ -35,14 +33,28 @@ export class Login {
 
     const credentials = this.loginForm.getRawValue();
 
-    // Llamamos al servicio que creamos en el paso anterior
     this.authService.login(credentials).subscribe({
-      next: () => {
+      next: (user) => {
         this.isLoading.set(false);
-         console.log("Redirigimos al panel de administración tras el login exitoso");
-         //("Redirigimos al panel de administración tras el login exitoso")
-        //this.router.navigate(['/admin/estudiantes']);
-      },
+     switch (user.rolId) {
+      case UserRole.ADMIN: 
+        this.router.navigate(['/dashboard-admin']);
+        break;
+
+      case UserRole.DOCENTE: 
+       this.router.navigate(['/dashboard']);
+        break;
+
+      case UserRole.ESTUDIANTE: 
+        this.router.navigate(['/dashboard']);
+        break;
+
+      default:
+        console.warn('Rol no reconocido:', user.rolId);
+        this.router.navigate(['/home']);
+        break;
+    }
+  },
       error: (err) => {
         this.isLoading.set(false);
         this.errorMessage.set('Credenciales incorrectas o error en el servidor');
@@ -50,32 +62,6 @@ export class Login {
       }
     });
   }
-
-
-
-    //  loginForm = this.formbuilder.group({
-    //   username: ['', [Validators.required, Validators.minLength(8), Validators.pattern('^[0-9]+$')]],
-    //   password: ['', [Validators.required, Validators.minLength(4)]]
-    // });
-  
-
-  // login() {
-  //   const {  username, password } = this.loginForm.value;
-
-  //   const usuario = this.authService.login(
-  //      username ?? '',
-  //     password ?? ''
-  //   );
-
-  //   console.log(usuario);
-  //   if (usuario) {
-  //     this.router.navigate(['/dashboard']);
-  //     console.log(this.authService.getUsuario());
-  //   } else {
-  //     console.log('Formulario inválido');
-  //   }
-  // }
-
   
 }
 
