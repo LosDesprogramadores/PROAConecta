@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthResponse, User, UserRole } from './auth.model';
 import { catchError, Observable, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { Persona } from '../../model/Persona.model';
 
 
 export interface LoginCredentials {
@@ -24,6 +25,10 @@ export class AuthService {
   token = signal<string | null>(localStorage.getItem('access_token'));
   currentUser = signal<User | null>(null);
 
+readonly currentPersona = computed<Persona | null>(() => {
+    return this.currentUser()?.persona ?? null;
+  });
+
   login(credentials: LoginCredentials): Observable<User> {
      return this.http.post<AuthResponse>(this.loginUrl, credentials).pipe(
         tap((res: AuthResponse) => {
@@ -31,14 +36,12 @@ export class AuthService {
         localStorage.setItem('access_token', res.access);
         localStorage.setItem('refresh_token', res.refresh);
        }),
-      // 2. Encadenamos inmediatamente la petición del perfil enviando el Bearer Token
       switchMap((res: AuthResponse) => {
         const headers = new HttpHeaders({
           Authorization: `Bearer ${res.access}`
         });
         return this.http.get<User>(this.perfilUrl, { headers });
       }),
-      // 3. Guardamos la persona/usuario obtenida en el Signal currentUser
       tap((userData: User) => {
         this.currentUser.set(userData);
         console.log('Datos de la persona asociada:', userData);
@@ -48,6 +51,9 @@ export class AuthService {
   rol(){
     return this.currentUser()?.rolId;
 
+  }
+    getCurrentUser(): Persona| null{
+      return this.currentPersona();
   }
   logout(): void {
     this.token.set(null);

@@ -2,17 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import { RouterModule, RouterOutlet } from '@angular/router';
+import { IEstudiante, Persona } from '../../../model/Persona.model';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 
-export interface Student {
-  id: number;
-  nombre: string;
-  apellido: string;
-  dni: string;
-  email: string;
-  fecha_nacimiento: string;
-  tel_contacto: string;
-}
+
 
 @Component({
   selector: 'app-estudiante',
@@ -22,8 +17,10 @@ export interface Student {
 })
 export class Estudiante {
 private fb = inject(FormBuilder);
+private http = inject(HttpClient)
+private readonly createPersona = `${environment.apiUrl}personas/`;
 
-  students = signal<Student[]>([
+  students = signal<Persona[]>([
     {
       id: 1,
       nombre: 'Lucía',
@@ -31,7 +28,8 @@ private fb = inject(FormBuilder);
       dni: '44123456',
       email: 'lucia.gonzalez@email.com',
       fecha_nacimiento: '2005-04-12',
-      tel_contacto: '3514567890'
+      tel_contacto: '3514567890',
+      rolId:3
     },
     {
       id: 2,
@@ -40,7 +38,8 @@ private fb = inject(FormBuilder);
       dni: '43987654',
       email: 'mateo.romero@email.com',
       fecha_nacimiento: '2004-11-23',
-      tel_contacto: '3517891234'
+      tel_contacto: '3517891234',
+      rolId:3
     },
     {
       id: 3,
@@ -49,7 +48,8 @@ private fb = inject(FormBuilder);
       dni: '45321654',
       email: 'sofia.f@email.com',
       fecha_nacimiento: '2006-08-05',
-      tel_contacto: '3513334455'
+      tel_contacto: '3513334455',
+      rolId:3
     }
   ]);
 
@@ -73,7 +73,7 @@ private fb = inject(FormBuilder);
     this.isModalOpen.set(true);
   }
 
-  openEditModal(students: Student): void {
+  openEditModal(students: Persona): void {
     this.isEditing.set(true);
     this.selectedId.set(students.id);
     this.form.patchValue(students);
@@ -95,7 +95,17 @@ private fb = inject(FormBuilder);
       );
     } else {
       const newId = this.students().length > 0 ? Math.max(...this.students().map(e => e.id)) + 1 : 1;
-      const nuevoEstudiante: Student = { ...formValues, id: newId };
+      const nuevoEstudiante: Persona = { ...formValues, id: newId ,rolId:3};
+      const estudiante: IEstudiante = { ...formValues , rol:3};
+      
+      this.http.post<IEstudiante>(this.createPersona,estudiante).subscribe({
+        next: (res)=> {
+          console.log('Estudiante creado con èxito:', res)
+        },
+        error: (err)=> {
+          console.log('Error al registrar el estudiante:', err)
+        }
+      })
       this.students.update(lista => [...lista, nuevoEstudiante]);
     }
 

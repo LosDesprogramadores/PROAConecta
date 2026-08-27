@@ -12,6 +12,6 @@ export class ApiService {
   private readonly baseUrl = environment.apiUrl;
 
   checkConnection(): Observable<HealthStatus> {
-    return this.http.get<HealthStatus>(`${this.baseUrl}/health/`);
+    return this.http.get<HealthStatus>(`${this.baseUrl}health/`);
   }
 }

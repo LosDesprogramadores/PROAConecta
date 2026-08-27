@@ -1,3 +1,5 @@
+import { Persona } from "../../model/Persona.model";
+
 export enum UserRole {
 
     ADMIN = 1,
@@ -17,6 +19,7 @@ export interface User {
     id: number;
     userName : string;
     rolId: UserRole;
+    persona:Persona;
 }
 
 export interface AuthResponse {
