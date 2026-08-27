@@ -4,10 +4,6 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
 
-interface NavLink {
-  label: string;
-  path: string;
-}
 
 @Component({
   selector: 'app-sidebar',

@@ -6,7 +6,7 @@ import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard-admin',
-  imports: [ Navbar, Footer, Sidebar, RouterOutlet],
+  imports: [ Navbar, Footer, RouterOutlet],
   templateUrl: './dashboard-admin.html',
   styleUrl: './dashboard-admin.css',
 })

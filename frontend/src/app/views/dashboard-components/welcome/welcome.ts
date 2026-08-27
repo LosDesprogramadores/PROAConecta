@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
 import { Noticia } from '../../../model/noticia.model';
 import { Materia } from '../../../model/materia.model';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-welcome',
@@ -11,6 +12,18 @@ import { CommonModule } from '@angular/common';
   styleUrl: './welcome.css',
 })
 export class Welcome {
+ private authService = inject(AuthService);
+ private currentUser = this.authService.currentUser
+ 
+ 
+userName = computed(() => {
+    
+    const persona = this.currentUser()?.persona;;
+    if (!persona) return 'Invitado';
+    return `${persona.nombre} `;
+  });
+
+
 noticias = signal<Noticia[]>([
     {
       titulo: 'Inicio del ciclo lectivo',
