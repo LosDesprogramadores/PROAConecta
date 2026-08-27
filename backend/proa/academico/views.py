@@ -1,17 +1,64 @@
-from django.shortcuts import render
 from rest_framework import viewsets, permissions, filters
-from .models import Materia
-from .serializer import MateriaSerializer
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-# Create your views here.
+from .models import Materia, Inscripcion
+from .serializer import MateriaSerializer, InscripcionSerializer, PersonaResumenSerializer
+from usuario.models import Persona
+
 
 class MateriaViewSet(viewsets.ModelViewSet):
-    queryset = Materia.objects.select_related('docente').all()
+
+    queryset = Materia.objects.select_related('docente__rol').all()
     serializer_class = MateriaSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['titulo', 'descripcion', 
-                     'criterios_evaluacion', 'anio',
-                       'curso', 'docente__nombre',
-                         'docente__apellido']
-    ordering_fields = ['anio', 'curso', 'titulo']
+    search_fields = ['titulo', 'curso', 'docente__nombre', 'docente__apellido']
+    ordering_fields = ['anio', 'curso', 'titulo', 'fecha_creacion']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        anio = self.request.query_params.get('anio')
+        curso = self.request.query_params.get('curso')
+
+        if anio:
+            queryset = queryset.filter(anio=anio)
+        if curso:
+            queryset = queryset.filter(curso__icontains=curso)
+
+        return queryset
+
+    @action(detail=True, methods=['get'], url_path='estudiantes-disponibles')
+    def estudiantes_disponibles(self, request, pk=None):
+
+        materia = self.get_object()
+        inscriptos_ids = materia.inscripciones.values_list('estudiante_id', flat=True)
+
+        disponibles = Persona.objects.filter(
+            fecha_baja__isnull=True,
+            rol__nombre__iexact='Estudiante'
+        ).exclude(id__in=inscriptos_ids).order_by('apellido', 'nombre')
+
+        serializer = PersonaResumenSerializer(disponibles, many=True)
+        return Response(serializer.data)
+
+
+class InscripcionViewSet(viewsets.ModelViewSet):
+
+    queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
+    serializer_class = InscripcionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['fecha_inscripcion', 'estado']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        materia_id = self.request.query_params.get('materia')
+        estudiante_id = self.request.query_params.get('estudiante')
+
+        if materia_id:
+            queryset = queryset.filter(materia_id=materia_id)
+        if estudiante_id:
+            queryset = queryset.filter(estudiante_id=estudiante_id)
+
+        return queryset

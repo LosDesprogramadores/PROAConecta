@@ -22,6 +22,30 @@ class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.all()
     serializer_class = PersonaSerializer
 
+class PersonaRolView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rol_id = request.query_params.get('rol')
+        
+        if not rol_id:
+            return Response(
+                {"error": "Debe especificar el rol (ej: ?rol=3)"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        personas = (
+            Persona.objects
+            .filter(rol_id=rol_id, fecha_baja__isnull=True)
+            .select_related('rol')
+            .order_by('apellido', 'nombre')
+        )
+        serializer = PersonaSerializer(personas, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
 class PerfilUsuarioView(APIView):
     permission_classes = [IsAuthenticated]
 
