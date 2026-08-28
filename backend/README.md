@@ -57,37 +57,46 @@ python manage.py runserver
 
 ## 6- Tenemos que abrir una terminar nueva para cargar los primeros datos en la Base de Datos por Bash
 
-    ##Creamos la Persona
+## En entonrno virtual y parados en backend/proa, tiramos comando python manage.py shell
 
-        from usuario.models import Persona, Usuario
-        from datetime import date
+Para crear usuarios hay que tener 2 terminales abiertas con su virtualenv activado
 
-        persona = Persona.objects.create(
-            nombre='Ana',
-            apellido='Gómez',
-            dni='test', # Es único no se puede repetir
-            fecha_nacimiento=date(1995, 5, 20),
-        )
+Una corriendo django y en la otra correr el siguiente comando:
 
-    ## Creamos el Usuario
+python manage.py shell
 
-        from usuario.models import Persona, Usuario
-        from datetime import date
+En este shell de django se puede probar la app de django desde consola, la idea es que vayan tirando las líneas siguientes para 
+que puedan crear 1ero La persona y 2do el Usuario
 
-        persona = Persona.objects.create(
-            nombre='Ana',
-            apellido='Gómez',
-            dni='test', # Es único no se puede repetir
-            fecha_nacimiento=date(1995, 5, 20),
-        )
 
-    ## Validar Usuario
+CREAR EL USUARIO
+#================
 
-        from django.contrib.auth import authenticate
+from usuario.models import Persona, Usuario
+from datetime import date
 
-        usuario_autenticado = authenticate(dni='test', password='test')
-        print(usuario_autenticado) # si da None algo le pifiaron, debería devolver el DNI
+persona = Persona.objects.create(
+    nombre='Ana',
+    apellido='Gómez',
+    dni='test', 
+    fecha_nacimiento=date(1995, 5, 20),
+)
 
+usuario = Usuario.objects.create_user(
+    username='test',  
+    password='test',
+    email= 'test@x.com', 
+    persona=persona,
+)
+
+
+VALIDAR EL USUARIO
+#==================
+
+from django.contrib.auth import authenticate
+
+usuario_autenticado = authenticate(dni='test', password='test')
+print(usuario_autenticado) # si da None algo le pifiaron, debería devolver el DNI
 
 ---
 
@@ -99,7 +108,7 @@ python manage.py runserver
 
   Crear los 3 Roles 
   Administrador (1)
-  Profesor (2)
+  Docente (2)
   Estudiante (3)
 
   ---
@@ -134,4 +143,158 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
 
   IMPRTANTE no olvidar de pegar el token obtenido anteriormente
 
+
+## 9 -Catálogo de Materias (academico)
+
+    Crear Materia
+    Método: POST
+    Endpoint: /materias/
+
+    Body (JSON):
+        {
+        "titulo": "Programación I",
+        "anio": 2026,
+        "curso": "1ro A",
+        "descripcion": "Fundamentos de lógica y algoritmos",
+        "criterios_evaluacion": "70% TPs, 30% Parcial",
+        "docente": 2
+        }
+
+    El campo docente es opcional; si no se asigna al crear, enviar null o no incluir la clave
+
+        Listar Materias
+        Método: GET
+        Endpoint: /materias/
+
+    Filtros disponibles por Query Params:
+
+        ?anio=2026
+        ?curso=1ro A
+        ?docente=2 (Materias que dicta un docente específico)
+        ?search=Programacion (Búsqueda por título, curso o nombre del profesor)
+
+
+    Respuesta (200 OK):
+
+    [
+        {
+            "id": 1,
+            "titulo": "Programación I",
+            "descripcion": "Fundamentos y lógica de programación",
+            "criterios_evaluacion": "70% TPs, 30% Parcial",
+            "anio": 2026,
+            "curso": "1ro A",
+            "docente": 2,
+            "docente_detalle": {
+            "id": 2,
+            "dni": "40123456",
+            "nombre": "Carlos",
+            "apellido": "Pérez",
+            "nombre_completo": "Pérez, Carlos",
+            "email": "carlos.perez@aula.com",
+            "rol_nombre": "Docente"
+            },
+            "total_estudiantes": 25,
+            "activo": true,
+            "fecha_creacion": "2026-08-26T22:50:00Z",
+            "fecha_actualizacion": "2026-08-26T22:52:00Z"
+        }
+        ]
+
+    Asignar, Cambiar o Quitar Docente
+        Método: PATCH
+        Endpoint: /materias/{id}/
+        Body (JSON):
+        Asignar / Cambiar: {"docente": 2}
+        Dejar sin profesor: {"docente": null}
+
+        Respuesta (200 OK): Objeto Materia actualizado.
+
+    Eliminar Materia
+        Método: DELETE
+        Endpoint: /materias/{id}/
+        Respuesta: 204 No Content
+
+    Consultar Alumnos Disponibles para Matricular
+        Método: GET
+        Endpoint: /materias/{id}/estudiantes-disponibles/
+        Uso: Carga el modal de matriculación con los estudiantes activos que aún no pertenecen a esta materia.
+        Respuesta (200 OK):
+
+        JSON
+        [
+        {
+            "id": 5,
+            "dni": "45111222",
+            "nombre": "Lucía",
+            "apellido": "Martínez",
+            "nombre_completo": "Martínez, Lucía",
+            "email": "lucia@aula.com",
+            "rol_nombre": "Estudiante"
+        }
+        ]
+        4. Cursadas e Inscripciones (academico)
+
+    Inscribir un Estudiante (1 a 1)
+        Método: POST
+        Endpoint: /inscripciones/
+        Body (JSON):
+
+        JSON
+        {
+        "materia": 1,
+        "estudiante": 5
+        }
+        Respuesta (201 Created):
+
+        JSON
+        {
+        "id": 18,
+        "materia": 1,
+        "materia_titulo": "Programación I",
+        "estudiante": 5,
+        "estudiante_detalle": {
+            "id": 5,
+            "dni": "45111222",
+            "nombre": "Lucía",
+            "apellido": "Martínez",
+            "nombre_completo": "Martínez, Lucía",
+            "email": "lucia@aula.com",
+            "rol_nombre": "Estudiante"
+        },
+        "estado": "ACTIVA",
+        "fecha_inscripcion": "2026-08-27"
+        }
+
+    Listar Alumnos Inscriptos en una Materia
+        Método: GET
+        Endpoint: /inscripciones/?materia={id_materia}
+        Uso: Vista de lista de curso dentro del aula virtual.
+
+        Respuesta (200 OK): Lista de inscripciones de esa materia.
+
+
+    Listar Materias Cursadas por un Alumno ("Mis Cursadas")
+        Método: GET
+        Endpoint: /inscripciones/?estudiante={id_estudiante}
+        Uso: Dashboard del estudiante para ver sus materias asignadas.
+        Respuesta (200 OK): Lista de inscripciones del estudiante.
+
+    Modificar Condición Académica del Alumno
+        Método: PATCH
+        Endpoint: /inscripciones/{id}/
+        Valores admitidos para estado: "CURSANDO", "REGULAR", "PROMOCIONADO", "LIBRE", "BAJA".
+
+        Body (JSON):
+
+        JSON
+        {
+        "estado": "REGULAR"
+        }
+        Respuesta (200 OK): Objeto Inscripcion actualizado.
+
+    Desvincular / Dar de Baja Estudiante de la Materia
+        Método: DELETE
+        Endpoint: /inscripciones/{id}/
+        Respuesta: 204 No Content
 
