@@ -14,6 +14,7 @@ import { ForoDetalleComponent } from './views/materias-components/foro-detalle/f
 import { authGuard } from './guards/auth.guard';
 import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
 import { Estudiante } from './views/admin/estudiante/estudiante';
+import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
 
 export const routes: Routes = [
     {
@@ -47,7 +48,7 @@ export const routes: Routes = [
         children: [
             { path: 'portada', component: Portada },
             { path: 'foro', component: ForoComponent },
-            // 2. Agregás la ruta del detalle del foro con parámetro dinámico :id
+            { path: 'anuncios', component: AnunciosMateriaComponent },
             { path: 'foro/:id', component: ForoDetalleComponent },
             { path: '', redirectTo: 'portada', pathMatch: 'full' }
         ]
