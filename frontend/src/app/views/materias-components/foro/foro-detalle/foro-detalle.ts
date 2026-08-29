@@ -2,7 +2,7 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PublicacionForo } from '../../../model/publicacion.model';
+import { PublicacionForo } from '../../../../model/publicacion.model';
 
 @Component({
   selector: 'app-foro-detalle',
