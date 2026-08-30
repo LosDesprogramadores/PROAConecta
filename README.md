@@ -101,6 +101,14 @@ Completamente viable dado que no requiere infraestructura externa compleja. El s
 
 ---
 
+## 📈 Sistema de branch
+
+Descripción aplicada en el proyecto:
+
+https://github.com/LosDesprogramadores/PROAConecta/wiki/Sistema-de-branching
+
+---
+
 ## 🚀 Comenzando: Guía de Levantamiento Local
 
 Seguí minuciosamente los pasos detallados a continuación para clonar el proyecto y levantar el ecosistema completo (Frontend, Backend, PostgreSQL y MongoDB) de manera automatizada.
