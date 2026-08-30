@@ -127,4 +127,25 @@ cd proa-conecta
 docker-compose up --build
 ```
 
+**3. Realizar las migraciones pendientes:**
+
+```bash
+docker compose exec backend python manage.py makemigrations
+docker compose exec backend python manage.py migrate
+```
+
 Una vez completado el proceso, los servicios estarán disponibles en sus respectivos puertos locales según la configuración definida en el archivo `docker-compose.yml`.
+
+Los usuarios cargados de prueba son:
+
+Rol 1- Administrador Ana Gomez: 
+DNI(username): 12345678
+PASS: test
+
+Rol 2- Docente Alan Profesor:
+DNI(username): 35785659
+PASS: 35785659
+
+Rol 3- Estudiante Julio Estudiante:
+DNI(username): 333111333
+PASS: 333111333
