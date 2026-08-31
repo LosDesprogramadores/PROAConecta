@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { IEstudiante, Persona } from '../../../model/Persona.model';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { EstudianteService } from '../../../services/estudiante.service';
 
 
 
@@ -15,43 +17,12 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })
-export class Estudiante {
+export class Estudiante implements OnInit {
 private fb = inject(FormBuilder);
 private http = inject(HttpClient)
+private estudianteService = inject(EstudianteService)
 private readonly createPersona = `${environment.apiUrl}personas/`;
-
-  students = signal<Persona[]>([
-    {
-      id: 1,
-      nombre: 'Lucía',
-      apellido: 'González',
-      dni: '44123456',
-      email: 'lucia.gonzalez@email.com',
-      fecha_nacimiento: '2005-04-12',
-      tel_contacto: '3514567890',
-      rolId:3
-    },
-    {
-      id: 2,
-      nombre: 'Mateo',
-      apellido: 'Romero',
-      dni: '43987654',
-      email: 'mateo.romero@email.com',
-      fecha_nacimiento: '2004-11-23',
-      tel_contacto: '3517891234',
-      rolId:3
-    },
-    {
-      id: 3,
-      nombre: 'Sofía',
-      apellido: 'Fernández',
-      dni: '45321654',
-      email: 'sofia.f@email.com',
-      fecha_nacimiento: '2006-08-05',
-      tel_contacto: '3513334455',
-      rolId:3
-    }
-  ]);
+students = signal<Persona[]>([])
 
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
@@ -65,6 +36,20 @@ private readonly createPersona = `${environment.apiUrl}personas/`;
     fecha_nacimiento: ['', [Validators.required]],
     tel_contacto: ['']
   });
+
+ 
+  ngOnInit(): void {
+     this.cargarEstudiantes()
+  }
+
+  cargarEstudiantes():void{
+    this.estudianteService.obtenerEstudiates().subscribe({
+      next : (data) => {this.students.set(data);
+            console.log(data)},
+      error: (err) => console.error('Error al cargar estudiantes:', err )
+
+      })
+  }
 
   openCreateModal(): void {
     this.isEditing.set(false);
@@ -87,34 +72,34 @@ private readonly createPersona = `${environment.apiUrl}personas/`;
   save(): void {
     if (this.form.invalid) return;
 
-    const formValues = this.form.getRawValue();
+    // const formValues = this.form.getRawValue();
 
-    if (this.isEditing() && this.selectedId()) {
-      this.students.update(lista =>
-        lista.map(item => item.id === this.selectedId() ? { ...formValues, id: this.selectedId()! } : item)
-      );
-    } else {
-      const newId = this.students().length > 0 ? Math.max(...this.students().map(e => e.id)) + 1 : 1;
-      const nuevoEstudiante: Persona = { ...formValues, id: newId ,rolId:3};
-      const estudiante: IEstudiante = { ...formValues , rol:3};
+    // if (this.isEditing() && this.selectedId()) {
+    //   this.students.update(lista =>
+    //     lista.map(item => item.id === this.selectedId() ? { ...formValues, id: this.selectedId()! } : item)
+    //   );
+    // } else {
+    //   const newId = this.students().length > 0 ? Math.max(...this.students().map(e => e.id)) + 1 : 1;
+    //   const nuevoEstudiante: Persona = { ...formValues, id: newId ,rolId:3};
+    //   const estudiante: IEstudiante = { ...formValues , rol:3};
       
-      this.http.post<IEstudiante>(this.createPersona,estudiante).subscribe({
-        next: (res)=> {
-          console.log('Estudiante creado con èxito:', res)
-        },
-        error: (err)=> {
-          console.log('Error al registrar el estudiante:', err)
-        }
-      })
-      this.students.update(lista => [...lista, nuevoEstudiante]);
-    }
+    //   this.http.post<IEstudiante>(this.createPersona,estudiante).subscribe({
+    //     next: (res)=> {
+    //       console.log('Estudiante creado con èxito:', res)
+    //     },
+    //     error: (err)=> {
+    //       console.log('Error al registrar el estudiante:', err)
+    //     }
+    //   })
+    //   this.students.update(lista => [...lista, nuevoEstudiante]);
+    // }
 
-    this.closeModal();
+    // this.closeModal();
   }
 
   eliminar(id: number): void {
-    if (confirm('¿Deseas eliminar este estudiante?')) {
-      this.students.update(lista => lista.filter(item => item.id !== id));
-    }
+  //   if (confirm('¿Deseas eliminar este estudiante?')) {
+  //     this.students.update(lista => lista.filter(item => item.id !== id));
+  //   }
   }
 }
