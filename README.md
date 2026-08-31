@@ -148,7 +148,7 @@ Los usuarios cargados de prueba son:
 
 Rol 1- Administrador Ana Gomez: 
 DNI(username): 12345678
-PASS: test
+PASS: 12345678
 
 Rol 2- Docente Alan Profesor:
 DNI(username): 35785659
