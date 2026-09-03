@@ -1,6 +1,4 @@
 import { Injectable, inject } from "@angular/core";
-import { environment } from "../../environments/environment";
-import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs/internal/Observable";
 import { Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";

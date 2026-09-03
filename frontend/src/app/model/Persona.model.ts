@@ -9,7 +9,7 @@ export interface Persona {
   rolId?: number;
 }
 
-export interface IEstudiante {
+export interface IPersona {
   nombre: string;
   apellido: string;
   dni: string;
