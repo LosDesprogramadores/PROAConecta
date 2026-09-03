@@ -1,8 +1,6 @@
-import { HttpClient } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
-
 import { Observable } from "rxjs";
-import { Persona, RolId } from "../model/Persona.model";
+import { IPersona, Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";
 
 
@@ -11,6 +9,7 @@ import { PersonaService } from "./persona.service";
 })
 
 export class EstudianteService {
+
 private readonly personaService = inject(PersonaService);
 
 
@@ -18,5 +17,16 @@ obtenerEstudiates():Observable<Persona[]>{
     return this.personaService.obtenerPersonas(RolId.ESTUDIANTE);
 
 }
+
+crearEstudiates(nuevoEstudiante:IPersona):Observable<Persona>{
+    return this.personaService.CrearPersona(nuevoEstudiante);
+
+}
+
+
+actualizarEstudiante(arg0: number, estudianteActualizado: Persona) {
+  throw new Error('Method not implemented.');
+}
+
 
 }

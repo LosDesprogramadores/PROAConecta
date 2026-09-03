@@ -1,14 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import { RouterModule, RouterOutlet } from '@angular/router';
-import { IEstudiante, Persona } from '../../../model/Persona.model';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { RouterModule} from '@angular/router';
+import { IPersona, Persona, RolId } from '../../../model/Persona.model';
 import { EstudianteService } from '../../../services/estudiante.service';
-
-
 
 
 @Component({
@@ -19,9 +14,7 @@ import { EstudianteService } from '../../../services/estudiante.service';
 })
 export class Estudiante implements OnInit {
 private fb = inject(FormBuilder);
-private http = inject(HttpClient)
 private estudianteService = inject(EstudianteService)
-private readonly createPersona = `${environment.apiUrl}personas/`;
 students = signal<Persona[]>([])
 
   isModalOpen = signal<boolean>(false);
@@ -70,31 +63,37 @@ students = signal<Persona[]>([])
   }
 
   save(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const formValues = this.form.getRawValue();
 
-    // const formValues = this.form.getRawValue();
+    if (this.isEditing() && this.selectedId()) {
+     const estudianteActualizado: Persona = {
+      ...formValues,
+      id: this.selectedId()!
+    };
+   
+  } else {
+  
+    const nuevoEstudiante: IPersona = {
+      ...formValues,
+      rol: RolId.ESTUDIANTE 
+    };
 
-    // if (this.isEditing() && this.selectedId()) {
-    //   this.students.update(lista =>
-    //     lista.map(item => item.id === this.selectedId() ? { ...formValues, id: this.selectedId()! } : item)
-    //   );
-    // } else {
-    //   const newId = this.students().length > 0 ? Math.max(...this.students().map(e => e.id)) + 1 : 1;
-    //   const nuevoEstudiante: Persona = { ...formValues, id: newId ,rolId:3};
-    //   const estudiante: IEstudiante = { ...formValues , rol:3};
-      
-    //   this.http.post<IEstudiante>(this.createPersona,estudiante).subscribe({
-    //     next: (res)=> {
-    //       console.log('Estudiante creado con èxito:', res)
-    //     },
-    //     error: (err)=> {
-    //       console.log('Error al registrar el estudiante:', err)
-    //     }
-    //   })
-    //   this.students.update(lista => [...lista, nuevoEstudiante]);
-    // }
-
-    // this.closeModal();
+    this.estudianteService.crearEstudiates(nuevoEstudiante).subscribe({
+      next: (res: Persona) => {
+        console.log('Estudiante creado con éxito:', res);
+        this.students.update(lista => [...lista, res]);
+        this.closeModal();
+      },
+      error: (err) => {
+        console.error('Error al registrar el estudiante:', err);
+      }
+    });
+  }
+   this.closeModal();
   }
 
   eliminar(id: number): void {
