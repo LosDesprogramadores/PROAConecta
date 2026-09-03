@@ -43,9 +43,9 @@ export class Navbar implements OnInit {
 switch (this.currentUser()?.rolId) {
       case UserRole.ADMIN: 
       this.navLinksAdmi = [
-          { label: 'Profesores', path: '/admin/Profesores' },
+          { label: 'Profesores', path: 'admin/profesores' },
           { label: 'Estudiantes', path: 'admin/estudiantes' },
-          { label: 'Materias', path: '/admin/Materias' }
+          { label: 'Materias', path: 'admin/materias' }
         ];
         break;
 

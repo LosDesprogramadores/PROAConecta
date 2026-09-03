@@ -15,6 +15,7 @@ import { authGuard } from './guards/auth.guard';
 import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
 import { Estudiante } from './views/admin/estudiante/estudiante';
 import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
+import { Profesor } from './views/admin/profesor/profesor';
 
 export const routes: Routes = [
     {
@@ -58,7 +59,10 @@ export const routes: Routes = [
     path: 'dashboard-admin',
     component : DashboardAdmin,
     children : [
-        {path: 'admin/estudiantes', component: Estudiante}
+        { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
+        {path: 'admin/estudiantes', component: Estudiante},
+        {path: 'admin/profesores', component: Profesor},
+        {path: 'admin/materias', component: Materias}
     ]
     }
 ];
