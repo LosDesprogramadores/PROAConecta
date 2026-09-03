@@ -3,6 +3,7 @@ import { Navbar } from '../../../shared/navbar/navbar';
 import { Footer } from '../../../shared/footer/footer';
 import { Sidebar } from '../../../shared/sidebar/sidebar';
 import { RouterOutlet } from '@angular/router';
+import { Profesor } from '../profesor/profesor';
 
 @Component({
   selector: 'app-dashboard-admin',

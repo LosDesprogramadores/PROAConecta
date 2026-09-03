@@ -18,6 +18,7 @@ import { AnunciosMateriaComponent } from './views/materias-components/anuncios/a
 import { Material } from './views/materias-components/material/material';
 import { Actividades } from './views/materias-components/actividades/actividades';
 import { Calificaciones } from './views/materias-components/calificaciones/calificaciones';
+import { Profesor } from './views/admin/profesor/profesor';
 
 export const routes: Routes = [
   {
@@ -61,7 +62,12 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard-admin',
-    component: DashboardAdmin,
-    children: [{ path: 'admin/estudiantes', component: Estudiante }],
-  },
+    component : DashboardAdmin,
+    children : [
+        { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
+        {path: 'admin/estudiantes', component: Estudiante},
+        {path: 'admin/profesores', component: Profesor},
+        {path: 'admin/materias', component: Materias}
+    ]
+    }
 ];
