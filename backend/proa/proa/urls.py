@@ -21,15 +21,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def health_check(request):
-    
-    return Response({"status": "ok", "message": "Backend Django conectado exitosamente"})
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('usuario.urls')), 
     path('api/', include('academico.urls')),
-    path('api/health/', health_check, name='health_check'),
 ]
