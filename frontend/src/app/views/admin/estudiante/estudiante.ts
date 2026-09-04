@@ -97,8 +97,16 @@ students = signal<Persona[]>([])
   }
 
   eliminar(id: number): void {
-  //   if (confirm('¿Deseas eliminar este estudiante?')) {
-  //     this.students.update(lista => lista.filter(item => item.id !== id));
-  //   }
+   if (confirm('¿Deseas eliminar este estudiante?')) {
+      this.estudianteService.eliminarEstudiante(id).subscribe({
+        next: () => {
+          console.log('Estudiante eliminado con éxito');
+          this.students.update(lista => lista.filter(estudiante => estudiante.id !== id));
+        },
+        error: (err) => {
+          console.error('Error al eliminar el estudiante:', err);
+        }
+      });
+  }
   }
 }

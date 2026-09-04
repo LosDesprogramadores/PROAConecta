@@ -19,7 +19,7 @@ obtenerEstudiates():Observable<Persona[]>{
 }
 
 crearEstudiates(nuevoEstudiante:IPersona):Observable<Persona>{
-    return this.personaService.CrearPersona(nuevoEstudiante);
+    return this.personaService.crearPersona(nuevoEstudiante);
 
 }
 
@@ -28,5 +28,9 @@ actualizarEstudiante(arg0: number, estudianteActualizado: Persona) {
   throw new Error('Method not implemented.');
 }
 
+
+eliminarEstudiante(id: number): Observable<void> {
+  return this.personaService.eliminarPersona(id);       
+}
 
 }

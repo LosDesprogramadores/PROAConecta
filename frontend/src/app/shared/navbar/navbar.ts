@@ -1,6 +1,5 @@
 import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { ApiService } from '../../core/services/api.service';
 import { HealthStatus } from '../../core/models/api-response.interface';
 import { ServiceAuth } from '../../services/service.auth';
 import { AuthService } from '../../core/auth/auth.service';
@@ -14,7 +13,7 @@ import { UserRole } from '../../core/auth/auth.model';
   styleUrl: './navbar.css',
 })
 export class Navbar implements OnInit {
-  private apiService = inject(ApiService);
+  
   private serviceAuth = inject(ServiceAuth);
   private authService = inject(AuthService);
   private currentUser = this.authService.currentUser
@@ -56,18 +55,6 @@ switch (this.currentUser()?.rolId) {
     }
 
 
-    this.apiService.checkConnection().subscribe({
-      next: (data) => {
-        this.response.set(data);
-        this.loading.set(false);
-        console.log('API connection status:', data.status, '-', data.message)
-      },
-      error: (error) => {
-        console.error('Error checking connection:', error);
-        this.response.set({ status: 'error', message: 'Failed to connect to the API' });
-        this.loading.set(false);
-      }
-    });
   }
 
   toggleMobileMenu(): void {

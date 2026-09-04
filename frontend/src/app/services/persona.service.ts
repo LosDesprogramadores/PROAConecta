@@ -18,8 +18,12 @@ obtenerPersonas(rol: RolId): Observable<Persona[]> {
   }
 
 
-  CrearPersona(NuevaPersona:IPersona): Observable<Persona> {
+crearPersona(NuevaPersona:IPersona): Observable<Persona> {
     return this.http.post<Persona>(`${this.baseUrl}personas/`, NuevaPersona);
+  }
+
+eliminarPersona(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}personas/${id}/`);
   }
 
 
