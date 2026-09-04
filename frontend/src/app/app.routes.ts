@@ -16,6 +16,7 @@ import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
 import { Estudiante } from './views/admin/estudiante/estudiante';
 import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
 import { Profesor } from './views/admin/profesor/profesor';
+import { Materia } from './views/admin/materia/materia';
 
 export const routes: Routes = [
     {
@@ -62,7 +63,7 @@ export const routes: Routes = [
         { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
         {path: 'admin/estudiantes', component: Estudiante},
         {path: 'admin/profesores', component: Profesor},
-        {path: 'admin/materias', component: Materias}
+        {path: 'admin/materias', component: Materia}
     ]
     }
 ];
