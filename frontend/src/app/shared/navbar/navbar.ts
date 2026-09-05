@@ -33,7 +33,7 @@ export class Navbar implements OnInit {
  userName = computed(() => {
     
     const persona = this.currentUser()?.persona;;
-    if (!persona) return 'Invitado';
+    if (!persona) return 'invitado';
     return `${persona.nombre} ${persona.apellido}`;
   });
    
