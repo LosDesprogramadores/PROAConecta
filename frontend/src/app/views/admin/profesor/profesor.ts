@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { RouterModule} from '@angular/router';
-import { Persona } from '../../../model/Persona.model';
+import { IPersona, Persona, RolId } from '../../../model/Persona.model';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProfesorService } from '../../../services/profesor.service';
 
@@ -62,7 +62,37 @@ profesores = signal<Persona[]>([])
   }
 
   save(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+         this.form.markAllAsTouched();
+         return;
+       }
+       const formValues = this.form.getRawValue();
+   
+       if (this.isEditing() && this.selectedId()) {
+        const estudianteActualizado: Persona = {
+         ...formValues,
+         id: this.selectedId()!
+       };
+      
+     } else {
+     
+       const nuevoProfesor: IPersona = {
+         ...formValues,
+         rol: RolId.PROFESOR 
+       };
+   
+       this.profesorService.crearProfesores(nuevoProfesor).subscribe({
+         next: (res: Persona) => {
+           console.log('Profesor creado con éxito:', res);
+           this.profesores.update(lista => [...lista, res]);
+           this.closeModal();
+         },
+         error: (err) => {
+           console.error('Error al registrar el profesor:', err);
+         }
+       });
+     }
+      this.closeModal();
 }
  eliminar(id: number): void {
   //   if (confirm('¿Deseas eliminar este estudiante?')) {
@@ -70,4 +100,14 @@ profesores = signal<Persona[]>([])
   //   }
   }
 
-}
+  asignar(profesor: Persona): void {
+   
+  }
+   consultar(profesor: Persona): void {
+   
+  }
+
+ }
+
+
+
