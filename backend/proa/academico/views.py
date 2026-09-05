@@ -71,6 +71,32 @@ class MateriaViewSet(viewsets.ModelViewSet):
         serializer = PersonaResumenSerializer(disponibles, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='mis-materias')
+    def mis_materias(self, request):
+        user = request.user
+        persona = getattr(user, 'persona', None)
+
+        # Administrador (rol 1) o super user ve todas las materias
+        if user.is_superuser or user.is_staff or (persona and persona.rol_id == 1):
+            materias = Materia.objects.all()
+
+        # Profesor o Estudiante según rol
+        elif persona and persona.rol:
+            rol_nombre = persona.rol.nombre.strip().capitalize()
+            if rol_nombre == 'Estudiante':
+                materias = Materia.objects.filter(
+                    inscripciones__estudiante=persona
+                ).distinct()
+            elif rol_nombre == 'Profesor':
+                materias = Materia.objects.filter(profesor=persona)
+            else:
+                return Response([])
+        else:
+            return Response([])
+
+        materias = materias.select_related('profesor__rol').order_by('anio', 'curso', 'titulo')
+        serializer = self.get_serializer(materias, many=True)
+        return Response(serializer.data)
 
 class InscripcionViewSet(viewsets.ModelViewSet):
 
