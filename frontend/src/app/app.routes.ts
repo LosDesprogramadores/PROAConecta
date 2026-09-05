@@ -18,6 +18,7 @@ import { AnunciosMateriaComponent } from './views/materias-components/anuncios/a
 import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
 
+
 export const routes: Routes = [
     {
         path: '',
@@ -63,7 +64,6 @@ export const routes: Routes = [
         { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
         {path: 'admin/estudiantes', component: Estudiante},
         {path: 'admin/profesores', component: Profesor},
-        {path: 'admin/materias', component: Materia}
-    ]
+        {path: 'admin/materias', component: Materia}    ]
     }
 ];
