@@ -20,6 +20,7 @@ students = signal<Persona[]>([])
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   selectedId = signal<number | null>(null);
+  isLoading = signal<boolean>(false);
 
   form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
@@ -36,11 +37,17 @@ students = signal<Persona[]>([])
   }
 
   cargarEstudiantes():void{
+    this.isLoading.set(true);
     this.estudianteService.obtenerEstudiates().subscribe({
-      next : (data) => {this.students.set(data);
-            console.log(data)},
-      error: (err) => console.error('Error al cargar estudiantes:', err )
+      next : (data) => {
+        this.students.set(data);
+        this.isLoading.set(false);
+            console.log(data)
+          },
 
+      error: (err) => {console.error('Error al cargar estudiantes:', err );
+       this.isLoading.set(false);
+      }
       })
   }
 
@@ -108,5 +115,12 @@ students = signal<Persona[]>([])
         }
       });
   }
+  }
+
+  inscribir(students: Persona): void {
+   
+  }
+   consultar(students: Persona): void {
+   
   }
 }

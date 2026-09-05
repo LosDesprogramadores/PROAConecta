@@ -1,9 +1,9 @@
 import { Component, signal, inject, computed } from '@angular/core';
 import { Noticia } from '../../../model/noticia.model';
-import { Materia } from '../../../model/materia.model';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
+import { Materia } from '../../../model/materia.model';
 
 @Component({
   selector: 'app-welcome',
