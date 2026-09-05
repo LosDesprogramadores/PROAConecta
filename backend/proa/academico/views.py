@@ -9,11 +9,11 @@ from usuario.models import Persona
 
 class MateriaViewSet(viewsets.ModelViewSet):
 
-    queryset = Materia.objects.select_related('docente__rol').all()
+    queryset = Materia.objects.select_related('profesor__rol').all()
     serializer_class = MateriaSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['titulo', 'curso', 'docente__nombre', 'docente__apellido']
+    search_fields = ['titulo', 'curso', 'profesor__nombre', 'profesor__apellido']
     ordering_fields = ['anio', 'curso', 'titulo', 'fecha_creacion']
 
     def get_queryset(self):

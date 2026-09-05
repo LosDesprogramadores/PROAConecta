@@ -21,6 +21,22 @@ Asegúrate de tener instalado:
 * Gestor de paquetes `pip`
 
 ---
+
+## Roles, Personas y Usuarios en DB de Prueba actuales en la DB
+
+Rol 1- Administrador Ana Gomez: 
+DNI(username): 12345678
+PASS: 12345678
+
+Rol 2- profesor Alan Profesor:
+DNI(username): 35785659
+PASS: 35785659
+
+Rol 3- Estudiante Julio Estudiante:
+DNI(username): 333111333
+PASS: 333111333
+
+
 ## En los siguientes pasos siempre deben tener en consideraciòn la posiciòn donde estàn y donde se encuentra el archivo a ajecutar.
 
 ## 1- Crear y activar el entorno virtual
@@ -108,7 +124,7 @@ print(usuario_autenticado) # si da None algo le pifiaron, debería devolver el D
 
   Crear los 3 Roles 
   Administrador (1)
-  Docente (2)
+  Profesor (2)
   Estudiante (3)
 
   ---
@@ -157,10 +173,10 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         "curso": "1ro A",
         "descripcion": "Fundamentos de lógica y algoritmos",
         "criterios_evaluacion": "70% TPs, 30% Parcial",
-        "docente": 2
+        "profesor": 2
         }
 
-    El campo docente es opcional; si no se asigna al crear, enviar null o no incluir la clave
+    El campo profesor es opcional; si no se asigna al crear, enviar null o no incluir la clave
 
         Listar Materias
         Método: GET
@@ -170,7 +186,7 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
 
         ?anio=2026
         ?curso=1ro A
-        ?docente=2 (Materias que dicta un docente específico)
+        ?profesor=2 (Materias que dicta un profesor específico)
         ?search=Programacion (Búsqueda por título, curso o nombre del profesor)
 
 
@@ -184,15 +200,15 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
             "criterios_evaluacion": "70% TPs, 30% Parcial",
             "anio": 2026,
             "curso": "1ro A",
-            "docente": 2,
-            "docente_detalle": {
+            "profesor": 2,
+            "profesor_detalle": {
             "id": 2,
             "dni": "40123456",
             "nombre": "Carlos",
             "apellido": "Pérez",
             "nombre_completo": "Pérez, Carlos",
             "email": "carlos.perez@aula.com",
-            "rol_nombre": "Docente"
+            "rol_nombre": "profesor"
             },
             "total_estudiantes": 25,
             "activo": true,
@@ -201,12 +217,12 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         }
         ]
 
-    Asignar, Cambiar o Quitar Docente
+    Asignar, Cambiar o Quitar profesor
         Método: PATCH
         Endpoint: /materias/{id}/
         Body (JSON):
-        Asignar / Cambiar: {"docente": 2}
-        Dejar sin profesor: {"docente": null}
+        Asignar / Cambiar: {"profesor": 2}
+        Dejar sin profesor: {"profesor": null}
 
         Respuesta (200 OK): Objeto Materia actualizado.
 

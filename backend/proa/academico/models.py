@@ -9,8 +9,8 @@ class Materia(models.Model):
     anio = models.PositiveSmallIntegerField(help_text='Año de la materia (por ejemplo, 2026)')
     curso = models.CharField(max_length=20, help_text='Curso de la materia (por ejemplo, 1ro A, 2do C, 3ro A, etc.)')
 
-    # Docente titular
-    docente = models.ForeignKey(
+    # profesor titular
+    profesor = models.ForeignKey(
         Persona,
         on_delete=models.SET_NULL,
         null=True,
