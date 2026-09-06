@@ -7,7 +7,7 @@ export interface ContenidoUnidad {
   titulo: string;
   descripcion?: string;
   tipo: 'documento' | 'video' | 'enlace';
-  url: string; // URL externa (Drive, YouTube, etc)
+  url: string;
   fechaCreacion: Date;
   profesor_id?: string;
 }
@@ -18,8 +18,8 @@ export interface ContenidoUnidad {
  */
 export interface UnidadMateria {
   id: string;
-  numero: number; // 1, 2, 3, 4...
-  nombre: string; // "Números reales y operaciones"
+  numero: number;
+  nombre: string;
   descripcion?: string;
   contenidos: ContenidoUnidad[];
 }

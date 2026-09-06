@@ -2,8 +2,8 @@ import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { UnidadMateria, ContenidoUnidad, MateriaPortada } from '../../model/unidad-contenido.model';
-import { ContenidoUnidadComponent } from './contenido-unidad/contenido-unidad.component';
+import { UnidadMateria, ContenidoUnidad, MateriaPortada } from '../../../model/unidad-contenido.model';
+import { ContenidoUnidadComponent } from './contenido-unidad/contenido-unidad';
 
 @Component({
   selector: 'app-portada',

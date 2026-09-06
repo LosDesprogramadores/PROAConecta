@@ -69,15 +69,72 @@
           }
         </div>
         
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
-          @for (item of (materia || materiaDemo).cronograma; track item) {
-            <div class="p-4 flex items-center justify-between hover:bg-slate-50/50 transition">
-              <span class="text-sm font-medium text-slate-700">{{ item }}</span>
-              <span class="text-xs text-slate-400">Ver contenido &rarr;</span>
-            </div>
+       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+  @for (unidad of datosActuales.unidades; track unidad.id) {
+    <div class="p-4 hover:bg-slate-50/50 transition">
+      
+      <button
+        (click)="toggleUnidad(unidad.id)"
+        class="w-full flex items-center justify-between text-left"
+      >
+        <div>
+          <span class="text-xs text-slate-400">
+            Unidad {{ unidad.numero }}
+          </span>
+          <h4 class="text-sm font-semibold text-slate-700">
+            {{ unidad.nombre }}
+          </h4>
+          @if (unidad.descripcion) {
+            <p class="text-xs text-slate-500 mt-1">
+              {{ unidad.descripcion }}
+            </p>
           }
         </div>
-      </div>
+
+        <span class="text-xs text-slate-400">
+          {{ unidadExpandida() === unidad.id ? '▲' : '▼' }}
+        </span>
+      </button>
+
+      @if (unidadExpandida() === unidad.id) {
+        <div class="mt-4 pl-3 border-l-2 border-slate-100 space-y-2">
+
+          @for (contenido of unidad.contenidos; track contenido.id) {
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    {{ contenido.titulo }}
+                  </p>
+
+                  @if (contenido.descripcion) {
+                    <p class="text-xs text-slate-500 mt-1">
+                      {{ contenido.descripcion }}
+                    </p>
+                  }
+                </div>
+
+                <a
+                  [href]="contenido.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-xs font-medium text-primary hover:underline shrink-0"
+                >
+                  Ver contenido →
+                </a>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-xs text-slate-400">
+              Esta unidad todavía no tiene contenidos.
+            </p>
+          }
+
+        </div>
+      }
+    </div>
+  }
+</div> </div>
 
     </main>
 
