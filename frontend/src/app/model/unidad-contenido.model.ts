@@ -10,6 +10,7 @@ export interface ContenidoUnidad {
   url: string;
   fechaCreacion: Date;
   profesor_id?: string;
+  visible: boolean;
 }
 
 /**
