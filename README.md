@@ -101,6 +101,14 @@ Completamente viable dado que no requiere infraestructura externa compleja. El s
 
 ---
 
+## 📈 Sistema de branch
+
+Descripción aplicada en el proyecto:
+
+https://github.com/LosDesprogramadores/PROAConecta/wiki/Sistema-de-branching
+
+---
+
 ## 🚀 Comenzando: Guía de Levantamiento Local
 
 Seguí minuciosamente los pasos detallados a continuación para clonar el proyecto y levantar el ecosistema completo (Frontend, Backend, PostgreSQL y MongoDB) de manera automatizada.
@@ -127,4 +135,25 @@ cd proa-conecta
 docker-compose up --build
 ```
 
+**3. Realizar las migraciones pendientes:**
+
+```bash
+docker compose exec backend python manage.py makemigrations
+docker compose exec backend python manage.py migrate
+```
+
 Una vez completado el proceso, los servicios estarán disponibles en sus respectivos puertos locales según la configuración definida en el archivo `docker-compose.yml`.
+
+Los usuarios cargados de prueba son:
+
+Rol 1- Administrador Ana Gomez: 
+DNI(username): 12345678
+PASS: 12345678
+
+Rol 2- Docente Alan Profesor:
+DNI(username): 35785659
+PASS: 35785659
+
+Rol 3- Estudiante Julio Estudiante:
+DNI(username): 333111333
+PASS: 333111333

@@ -21,6 +21,22 @@ Asegúrate de tener instalado:
 * Gestor de paquetes `pip`
 
 ---
+
+## Roles, Personas y Usuarios en DB de Prueba actuales en la DB
+
+Rol 1- Administrador Ana Gomez: 
+DNI(username): 12345678
+PASS: 12345678
+
+Rol 2- profesor Alan Profesor:
+DNI(username): 35785659
+PASS: 35785659
+
+Rol 3- Estudiante Julio Estudiante:
+DNI(username): 333111333
+PASS: 333111333
+
+
 ## En los siguientes pasos siempre deben tener en consideraciòn la posiciòn donde estàn y donde se encuentra el archivo a ajecutar.
 
 ## 1- Crear y activar el entorno virtual
@@ -108,7 +124,7 @@ print(usuario_autenticado) # si da None algo le pifiaron, debería devolver el D
 
   Crear los 3 Roles 
   Administrador (1)
-  Docente (2)
+  Profesor (2)
   Estudiante (3)
 
   ---
@@ -157,10 +173,10 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         "curso": "1ro A",
         "descripcion": "Fundamentos de lógica y algoritmos",
         "criterios_evaluacion": "70% TPs, 30% Parcial",
-        "docente": 2
+        "profesor": 2
         }
 
-    El campo docente es opcional; si no se asigna al crear, enviar null o no incluir la clave
+    El campo profesor es opcional; si no se asigna al crear, enviar null o no incluir la clave
 
         Listar Materias
         Método: GET
@@ -170,7 +186,7 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
 
         ?anio=2026
         ?curso=1ro A
-        ?docente=2 (Materias que dicta un docente específico)
+        ?profesor=2 (Materias que dicta un profesor específico)
         ?search=Programacion (Búsqueda por título, curso o nombre del profesor)
 
 
@@ -184,15 +200,15 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
             "criterios_evaluacion": "70% TPs, 30% Parcial",
             "anio": 2026,
             "curso": "1ro A",
-            "docente": 2,
-            "docente_detalle": {
-            "id": 2,
-            "dni": "40123456",
-            "nombre": "Carlos",
-            "apellido": "Pérez",
-            "nombre_completo": "Pérez, Carlos",
-            "email": "carlos.perez@aula.com",
-            "rol_nombre": "Docente"
+            "profesor": 2,
+            "profesor_detalle": {
+                "id": 2,
+                "dni": "40123456",
+                "nombre": "Carlos",
+                "apellido": "Pérez",
+                "nombre_completo": "Pérez, Carlos",
+                "email": "carlos.perez@aula.com",
+                "rol_nombre": "profesor"
             },
             "total_estudiantes": 25,
             "activo": true,
@@ -201,12 +217,12 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         }
         ]
 
-    Asignar, Cambiar o Quitar Docente
+    Asignar, Cambiar o Quitar profesor
         Método: PATCH
         Endpoint: /materias/{id}/
         Body (JSON):
-        Asignar / Cambiar: {"docente": 2}
-        Dejar sin profesor: {"docente": null}
+        Asignar / Cambiar: {"profesor": 2}
+        Dejar sin profesor: {"profesor": null}
 
         Respuesta (200 OK): Objeto Materia actualizado.
 
@@ -273,12 +289,52 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
 
         Respuesta (200 OK): Lista de inscripciones de esa materia.
 
+-----------------------------------------------------------------------------------
 
     Listar Materias Cursadas por un Alumno ("Mis Cursadas")
         Método: GET
         Endpoint: /inscripciones/?estudiante={id_estudiante}
         Uso: Dashboard del estudiante para ver sus materias asignadas.
         Respuesta (200 OK): Lista de inscripciones del estudiante.
+
+-----------------------------------------------------------------------------------
+
+    Listar Mis Materias (Dashboard por Rol)
+        Método: GET
+        Endpoint: /materias/mis-materias/
+        Uso: Endpoint para el dashboard de catalogo de materias creadas y vista de lista de Materias segun el rol de profesor o alumno.
+
+            - Administrador (rol ID 1 o superusuario): Devuelve la totalidad de materias del catálogo general.
+            - Profesor: Devuelve únicamente las materias donde se encuentra asignado como docente titular.
+            - Estudiante: Devuelve únicamente las materias en las que posee una inscripción activa.
+            - Sin asignaciones: Retorna un array vacío [] con código 200 OK para renderizar el estado vacío (Empty State) en la interfaz.
+
+        Respuesta (200 OK):
+
+        [
+            {
+                "id": 1,
+                "titulo": "Programación I",
+                "descripcion": "Fundamentos y lógica de programación",
+                "criterios_evaluacion": "70% TPs, 30% Parcial",
+                "anio": 2026,
+                "curso": "1ro A",
+                "profesor": 2,
+                "profesor_detalle": {
+                    "id": 2,
+                    "dni": "40123456",
+                    "nombre": "Carlos",
+                    "apellido": "Pérez",
+                    "nombre_completo": "Pérez, Carlos",
+                    "email": "carlos.perez@aula.com",
+                    "rol_nombre": "profesor"
+                },
+                "total_estudiantes": 25,
+                "activo": true,
+                "fecha_creacion": "2026-08-26T22:50:00Z",
+                "fecha_actualizacion": "2026-08-26T22:52:00Z"
+            }
+        ]
 
     Modificar Condición Académica del Alumno
         Método: PATCH

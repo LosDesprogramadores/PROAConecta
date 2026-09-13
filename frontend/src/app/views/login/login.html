@@ -13,10 +13,10 @@
         </a>
 
         @if (errorMessage()) {
-      <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg text-center font-medium">
-        {{ errorMessage() }}
-      </div>
-    }
+        <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg text-center font-medium">
+            {{ errorMessage() }}
+        </div>
+        }
 
         <div class="w-full bg-white rounded-2xl shadow-xl border border-slate-200/80 p-8 transition-all">
             <div class="space-y-6">
@@ -34,14 +34,44 @@
                     <div>
                         <label for="dni" class="block mb-2 text-sm font-semibold text-slate-700">Tu Usuario</label>
                         <input type="text" id="dni" formControlName="dni"
-                            class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full p-3 transition-all outline-none"
+                            class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:placeholder-transparent block w-full p-3 transition-all outline-none"
                             placeholder="Usuario">
+
+                        @if (loginForm.controls.dni.touched && loginForm.controls.dni.errors?.['required']) {
+                        <p class="mt-1 text-xs text-rose-600 font-medium">El usuario es obligatorio.</p>
+                        }
                     </div>
 
                     <div>
                         <label for="password" class="block mb-2 text-sm font-semibold text-slate-700">Contraseña</label>
-                        <input type="password" id="password" formControlName="password" placeholder="••••••••"
-                            class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full p-3 transition-all outline-none">
+                        <div class="relative">
+                            <input [type]="showPassword() ? 'text' : 'password'" id="password"
+                                formControlName="password" placeholder="Contraseña"
+                                class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:placeholder-transparent block w-full p-3 pr-10 transition-all outline-none">
+
+                            <button type="button" (click)="toggleShowPassword()"
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 transition-colors">
+                                @if (showPassword()) {
+                                <!-- Ícono Ojo Trazado / Ocultar -->
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" />
+                                </svg>
+                                } @else {
+                                <!-- Ícono Ojo / Mostrar -->
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                }
+                            </button>
+                        </div>
+
+                        @if (loginForm.controls.password.touched && loginForm.controls.password.errors?.['required']) {
+                        <p class="mt-1 text-xs text-rose-600 font-medium">La contraseña es obligatoria.</p>
+                        }
                     </div>
 
                     <div class="flex items-center justify-between text-sm">
@@ -54,14 +84,13 @@
                             contraseña?</a>
                     </div>
 
-                    <button type="submit"
-                    [disabled]="loginForm.invalid || isLoading()"
-                        class="w-full text-white bg-sky-600 hover:bg-sky-700 focus:ring-4 focus:outline-none focus:ring-sky-300 font-semibold rounded-xl text-sm px-5 py-3 text-center shadow-md transition-all">
-                       @if (isLoading()) {
-          <span>Verificando...</span>
-        } @else {
-          <span>Ingresar</span>
-        } 
+                    <button type="submit" [disabled]="loginForm.invalid || isLoading()"
+                        class="w-full text-white bg-sky-600 hover:bg-sky-700 focus:ring-4 focus:outline-none focus:ring-sky-300 font-semibold rounded-xl text-sm px-5 py-3 text-center shadow-md transition-all disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:shadow-none">
+                        @if (isLoading()) {
+                        <span>Verificando...</span>
+                        } @else {
+                        <span>Ingresar</span>
+                        }
                     </button>
                 </form>
 

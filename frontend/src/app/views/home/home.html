@@ -7,10 +7,25 @@
     <p class="text-lg">
       Plataforma educativa de la Escuela PROA Embalse para conectar estudiantes, docentes y proyectos.
     </p>
+
+    <!-- Botón condicional según sesión y rol -->
     <div class="mt-6 flex justify-center">
-      <a routerLink="/login" class="px-6 py-3 rounded-lg bg-primary text-white font-semibold shadow hover:bg-primary-400 transition-colors">
-        Iniciar sesión
-      </a>
+      @if (!currentUser()) {
+        <!-- Usuario NO logueado -->
+        <a routerLink="/login" class="px-6 py-3 rounded-lg bg-primary text-white font-semibold shadow hover:bg-primary-400 transition-colors">
+          Iniciar sesión
+        </a>
+      } @else if (currentUser()?.rolId === userRole.ADMIN) {
+        <!-- Usuario ADMIN -->
+        <a routerLink="/dashboard-admin" class="px-6 py-3 rounded-lg bg-primary text-white font-semibold shadow hover:bg-primary-400 transition-colors">
+          Ir al Panel de Administración
+        </a>
+      } @else {
+        <!-- Usuario DOCENTE o ESTUDIANTE -->
+        <a routerLink="/dashboard" class="px-6 py-3 rounded-lg bg-primary text-white font-semibold shadow hover:bg-primary-400 transition-colors">
+          Ir a mi Panel
+        </a>
+      }
     </div>
   </div>
 

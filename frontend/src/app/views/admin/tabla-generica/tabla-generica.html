@@ -1,0 +1,85 @@
+<div class="w-full bg-white border border-slate-200/80 rounded-lg overflow-hidden">
+  
+  @if (titulo) {
+    <div class="px-5 py-3 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">{{ titulo }}</h4>
+      @if (isLoading()) {
+       <tr>
+              <td colspan="5" class="py-16 text-center">
+                <div class="inline-flex flex-col items-center justify-center gap-3">
+                  <svg 
+                    class="w-8 h-8 animate-spin text-[#155dfc]" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="text-sm font-medium text-slate-500 tracking-wide">
+                    Cargando registros...
+                  </span>
+                </div>
+              </td>
+            </tr>
+      } @else {
+        <span class="text-xs font-semibold px-2 py-0.5 bg-cyan-100 text-cyan-800 rounded-full">
+          {{ datos.length }} registros
+        </span>
+      }
+    </div>
+  }
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm text-slate-600 border-collapse">
+      <thead class="bg-slate-50/50 text-xs font-semibold uppercase text-slate-400 border-b border-slate-200/80">
+        <tr>
+          @for (col of columnas; track col.campo) {
+            <th [class]="'px-5 py-3 tracking-wider ' + (col.claseTh || '')">
+              {{ col.titulo }}
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @if (isLoading()) {
+            <tr>
+              <td colspan="5" class="py-16 text-center">
+                <div class="inline-flex flex-col items-center justify-center gap-3">
+                  <svg 
+                    class="w-8 h-8 animate-spin text-[#155dfc]" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="text-sm font-medium text-slate-500 tracking-wide">
+                    Cargando registros...
+                  </span>
+                </div>
+              </td>
+            </tr>
+          } @else if (datos.length === 0) {
+          <tr>
+            <td [attr.colspan]="columnas.length" class="px-5 py-8 text-center text-slate-400 italic text-xs">
+              {{ mensajeVacio }}
+            </td>
+          </tr>
+        } @else {
+          @for (fila of datos; track $index) {
+            <tr class="hover:bg-slate-50/50 transition-colors">
+              @for (col of columnas; track col.campo) {
+                <td [class]="'px-5 py-3.5 align-middle ' + (col.claseTd || '')">
+                  {{ obtenerValor(fila, col.campo) }}
+                </td>
+              }
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>

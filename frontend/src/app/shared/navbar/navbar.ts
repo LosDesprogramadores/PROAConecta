@@ -1,94 +1,166 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
-import { ApiService } from '../../core/services/api.service';
-import { HealthStatus } from '../../core/models/api-response.interface';
-import { ServiceAuth } from '../../services/service.auth';
+
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
+import { Toast } from '../toast/toast';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterModule],
+  imports: [RouterModule, Toast],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-export class Navbar implements OnInit {
-  private apiService = inject(ApiService);
-  private serviceAuth = inject(ServiceAuth);
+export class Navbar {
   private authService = inject(AuthService);
-  private currentUser = this.authService.currentUser
-  response = signal<HealthStatus | null>(null);
+  private toastService = inject(ToastService);
+
+  currentUser = this.authService.currentUser;
+
   loading = signal<boolean>(true);
+
   isMobileMenuOpen = signal<boolean>(false);
+
   isProfileMenuOpen = signal<boolean>(false);
+
+  isProfileModalOpen = signal<boolean>(false);
+
   unreadCount = signal<number>(4);
+
   navLinksAdmi: NavLink[] = [];
-  userAvatar = signal<string>('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80');
+
+  userAvatar = signal<string>(
+    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+  );
 
   navLinks = [
-    { label: 'Materias', path: '/materias' },
-    { label: 'Foros', path: '/foros' },
-    { label: 'Actividades', path: '/actividades' }
-   ];
- userName = computed(() => {
-    
-    const persona = this.currentUser()?.persona;;
-    if (!persona) return 'Invitado';
-    return `${persona.nombre} ${persona.apellido}`;
-  });
-   
+    {
+      label: 'Materias',
+      path: '/materias',
+    },
+    {
+      label: 'Foros',
+      path: '/foros',
+    },
+    {
+      label: 'Actividades',
+      path: '/actividades',
+    },
+  ];
 
-  ngOnInit(): void {
-switch (this.currentUser()?.rolId) {
-      case UserRole.ADMIN: 
-      this.navLinksAdmi = [
-          { label: 'Profesores', path: '/admin/Profesores' },
-          { label: 'Estudiantes', path: 'admin/estudiantes' },
-          { label: 'Materias', path: '/admin/Materias' }
-        ];
-        break;
+  userName = computed(() => {
+    const persona = this.currentUser()?.persona;
 
-     default:
-        console.warn('Rol no reconocido:', this.currentUser()?.rolId);
-       this.navLinksAdmi = [];
-        break;
+    if (!persona) {
+      return 'invitado';
     }
 
+    return `${persona.nombre} ${persona.apellido}`;
+  });
 
-    this.apiService.checkConnection().subscribe({
-      next: (data) => {
-        this.response.set(data);
-        this.loading.set(false);
-        console.log('API connection status:', data.status, '-', data.message)
-      },
-      error: (error) => {
-        console.error('Error checking connection:', error);
-        this.response.set({ status: 'error', message: 'Failed to connect to the API' });
-        this.loading.set(false);
+  constructor() {
+    effect(() => {
+      const user = this.currentUser();
+
+      if (!user) {
+        this.navLinksAdmi = [];
+
+        return;
+      }
+
+      switch (user.rolId) {
+        case UserRole.ADMIN:
+          this.navLinksAdmi = [
+            {
+              label: 'Profesores',
+              path: 'admin/profesores',
+            },
+            {
+              label: 'Estudiantes',
+              path: 'admin/estudiantes',
+            },
+            {
+              label: 'Materias',
+              path: 'admin/materias',
+            },
+            {
+              label: 'Notificaciones',
+              path: 'admin/notificaciones',
+            },
+          ];
+
+          break;
+
+        case UserRole.DOCENTE:
+
+        case UserRole.ESTUDIANTE:
+          // Profesores y estudiantes no tienen
+          // enlaces administrativos.
+          this.navLinksAdmi = [];
+
+          break;
+
+        default:
+          console.warn('Rol no reconocido:', user.rolId);
+
+          this.navLinksAdmi = [];
+
+          break;
       }
     });
   }
 
   toggleMobileMenu(): void {
-    this.isMobileMenuOpen.update(v => !v);
+    this.isMobileMenuOpen.update((value) => !value);
   }
 
   toggleProfileMenu(): void {
-    this.isProfileMenuOpen.update(v => !v);
+    this.isProfileMenuOpen.update((value) => !value);
   }
 
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
+
     this.isProfileMenuOpen.set(false);
-    this.serviceAuth.logout();
+  }
+
+  openProfileModal(): void {
+    this.closeMenus();
+
+    this.isProfileModalOpen.set(true);
+  }
+
+  closeProfileModal(): void {
+    this.isProfileModalOpen.set(false);
+  }
+
+  logout(): void {
+    this.closeMenus();
+
+    this.authService.logout();
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
+
     if (!target.closest('#user-menu-button') && !target.closest('#user-menu-dropdown')) {
       this.isProfileMenuOpen.set(false);
+    }
+  }
+
+  configuracion(): void {
+    this.closeMenus();
+
+    const persona = this.currentUser()?.persona;
+
+    if (persona) {
+      this.toastService.info(`Configuración para ${persona.nombre}: en desarrollo`);
+    } else {
+      this.toastService.info('Configuración: en desarrollo');
     }
   }
 }

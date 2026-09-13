@@ -1,0 +1,11 @@
+body {
+    background-color: var(--color-background);
+}
+
+     @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: floatIcon 3s ease-in-out infinite;
+        }

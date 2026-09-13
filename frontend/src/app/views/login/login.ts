@@ -18,16 +18,23 @@ export class Login {
  
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
+  showPassword = signal<boolean>(false);
 
   loginForm = this.formbuilder .nonNullable.group({
     dni: ['', [Validators.required]],
     password: ['', [Validators.required]]
   });
 
+  toggleShowPassword(): void {
+    this.showPassword.update(prev => !prev);
+  }
+
   onSubmit(): void {
    
-    if (this.loginForm.invalid) return;
-
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
     this.isLoading.set(true);
     this.errorMessage.set(null);
 

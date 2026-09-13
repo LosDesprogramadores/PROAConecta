@@ -85,35 +85,61 @@
 
     <!-- Columna Secundaria: Materias y Próximas Entregas (1/3) -->
     <aside class="space-y-6">
-      <!-- Módulo Materias -->
+      <!-- Módulo Materias - ACTUALIZADO CON EXPAND -->
       <div class="space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-slate-800">Tus materias</h3>
-          <a routerLink="/dashboard/materias" 
-             class="text-sm font-medium text-primary hover:text-primary/80 transition flex items-center gap-1">
-            Ver todas <span aria-hidden="true">&rarr;</span>
-          </a>
+          <!-- Link removido - el botón de expand se muestra abajo -->
         </div>
 
-        @if (materias().length === 0) {
+        <!-- Estado de carga -->
+        @if (cargando()) {
+          <div class="flex justify-center py-6">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        }
+
+        <!-- Error -->
+        @if (error()) {
+          <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+            ⚠️ {{ error() }}
+          </div>
+        }
+
+        @if (materias().length === 0 && !cargando()) {
           <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500 text-sm">
             No hay materias asignadas.
           </div> 
-        } @else {
+        } @else if (materias().length > 0) {
+          <!-- CAMBIO: De slice(0, 2) a materiasVisibles (3 por defecto) -->
           <div class="grid grid-cols-1 gap-3">
-            @for (materia of materias().slice(0, 2); track materia.nombre) {
-              <a [routerLink]="'/view-materia/portada'"
+            @for (materia of materiasVisibles; track materia.id) {
+              <a [routerLink]="['/view-materia', materia.id, 'portada']"
                  class="flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md transition cursor-pointer group">
                 <div class="w-10 h-10 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
-                  {{ materia.nombre.charAt(0) }}
+                  {{ materia.titulo.charAt(0) }}
                 </div>
                 <div class="min-w-0 flex-1">
-                  <h4 class="text-sm font-semibold text-slate-800 truncate">{{ materia.nombre }}</h4>
+                  <h4 class="text-sm font-semibold text-slate-800 truncate">{{ materia.titulo }}</h4>
                   <span class="text-xs text-slate-400 group-hover:text-primary transition-colors">Ver contenido &rarr;</span>
                 </div>
               </a>
             }
           </div>
+
+          <!-- NUEVO: Botón "Ver todas" solo si hay más de 3 materias -->
+          @if (tieneMasMaterias) {
+            <button 
+              (click)="toggleExpandMaterias()"
+              class="w-full mt-3 px-4 py-2.5 rounded-lg font-medium text-sm transition-all border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700"
+            >
+              @if (expandedMaterias()) {
+                Mostrar menos
+              } @else {
+                Ver todas ({{ materias().length }} total)
+              }
+            </button>
+          }
         }
       </div>
 
