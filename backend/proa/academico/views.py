@@ -60,7 +60,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        Materia.objects.filter(profesor_id=profesor_id).exclude(id__in=materia_ids).update(profesor=None)
+        Materia.objects.filter(profesor_id=profesor_id)
         actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor_id=profesor_id)
 
         return Response({

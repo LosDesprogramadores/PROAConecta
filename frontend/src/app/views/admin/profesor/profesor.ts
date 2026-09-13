@@ -151,9 +151,12 @@ columnasMaterias = [
       next: (materias) => {
         this.materiasDisponibles.set(materias);
         this.isLoadingMaterias.set(false);
+      
       },
       error: (err) => {
         console.error('Error al cargar materias:', err);
+        this.toastService.error("Error al cargar  las materias" )
+      
         this.isLoadingMaterias.set(false);
       }
     });
@@ -200,11 +203,13 @@ cerrarConsulta(): void {
 this.materiaService.asignarProfesorAMaterias(profesor.id, ids).subscribe({
     next: (res) => {
       console.log('Asignación completada:', res);
+        this.toastService.success("Las materias si asignaron correctamente")
       this.cerrarModalAsignar();
   
     },
     error: (err) => {
       console.error('Error al asignar materias al profesor:', err);
+        this.toastService.error("Error al asignar las materias al profesor" )
     }
   });
 }
