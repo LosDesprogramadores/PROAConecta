@@ -186,15 +186,14 @@
           </h3>
 
 
-@if (esDocente()) {
-<button
-  (click)="abrirFormularioUnidad()"
-  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition shadow-sm"
->
-  ➕ Nuevo Contenido
-</button>
-
-}
+          @if (esDocente()) {
+            <button
+              (click)="abrirFormularioUnidad()"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition shadow-sm"
+            >
+              ➕ Nuevo Contenido
+            </button>
+          }
 
         </div>
 
@@ -345,7 +344,7 @@
           <div
             class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm border border-slate-200"
           >
-            {{ datosActuales.docente.charAt(5) }}
+            {{ datosActuales.docente.charAt(0) }}
           </div>
 
 
@@ -396,7 +395,7 @@
           @if (esDocente()) {
 
             <button
-              (click)="abrirModalRecurso()"
+              (click)="abrirFormularioRecurso()"
               class="text-xs font-medium text-primary hover:underline"
             >
               + Subir
@@ -411,40 +410,61 @@
           class="space-y-2"
         >
 
-          <a
-            href="#"
-            class="flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition border border-slate-100"
-          >
+          @if (
+            !datosActuales.recursosClase ||
+            datosActuales.recursosClase.length === 0
+          ) {
 
-            <span>
-              📄 Programa de la materia
-            </span>
+            <p class="text-xs text-slate-500">
+              No hay recursos aún.
+            </p>
 
-            <span
-              class="text-xs text-slate-400"
+          }
+
+          @for (
+            recurso of datosActuales.recursosClase;
+            track recurso.id
+          ) {
+
+            <div
+              class="flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition border border-slate-100"
             >
-              PDF
-            </span>
 
-          </a>
+              <a
+                [href]="recurso.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex-1 truncate text-primary hover:underline"
+              >
+                @switch (recurso.tipo) {
+                  @case ('documento') {
+                    📄
+                  }
+                  @case ('video') {
+                    🎥
+                  }
+                  @case ('enlace') {
+                    🔗
+                  }
+                }
+                {{ recurso.titulo }}
+              </a>
 
+              @if (esDocente()) {
 
-          <a
-            href="#"
-            class="flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition border border-slate-100"
-          >
+                <button
+                  (click)="eliminarRecurso(recurso.id)"
+                  class="ml-2 text-red-500 hover:text-red-700 text-sm flex-shrink-0"
+                  title="Eliminar"
+                >
+                  ✕
+                </button>
 
-            <span>
-              📁 Material Bibliográfico
-            </span>
+              }
 
-            <span
-              class="text-xs text-slate-400"
-            >
-              Enlace
-            </span>
+            </div>
 
-          </a>
+          }
 
         </nav>
 
@@ -453,74 +473,167 @@
     </aside>
 
   </div>
-<!-- ========================================== -->
-<!-- MODAL NUEVA UNIDAD -->
-<!-- ========================================== -->
 
-@if (mostrarFormularioUnidad()) {
+  <!-- ========================================== -->
+  <!-- MODAL NUEVA UNIDAD -->
+  <!-- ========================================== -->
 
-  <div 
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  >
-    
-    <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+  @if (mostrarFormularioUnidad()) {
+
+    <div 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
       
-      <h3 class="text-2xl font-bold text-slate-900 mb-6">➕ Nuevo Contenido</h3>
-
-      <form (ngSubmit)="guardarUnidad()" class="space-y-4">
+      <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
         
-        <!-- Nombre de la unidad -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">
-            Nombre de la Unidad *
-          </label>
-          <input 
-            type="text"
-            [(ngModel)]="nuevoNombreUnidad"
-            name="nombre"
-            placeholder="Ej: Números reales y operaciones"
-            class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
-            required
-            autofocus
-          />
-        </div>
+        <h3 class="text-2xl font-bold text-slate-900 mb-6">➕ Nuevo Contenido</h3>
 
-        <!-- Descripción -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">
-            Descripción (opcional)
-          </label>
-          <textarea 
-            [(ngModel)]="nuevoDescripcionUnidad"
-            name="descripcion"
-            placeholder="Describe brevemente esta unidad..."
-            rows="3"
-            class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
-          ></textarea>
-        </div>
+        <form (ngSubmit)="guardarUnidad()" class="space-y-4">
+          
+          <!-- Nombre de la unidad -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              Nombre de la Unidad *
+            </label>
+            <input 
+              type="text"
+              [(ngModel)]="nuevoNombreUnidad"
+              name="nombre"
+              placeholder="Ej: Números reales y operaciones"
+              class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              required
+              autofocus
+            />
+          </div>
 
-        <!-- Botones -->
-        <div class="flex gap-3 justify-end pt-4 border-t">
-          <button 
-            type="button"
-            (click)="cancelarFormularioUnidad()"
-            class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-medium"
-          >
-            Cancelar
-          </button>
-          <button 
-  type="submit"
-  class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
->
-  Crear Contenido
-</button>
-        </div>
+          <!-- Descripción -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              Descripción (opcional)
+            </label>
+            <textarea 
+              [(ngModel)]="nuevoDescripcionUnidad"
+              name="descripcion"
+              placeholder="Describe brevemente esta unidad..."
+              rows="3"
+              class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            ></textarea>
+          </div>
 
-      </form>
+          <!-- Botones -->
+          <div class="flex gap-3 justify-end pt-4 border-t">
+            <button 
+              type="button"
+              (click)="cancelarFormularioUnidad()"
+              class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit"
+              class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            >
+              Crear Contenido
+            </button>
+          </div>
+
+        </form>
+
+      </div>
 
     </div>
 
-  </div>
+  }
 
-}
+  <!-- ========================================== -->
+  <!-- MODAL NUEVO RECURSO -->
+  <!-- ========================================== -->
+
+  @if (mostrarFormularioRecurso()) {
+
+    <div 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      
+      <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+        
+        <h3 class="text-2xl font-bold text-slate-900 mb-6">📚 Nuevo Recurso</h3>
+
+        <form (ngSubmit)="guardarRecurso()" class="space-y-4">
+          
+          <!-- Tipo de recurso -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              Tipo de Recurso
+            </label>
+            <select 
+              [(ngModel)]="nuevoTipoRecurso"
+              name="tipo"
+              class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="documento">📄 Documento (Google Drive, PDF online)</option>
+              <option value="video">🎥 Video (YouTube, Vimeo)</option>
+              <option value="enlace">🔗 Enlace (sitio web, recurso online)</option>
+            </select>
+          </div>
+
+          <!-- Título del recurso -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              Título *
+            </label>
+            <input 
+              type="text"
+              [(ngModel)]="nuevoTituloRecurso"
+              name="titulo"
+              placeholder="Ej: Programa de la materia"
+              class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              required
+              autofocus
+            />
+          </div>
+
+          <!-- URL del recurso -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              URL del recurso *
+            </label>
+            <input 
+              type="url"
+              [(ngModel)]="nuevoUrlRecurso"
+              name="url"
+              placeholder="https://drive.google.com/file/d/... o https://youtube.com/watch?v=..."
+              class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              required
+            />
+            <p class="text-xs text-gray-600 mt-1">
+              💡 Pega aquí el link compartible
+            </p>
+          </div>
+
+          <!-- Botones -->
+          <div class="flex gap-3 justify-end pt-4 border-t">
+            <button 
+              type="button"
+              (click)="cancelarFormularioRecurso()"
+              class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit"
+              class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            >
+              Guardar Recurso
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  }
+
 </section>

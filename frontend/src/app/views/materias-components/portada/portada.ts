@@ -17,12 +17,15 @@ import { FormsModule } from '@angular/forms';
 import {
   UnidadMateria,
   ContenidoUnidad,
-  MateriaPortada
+  MateriaPortada,
+  RecursoClase
 } from '../../../model/unidad-contenido.model';
 
 import { ContenidoUnidadComponent } from './contenido-unidad/contenido-unidad';
 
 import { MateriaService } from '../../../services/materia.service';
+import { UserRole } from '../../../core/auth/auth.model';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-portada',
@@ -45,6 +48,11 @@ export class Portada implements OnInit {
   error = signal<string | null>(null);
 
   private materiaId: number | null = null;
+
+  // ID del rol profesor (AJUSTA SEGÚN TU BD)
+  // Si en tu BD profesor = 1, coloca 1
+  // Si es 2, coloca 2, etc.
+  
 
   // ==========================================
   // DATOS DEMO
@@ -158,22 +166,15 @@ export class Portada implements OnInit {
 
       }
 
-    ]
+    ],
 
-  };
+    recursosClase: []
+
+  }; private readonly ROL_PROFESOR = UserRole.DOCENTE;
 
   // ==========================================
-  // ROL
+  // ROL (Detectado automáticamente)
   // ==========================================
-
-  /*
-   * Por ahora esta vista se utiliza como vista
-   * del estudiante para cumplir TSK85.
-   *
-   * Cuando tengamos conectado el servicio de
-   * autenticación/roles, este valor deberá salir
-   * del usuario autenticado.
-   */
 
   esDocente = signal<boolean>(false);
 
@@ -203,6 +204,19 @@ export class Portada implements OnInit {
   nuevoDescripcionUnidad = '';
 
   // ==========================================
+  // NUEVO RECURSO
+  // ==========================================
+
+  mostrarFormularioRecurso =
+    signal<boolean>(false);
+
+  nuevoTituloRecurso = '';
+
+  nuevoTipoRecurso: 'documento' | 'video' | 'enlace' = 'documento';
+
+  nuevoUrlRecurso = '';
+
+  // ==========================================
   // DATOS ACTUALES
   // ==========================================
 
@@ -214,7 +228,8 @@ export class Portada implements OnInit {
 
   constructor(
     private readonly materiaService: MateriaService,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly authService: AuthService
   ) {}
 
   // ==========================================
@@ -223,7 +238,35 @@ export class Portada implements OnInit {
 
   ngOnInit(): void {
 
+    // Detectar rol del usuario autenticado
+    this.detectarRol();
+
     this.cargarMateriaDesdeRuta();
+
+  }
+
+  // ==========================================
+  // DETECTAR ROL
+  // ==========================================
+
+  private detectarRol(): void {
+
+    const rolId = this.authService.rol();
+
+    // Si el usuario está logueado y es profesor
+    if (rolId === this.ROL_PROFESOR) {
+
+      this.esDocente.set(true);
+
+      console.log('Usuario detectado como PROFESOR');
+
+    } else {
+
+      this.esDocente.set(false);
+
+      console.log('Usuario detectado como ESTUDIANTE');
+
+    }
 
   }
 
@@ -490,6 +533,119 @@ export class Portada implements OnInit {
   }
 
   // ==========================================
+  // GESTIÓN RECURSOS DE CLASE
+  // ==========================================
+
+  abrirFormularioRecurso(): void {
+
+    this.mostrarFormularioRecurso.set(true);
+
+    this.nuevoTituloRecurso = '';
+
+    this.nuevoTipoRecurso = 'documento';
+
+    this.nuevoUrlRecurso = '';
+
+  }
+
+  cancelarFormularioRecurso(): void {
+
+    this.mostrarFormularioRecurso.set(false);
+
+  }
+
+  guardarRecurso(): void {
+
+    if (!this.nuevoTituloRecurso.trim()) {
+
+      alert('El título del recurso es requerido');
+
+      return;
+
+    }
+
+    if (!this.nuevoUrlRecurso.trim()) {
+
+      alert('La URL es requerida');
+
+      return;
+
+    }
+
+    try {
+
+      new URL(this.nuevoUrlRecurso);
+
+    } catch {
+
+      alert('Por favor ingresa una URL válida (ej: https://...)');
+
+      return;
+
+    }
+
+    // Inicializar array si no existe
+    if (!this.datosActuales.recursosClase) {
+
+      this.datosActuales.recursosClase = [];
+
+    }
+
+    const nuevoRecurso: RecursoClase = {
+
+      id: `recurso-${Date.now()}`,
+
+      titulo: this.nuevoTituloRecurso,
+
+      tipo: this.nuevoTipoRecurso,
+
+      url: this.nuevoUrlRecurso,
+
+      fechaCreacion: new Date()
+
+    };
+
+    this.datosActuales.recursosClase.push(nuevoRecurso);
+
+    console.log('Recurso creado:', nuevoRecurso);
+
+    this.mostrarFormularioRecurso.set(false);
+
+    /*
+     * TODO:
+     * Guardar en backend cuando corresponda.
+     */
+
+  }
+
+  eliminarRecurso(id: string): void {
+
+    if (confirm('¿Eliminar este recurso?')) {
+
+      if (!this.datosActuales.recursosClase) {
+        return;
+      }
+
+      const indice = this.datosActuales
+        .recursosClase
+        .findIndex(r => r.id === id);
+
+      if (indice >= 0) {
+
+        this.datosActuales.recursosClase.splice(
+          indice,
+          1
+        );
+
+        console.log('Recurso eliminado:', id);
+
+      }
+
+    }
+
+  }
+
+  // ==========================================
   // GESTIÓN CONTENIDO
   // ==========================================
 
@@ -599,9 +755,7 @@ export class Portada implements OnInit {
 
   abrirModalRecurso(): void {
 
-    console.log(
-      'Abrir modal para subir recurso'
-    );
+    this.abrirFormularioRecurso();
 
   }
 
