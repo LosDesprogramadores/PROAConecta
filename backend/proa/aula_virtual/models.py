@@ -5,25 +5,18 @@ from django.utils import timezone
 
 
 class Unidad(models.Model):
-    materia = models.ForeignKey(Materia,on_delete=models.CASCADE,related_name='unidades')
-    numero = models.PositiveIntegerField(help_text="Ej: 1 para Unidad 1")
-    titulo = models.CharField(max_length=150, help_text="Ej: Matemáticas")
-    descripcion = models.TextField(null=True,blank=True)
+    materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='unidades')
+    titulo = models.CharField(max_length=150, help_text="Ej: Programación Orientada a Objetos")
+    descripcion = models.TextField(null=True, blank=True)
     orden = models.PositiveIntegerField(default=1)
     fecha_baja = models.DateTimeField(null=True, blank=True)
+    visible = models.BooleanField(default=True)
 
     class Meta: 
         db_table = 'unidad'
         verbose_name = 'Unidad'
         verbose_name_plural = 'Unidades'
-        ordering = ['orden', 'numero']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['materia', 'numero'],
-                condition=models.Q(fecha_baja__isnull=True),
-                name='unique_unidad_activa_materia'
-            )
-        ]
+        ordering = ['orden']
 
     def soft_delete(self):
         self.fecha_baja = timezone.now()
@@ -34,7 +27,7 @@ class Unidad(models.Model):
         self.save(update_fields=['fecha_baja'])
 
     def __str__(self):
-        return f'Unidad {self.numero}: {self.titulo} ({self.materia.titulo})'
+        return f'{self.titulo} ({self.materia.titulo})'
 
 
 class Material(models.Model):

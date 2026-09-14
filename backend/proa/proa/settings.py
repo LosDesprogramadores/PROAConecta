@@ -31,7 +31,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv("KEY_SECRET")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG") == "True"
 
 
 
@@ -89,6 +89,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Documentación interactiva de materias, asignaciones e inscripciones',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 SIMPLE_JWT = {
