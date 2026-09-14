@@ -23,3 +23,7 @@ proa/db.sqlite3
 backend/proa/db.sqlite3
 Archivos de variables de entorno específicos para producción o secretos
 .env
+
+# Media subida por usuarios
+**/media/*
+!**/media/.gitkeep
