@@ -87,4 +87,12 @@ export class UnidadesService {
       {}
     );
   }
+
+  obtenerMaterialesGenerales(materiaId: number | string): Observable<Material[]> {
+    const params = new HttpParams()
+      .set('materia', materiaId.toString())
+      .set('recurso_general', 'true');
+
+    return this.http.get<Material[]>(`${this.apiUrl}materiales/`, { params });
+  }
 }

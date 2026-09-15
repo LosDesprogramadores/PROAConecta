@@ -1,17 +1,16 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { ContenidoUnidadComponent } from '../contenido-unidad/contenido-unidad';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { UnidadesService } from '../../../../services/unidades.service';
-import { Unidad } from '../../../../model/unidad-material.model';
+import { Unidad, Material } from '../../../../model/unidad-material.model';
 
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule, ContenidoUnidadComponent],
+  imports: [RouterModule, CommonModule, FormsModule],
   templateUrl: './unidades-material.html',
   styleUrl: './unidades-material.css',
 })
@@ -29,10 +28,14 @@ export class UnidadesMaterial implements OnInit {
   nuevoDescripcionUnidad = '';
   materiaId: string | number = '';
 
-  ngOnInit() {
-    //this.esDocente.set(this.authService.esDocente?.() ?? true);
-    this.esDocente.set(true);
+  mostrarFormularioRecurso = signal<boolean>(false);
+  unidadSeleccionadaId = signal<string | number | null>(null);
+  nuevoTipoRecurso = 'DOCUMENTO';
+  nuevoTituloRecurso = '';
+  nuevoUrlRecurso = '';
 
+  ngOnInit() {
+    this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
     this.materiaId = localStorage.getItem('materiaId') || '5';
 
     if (this.materiaId) {
@@ -42,17 +45,30 @@ export class UnidadesMaterial implements OnInit {
 
   cargarUnidades() {
     this.unidadesService.obtenerUnidadesPorMateria(this.materiaId).subscribe({
-      next: (data) => {
-      console.log('✅ Datos recibidos de Django REST:', data);
-      this.unidades.set(data);
-      console.log('📊 Signal unidades actualizada. Longitud:', this.unidades().length);
-    },
+      next: (data) => this.unidades.set(data),
       error: () => this.toastService.error('Error al cargar las unidades')
     });
   }
 
   toggleUnidad(id: string | number) {
-    this.unidadExpandida.update(v => v === id ? null : id);
+    if (this.unidadExpandida() === id) {
+      this.unidadExpandida.set(null);
+      return;
+    }
+
+    this.unidadExpandida.set(id);
+    this.cargarMaterialesDeUnidad(id);
+  }
+
+  cargarMaterialesDeUnidad(unidadId: string | number) {
+    this.unidadesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
+      next: (materiales) => {
+        this.unidades.update(lista =>
+          lista.map(u => u.id === unidadId ? { ...u, contenidos: materiales } : u)
+        );
+      },
+      error: () => this.toastService.error('Error al cargar materiales de la unidad')
+    });
   }
 
   abrirFormularioUnidad() {
@@ -86,8 +102,8 @@ export class UnidadesMaterial implements OnInit {
   }
 
   cambiarVisibilidad(unidadId: string | number, event: Event) {
-    event.stopPropagation(); 
-    
+    event.stopPropagation();
+
     this.unidadesService.cambiarVisibilidadUnidad(unidadId).subscribe({
       next: (res) => {
         this.toastService.success(res.mensaje);
@@ -111,11 +127,48 @@ export class UnidadesMaterial implements OnInit {
     }
   }
 
-  onContenidoGuardado(unidadId: string | number, event: any) {
-    this.cargarUnidades();
+  // LÓGICA DE RECURSOS / MATERIALES
+  abrirFormularioRecurso(unidadId: string | number, event?: Event) {
+    if (event) event.stopPropagation();
+    this.unidadSeleccionadaId.set(unidadId);
+    this.nuevoTipoRecurso = 'DOCUMENTO';
+    this.nuevoTituloRecurso = '';
+    this.nuevoUrlRecurso = '';
+    this.mostrarFormularioRecurso.set(true);
   }
 
-  onContenidoEliminado(unidadId: string | number, event: any) {
-    this.cargarUnidades();
+  cancelarFormularioRecurso() {
+    this.mostrarFormularioRecurso.set(false);
+    this.unidadSeleccionadaId.set(null);
+  }
+
+  guardarRecurso() {
+    const unidadId = this.unidadSeleccionadaId();
+    if (!unidadId || !this.nuevoTituloRecurso.trim() || !this.nuevoUrlRecurso.trim()) return;
+
+    let urlFormateada = this.nuevoUrlRecurso.trim();
+    if (!/^https?:\/\//i.test(urlFormateada)) {
+      urlFormateada = `https://${urlFormateada}`;
+    }
+
+    const tipoFormateado = this.nuevoTipoRecurso.toUpperCase();
+
+    const nuevoMaterial: Material = {
+      unidad: unidadId,
+      materia: this.materiaId,
+      titulo: this.nuevoTituloRecurso,
+      tipo: tipoFormateado,
+      enlace: urlFormateada
+    };
+    console.log("Material a crear:", nuevoMaterial);
+
+    this.unidadesService.crearMaterial(nuevoMaterial).subscribe({
+      next: () => {
+        this.toastService.success('Material agregado');
+        this.cargarMaterialesDeUnidad(unidadId);
+        this.cancelarFormularioRecurso();
+      },
+      error: () => this.toastService.error('Error al guardar el recurso')
+    });
   }
 }
