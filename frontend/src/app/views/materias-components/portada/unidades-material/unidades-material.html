@@ -36,7 +36,6 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- ACCIONES SOLO VISIBLES PARA DOCENTES -->
                     @if (esDocente()) {
                     <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
                         <!-- Botón Añadir Recurso a la Unidad -->
@@ -80,6 +79,26 @@
                             <span>{{ mat.tipo === 'VIDEO' ? '🎥' : mat.tipo === 'DOCUMENTO' ? '📄' : '🔗' }}</span>
                             <span>{{ mat.titulo }}</span>
                         </a>
+                        @if (esDocente()) {
+                        <div class="flex items-center gap-1">
+
+                            <!-- Toggle Visibilidad -->
+                            <button (click)="alternarVisibilidadMaterial(mat)" type="button"
+                                class="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                                [title]="mat.visible ? 'Ocultar material a alumnos' : 'Mostrar material a alumnos'">
+                                <span *ngIf="mat.visible">👁️</span>
+                                <span *ngIf="!mat.visible">🙈</span>
+                            </button>
+
+                            <!-- Eliminar -->
+                            <button (click)="eliminarMaterial(mat.id!, unidad)" type="button"
+                                class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
+                                title="Eliminar material">
+                                🗑️
+                            </button>
+
+                        </div>
+                        }
                     </div>
                     }
                 </div>
@@ -123,6 +142,16 @@
                     class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"></textarea>
             </div>
 
+            <div class="mt-4 pt-3 border-t border-gray-100">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" [(ngModel)]="visible" name="unidadVisible"
+                        class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                    <span class="text-sm font-medium text-slate-700">
+                        Publicar unidad al crear (visible para alumnos)
+                    </span>
+                </label>
+            </div>
+
             <div class="flex gap-3 justify-end pt-4 border-t">
                 <button type="button" (click)="cancelarFormularioUnidad()"
                     class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-medium">
@@ -151,9 +180,9 @@
                 </label>
                 <select [(ngModel)]="nuevoTipoRecurso" name="tipo"
                     class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                    <option value="documento">📄 Documento (Google Drive, PDF online)</option>
-                    <option value="video">🎥 Video (YouTube, Vimeo)</option>
-                    <option value="enlace">🔗 Enlace (sitio web, recurso online)</option>
+                    <option value="DOCUMENTO">📄 Documento (Google Drive, PDF online)</option>
+                    <option value="VIDEO">🎥 Video (YouTube, Vimeo)</option>
+                    <option value="ENLACE">🔗 Enlace (sitio web, recurso online)</option>
                 </select>
             </div>
 

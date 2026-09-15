@@ -27,6 +27,7 @@ export class UnidadesMaterial implements OnInit {
   nuevoNombreUnidad = '';
   nuevoDescripcionUnidad = '';
   materiaId: string | number = '';
+  visible = true;
 
   mostrarFormularioRecurso = signal<boolean>(false);
   unidadSeleccionadaId = signal<string | number | null>(null);
@@ -88,7 +89,7 @@ export class UnidadesMaterial implements OnInit {
       materia: this.materiaId,
       titulo: this.nuevoNombreUnidad,
       descripcion: this.nuevoDescripcionUnidad,
-      visible: true
+      visible: this.visible
     };
 
     this.unidadesService.crearUnidad(payload).subscribe({
@@ -171,4 +172,35 @@ export class UnidadesMaterial implements OnInit {
       error: () => this.toastService.error('Error al guardar el recurso')
     });
   }
+
+  alternarVisibilidadMaterial(material: any): void {
+    const estadoAnterior = material.visible;
+
+    material.visible = !material.visible;
+
+    this.unidadesService.cambiarVisibilidadMaterial(material.id).subscribe({
+      next: (res) => {
+        material.visible = res.visible;
+      },
+      error: (err) => {
+        material.visible = estadoAnterior;
+        console.error('Error al cambiar la visibilidad del material', err);
+      }
+    });
+  }
+
+eliminarMaterial(materialId: number | string, unidad: any): void {
+  if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
+
+  this.unidadesService.eliminarMaterial(materialId).subscribe({
+    next: () => {
+      if (unidad.contenidos) {
+        unidad.contenidos = unidad.contenidos.filter((m: any) => m.id !== materialId);
+      } else if (unidad.materiales) {
+        unidad.materiales = unidad.materiales.filter((m: any) => m.id !== materialId);
+      }
+    },
+    error: (err) => console.error('Error al eliminar el material', err)
+  });
+}
 }
