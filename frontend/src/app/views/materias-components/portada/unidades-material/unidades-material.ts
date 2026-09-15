@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { UnidadesService } from '../../../../services/unidades.service';
+import { MaterialesService } from '../../../../services/materiales.service';
 import { Unidad, Material } from '../../../../model/unidad-material.model';
 
 @Component({
@@ -16,6 +17,7 @@ import { Unidad, Material } from '../../../../model/unidad-material.model';
 })
 export class UnidadesMaterial implements OnInit {
   private unidadesService = inject(UnidadesService);
+  private materialesService = inject(MaterialesService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
 
@@ -62,7 +64,7 @@ export class UnidadesMaterial implements OnInit {
   }
 
   cargarMaterialesDeUnidad(unidadId: string | number) {
-    this.unidadesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
+    this.materialesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
       next: (materiales) => {
         this.unidades.update(lista =>
           lista.map(u => u.id === unidadId ? { ...u, contenidos: materiales } : u)
@@ -163,7 +165,7 @@ export class UnidadesMaterial implements OnInit {
     };
     console.log("Material a crear:", nuevoMaterial);
 
-    this.unidadesService.crearMaterial(nuevoMaterial).subscribe({
+    this.materialesService.crearMaterial(nuevoMaterial).subscribe({
       next: () => {
         this.toastService.success('Material agregado');
         this.cargarMaterialesDeUnidad(unidadId);
@@ -178,7 +180,7 @@ export class UnidadesMaterial implements OnInit {
 
     material.visible = !material.visible;
 
-    this.unidadesService.cambiarVisibilidadMaterial(material.id).subscribe({
+    this.materialesService.cambiarVisibilidadMaterial(material.id).subscribe({
       next: (res) => {
         material.visible = res.visible;
       },
@@ -192,7 +194,7 @@ export class UnidadesMaterial implements OnInit {
 eliminarMaterial(materialId: number | string, unidad: any): void {
   if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
 
-  this.unidadesService.eliminarMaterial(materialId).subscribe({
+  this.materialesService.eliminarMaterial(materialId).subscribe({
     next: () => {
       if (unidad.contenidos) {
         unidad.contenidos = unidad.contenidos.filter((m: any) => m.id !== materialId);
