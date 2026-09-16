@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { UnidadesService } from '../../../../services/unidades.service';
+import { MaterialesService } from '../../../../services/materiales.service';
 import { Unidad, Material } from '../../../../model/unidad-material.model';
 
 @Component({
@@ -16,6 +17,7 @@ import { Unidad, Material } from '../../../../model/unidad-material.model';
 })
 export class UnidadesMaterial implements OnInit {
   private unidadesService = inject(UnidadesService);
+  private materialesService = inject(MaterialesService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
 
@@ -26,13 +28,16 @@ export class UnidadesMaterial implements OnInit {
 
   nuevoNombreUnidad = '';
   nuevoDescripcionUnidad = '';
+  nuevoOrdenUnidad: number = 1;
   materiaId: string | number = '';
+  visible = true;
 
   mostrarFormularioRecurso = signal<boolean>(false);
   unidadSeleccionadaId = signal<string | number | null>(null);
   nuevoTipoRecurso = 'DOCUMENTO';
   nuevoTituloRecurso = '';
   nuevoUrlRecurso = '';
+  nuevoMaterialVisible = true;
 
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
@@ -61,7 +66,7 @@ export class UnidadesMaterial implements OnInit {
   }
 
   cargarMaterialesDeUnidad(unidadId: string | number) {
-    this.unidadesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
+    this.materialesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
       next: (materiales) => {
         this.unidades.update(lista =>
           lista.map(u => u.id === unidadId ? { ...u, contenidos: materiales } : u)
@@ -88,7 +93,7 @@ export class UnidadesMaterial implements OnInit {
       materia: this.materiaId,
       titulo: this.nuevoNombreUnidad,
       descripcion: this.nuevoDescripcionUnidad,
-      visible: true
+      visible: this.visible
     };
 
     this.unidadesService.crearUnidad(payload).subscribe({
@@ -162,7 +167,7 @@ export class UnidadesMaterial implements OnInit {
     };
     console.log("Material a crear:", nuevoMaterial);
 
-    this.unidadesService.crearMaterial(nuevoMaterial).subscribe({
+    this.materialesService.crearMaterial(nuevoMaterial).subscribe({
       next: () => {
         this.toastService.success('Material agregado');
         this.cargarMaterialesDeUnidad(unidadId);
@@ -171,4 +176,35 @@ export class UnidadesMaterial implements OnInit {
       error: () => this.toastService.error('Error al guardar el recurso')
     });
   }
+
+  alternarVisibilidadMaterial(material: any): void {
+    const estadoAnterior = material.visible;
+
+    material.visible = !material.visible;
+
+    this.materialesService.cambiarVisibilidadMaterial(material.id).subscribe({
+      next: (res) => {
+        material.visible = res.visible;
+      },
+      error: (err) => {
+        material.visible = estadoAnterior;
+        console.error('Error al cambiar la visibilidad del material', err);
+      }
+    });
+  }
+
+eliminarMaterial(materialId: number | string, unidad: any): void {
+  if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
+
+  this.materialesService.eliminarMaterial(materialId).subscribe({
+    next: () => {
+      if (unidad.contenidos) {
+        unidad.contenidos = unidad.contenidos.filter((m: any) => m.id !== materialId);
+      } else if (unidad.materiales) {
+        unidad.materiales = unidad.materiales.filter((m: any) => m.id !== materialId);
+      }
+    },
+    error: (err) => console.error('Error al eliminar el material', err)
+  });
+}
 }
