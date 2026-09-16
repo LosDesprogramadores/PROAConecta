@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -20,6 +20,7 @@ export class UnidadesMaterial implements OnInit {
   private materialesService = inject(MaterialesService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute)
 
   unidades = signal<Unidad[]>([]);
   esDocente = signal<boolean>(false);
@@ -41,7 +42,11 @@ export class UnidadesMaterial implements OnInit {
 
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
-    this.materiaId = localStorage.getItem('materiaId') || '5';
+    //this.materiaId = localStorage.getItem('materiaId') ?? '';
+    this.materiaId = this.route.snapshot.paramMap.get('id') 
+    ?? this.route.parent?.snapshot.paramMap.get('id') 
+    ?? '';
+    console.log("ID obtenido de la URL:", this.materiaId);
 
     if (this.materiaId) {
       this.cargarUnidades();

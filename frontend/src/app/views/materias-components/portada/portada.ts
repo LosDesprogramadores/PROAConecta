@@ -21,7 +21,7 @@ import {
   RecursoClase
 } from '../../../model/unidad-contenido.model';
 
-import { ContenidoUnidadComponent } from './contenido-unidad/contenido-unidad';
+import { UnidadesMaterial } from './unidades-material/unidades-material'; 
 
 import { MateriaService } from '../../../services/materia.service';
 import { UserRole } from '../../../core/auth/auth.model';
@@ -34,7 +34,7 @@ import { AuthService } from '../../../core/auth/auth.service';
     CommonModule,
     RouterModule,
     FormsModule,
-    ContenidoUnidadComponent
+    UnidadesMaterial
   ],
   templateUrl: './portada.html',
   styleUrl: './portada.css',
@@ -82,7 +82,7 @@ export class Portada implements OnInit {
     private readonly materiaService: MateriaService,
     private readonly route: ActivatedRoute,
     private readonly authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.detectarRol();
@@ -300,7 +300,7 @@ export class Portada implements OnInit {
     unidad.contenidos = unidad.contenidos.filter(c => c.id !== contenidoId);
   }
 
-  abrirModalActividad(): void {}
+  abrirModalActividad(): void { }
   abrirModalRecurso(): void {
     this.abrirFormularioRecurso();
   }
