@@ -28,6 +28,7 @@ export class UnidadesMaterial implements OnInit {
 
   nuevoNombreUnidad = '';
   nuevoDescripcionUnidad = '';
+  nuevoOrdenUnidad: number = 1;
   materiaId: string | number = '';
   visible = true;
 
@@ -36,6 +37,7 @@ export class UnidadesMaterial implements OnInit {
   nuevoTipoRecurso = 'DOCUMENTO';
   nuevoTituloRecurso = '';
   nuevoUrlRecurso = '';
+  nuevoMaterialVisible = true;
 
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
