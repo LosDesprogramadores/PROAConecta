@@ -6,7 +6,7 @@ export interface ContenidoUnidad {
   url: string;
   fechaCreacion: Date;
   profesor_id?: string;
-  visible?: boolean; // Agregamos como opcional
+  visible?: boolean;
 }
 
 export interface UnidadMateria {
@@ -17,9 +17,18 @@ export interface UnidadMateria {
   contenidos: ContenidoUnidad[];
 }
 
+export interface RecursoClase {
+  id: string;
+  titulo: string;
+  tipo: 'documento' | 'video' | 'enlace';
+  url: string;
+  fechaCreacion: Date;
+}
+
 export interface MateriaPortada {
   nombre: string;
   docente: string;
   presentacion: string;
   unidades: UnidadMateria[];
+  recursosClase?: RecursoClase[];
 }

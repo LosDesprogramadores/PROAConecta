@@ -17,6 +17,14 @@ interface Noticia {
   contenido: string;
 }
 
+export interface MateriasProfesor extends IMateria {
+  id: number; // Garantizar que siempre es number
+  estado: 'en-progreso' | 'finalizada' | 'archived';
+  esFavorita: boolean;
+  estudiantes: number;
+  proximaEntrega: string;
+}
+
 @Component({
   selector: 'app-welcome',
   standalone: true,
@@ -25,13 +33,18 @@ interface Noticia {
   styleUrls: ['./welcome.css'],
 })
 export class Welcome implements OnInit {
+  // Para estudiante
   materias = signal<IMateria[]>([]);
+  // Para profesor - tipado como MateriasProfesor
+  materiasProfesor = signal<MateriasProfesor[]>([]);
+  
   noticias = signal<Noticia[]>([]);
 
   cargando = signal(false);
   error = signal<string | null>(null);
 
   expandedMaterias = signal(false);
+  filtroMaterias = signal<'todas' | 'en-progreso' | 'finalizadas' | 'favoritas'>('todas');
 
   readonly itemsToShow = 3;
 
@@ -63,6 +76,16 @@ export class Welcome implements OnInit {
     return this.esEstudiante() ? 'Tus materias' : 'Materias asignadas';
   });
 
+  // Computed para materias filtradas (profesor)
+  materiasFiltradasComputed = computed(() => {
+    const filtro = this.filtroMaterias();
+    const all = this.materiasProfesor();
+
+    if (filtro === 'todas') return all;
+    if (filtro === 'favoritas') return all.filter((m) => m.esFavorita);
+    return all.filter((m) => m.estado === filtro);
+  });
+
   ngOnInit(): void {
     this.loadMaterias();
     this.loadNoticias();
@@ -91,9 +114,6 @@ export class Welcome implements OnInit {
 
     /*
      * ESTUDIANTE
-     *
-     * Buscamos las inscripciones del estudiante y a partir
-     * de ellas obtenemos las materias en las que está inscripto.
      */
     if (rolId === UserRole.ESTUDIANTE) {
       this.inscripcionesService.obtenerInscripcionesPorEstudiante(personaId).subscribe({
@@ -117,9 +137,7 @@ export class Welcome implements OnInit {
 
         error: (err) => {
           console.error('Error cargando materias del estudiante:', err);
-
           this.error.set('No se pudieron cargar tus materias.');
-
           this.cargando.set(false);
         },
       });
@@ -129,22 +147,30 @@ export class Welcome implements OnInit {
 
     /*
      * PROFESOR
-     *
-     * Buscamos únicamente las materias que tienen asignado
-     * al profesor actual.
      */
     if (rolId === UserRole.DOCENTE) {
       this.materiaService.obtenerMateriasPorProfesor(personaId).subscribe({
         next: (data: IMateria[]) => {
-          this.materias.set(data);
+          // Mapear datos con información adicional para profesor
+          // Garantizar que id siempre es number
+          const materiasConInfo: MateriasProfesor[] = data
+            .filter((materia): materia is IMateria & { id: number } => materia.id !== undefined && materia.id !== null)
+            .map((materia) => ({
+              ...materia,
+              id: materia.id as number, // Type assertion segura
+              estado: 'en-progreso' as const,
+              esFavorita: false,
+              estudiantes: materia.total_estudiantes || 0,
+              proximaEntrega: 'Próxima entrega: 25 Ago',
+            }));
+
+          this.materiasProfesor.set(materiasConInfo);
           this.cargando.set(false);
         },
 
         error: (err) => {
           console.error('Error cargando materias del profesor:', err);
-
           this.error.set('No se pudieron cargar tus materias.');
-
           this.cargando.set(false);
         },
       });
@@ -152,14 +178,8 @@ export class Welcome implements OnInit {
       return;
     }
 
-    /*
-     * Si el componente es utilizado por otro rol,
-     * no hacemos una consulta general de materias.
-     */
     console.warn('Rol no contemplado para Welcome:', rolId);
-
     this.error.set('No tenés materias disponibles para mostrar.');
-
     this.cargando.set(false);
   }
 
@@ -189,5 +209,54 @@ export class Welcome implements OnInit {
 
   toggleExpandMaterias(): void {
     this.expandedMaterias.update((value) => !value);
+  }
+
+  // --- MÉTODOS PARA PROFESOR ---
+
+  toggleFavoritaProfesor(materiaId: number): void {
+    this.materiasProfesor.update((materias) =>
+      materias.map((m) => ({
+        ...m,
+        esFavorita: m.id === materiaId ? !m.esFavorita : m.esFavorita,
+      })),
+    );
+  }
+
+  setFiltroProfesor(filtro: 'todas' | 'en-progreso' | 'finalizadas' | 'favoritas'): void {
+    this.filtroMaterias.set(filtro);
+  }
+
+  cambiarEstadoMateria(materiaId: number, nuevoEstado: 'en-progreso' | 'finalizada'): void {
+    this.materiasProfesor.update((materias) =>
+      materias.map((m) => ({
+        ...m,
+        estado: m.id === materiaId ? nuevoEstado : m.estado,
+      })),
+    );
+  }
+
+  // Métodos helper para el template
+  getEstadoBadgeClass(estado: string): string {
+    const baseClass = 'inline-block px-3 py-1 rounded-full text-xs font-medium';
+    
+    switch (estado) {
+      case 'en-progreso':
+        return `${baseClass} bg-blue-100 text-blue-700`;
+      case 'finalizada':
+        return `${baseClass} bg-slate-100 text-slate-600`;
+      case 'archived':
+        return `${baseClass} bg-slate-50 text-slate-400`;
+      default:
+        return baseClass;
+    }
+  }
+
+  getEstadoText(estado: string): string {
+    if (!estado) return 'Sin estado';
+    return estado.charAt(0).toUpperCase() + estado.slice(1);
+  }
+
+  getFavoritaIcon(esFavorita: boolean): string {
+    return esFavorita ? '★' : '☆';
   }
 }
