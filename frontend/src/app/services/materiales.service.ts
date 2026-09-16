@@ -20,22 +20,14 @@ export class MaterialesService {
     return this.http.get<Material[]>(`${this.apiUrl}materiales/`, { params });
   }
 
-  crearMaterial(material: Material, archivoFile?: File): Observable<Material> {
-    const formData = new FormData();
-    formData.append('materia', material.materia.toString());
-
-    if (material.unidad) {
-      formData.append('unidad', material.unidad.toString());
-    }
-
-    formData.append('tipo', material.tipo);
-    formData.append('titulo', material.titulo);
-
-    if (material.descripcion) formData.append('descripcion', material.descripcion);
-    if (material.enlace) formData.append('enlace', material.enlace);
-    if (archivoFile) formData.append('archivo', archivoFile);
-
+  crearMaterial(material: Partial<Material>, archivoFile?: File): Observable<Material> {
+    const formData = this.construirFormData(material, archivoFile);
     return this.http.post<Material>(`${this.apiUrl}materiales/`, formData);
+  }
+
+  actualizarMaterial(id: number | string, material: Partial<Material>, archivoFile?: File): Observable<Material> {
+    const formData = this.construirFormData(material, archivoFile);
+    return this.http.put<Material>(`${this.apiUrl}materiales/${id}/`, formData);
   }
 
   eliminarMaterial(id: number | string): Observable<void> {
@@ -57,4 +49,17 @@ export class MaterialesService {
     return this.http.get<Material[]>(`${this.apiUrl}materiales/`, { params });
   }
 
+  private construirFormData(material: Partial<Material>, archivoFile?: File): FormData {
+    const formData = new FormData();
+    if (material.materia) formData.append('materia', material.materia.toString());
+    if (material.unidad) formData.append('unidad', material.unidad.toString());
+    if (material.tipo) formData.append('tipo', material.tipo);
+    if (material.titulo) formData.append('titulo', material.titulo);
+    if (material.descripcion) formData.append('descripcion', material.descripcion);
+    if (material.enlace) formData.append('enlace', material.enlace);
+    if (material.visible !== undefined) formData.append('visible', String(material.visible));
+    if (archivoFile) formData.append('archivo', archivoFile);
+
+    return formData;
+  }
 }
