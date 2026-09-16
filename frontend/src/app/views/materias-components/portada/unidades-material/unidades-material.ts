@@ -27,6 +27,7 @@ export class UnidadesMaterial implements OnInit {
   unidadExpandida = signal<string | number | null>(null);
   mostrarFormularioUnidad = signal(false);
 
+  unidadEditandoId: string | number | null = null;
   nuevoNombreUnidad = '';
   nuevoDescripcionUnidad = '';
   nuevoOrdenUnidad: number = 1;
@@ -42,10 +43,10 @@ export class UnidadesMaterial implements OnInit {
 
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
-    //this.materiaId = localStorage.getItem('materiaId') ?? '';
-    this.materiaId = this.route.snapshot.paramMap.get('id') 
-    ?? this.route.parent?.snapshot.paramMap.get('id') 
-    ?? '';
+
+    this.materiaId = this.route.snapshot.paramMap.get('id')
+      ?? this.route.parent?.snapshot.paramMap.get('id')
+      ?? '';
     console.log("ID obtenido de la URL:", this.materiaId);
 
     if (this.materiaId) {
@@ -82,13 +83,31 @@ export class UnidadesMaterial implements OnInit {
   }
 
   abrirFormularioUnidad() {
+    this.unidadEditandoId = null; // Modo Creación
+    this.nuevoNombreUnidad = '';
+    this.nuevoDescripcionUnidad = '';
+    this.nuevoOrdenUnidad = 1;
+    this.visible = true;
+    this.mostrarFormularioUnidad.set(true);
+  }
+
+  prepararEditarUnidad(unidad: Unidad, event: Event) {
+    event.stopPropagation();
+    this.unidadEditandoId = unidad.id ?? null; // Modo Edición
+    this.nuevoNombreUnidad = unidad.titulo;
+    this.nuevoDescripcionUnidad = unidad.descripcion || '';
+    this.nuevoOrdenUnidad = unidad.orden ?? 1;
+    this.visible = unidad.visible ?? true;
     this.mostrarFormularioUnidad.set(true);
   }
 
   cancelarFormularioUnidad() {
     this.mostrarFormularioUnidad.set(false);
+    this.unidadEditandoId = null;
     this.nuevoNombreUnidad = '';
     this.nuevoDescripcionUnidad = '';
+    this.nuevoOrdenUnidad = 1;
+    this.visible = true;
   }
 
   guardarUnidad() {
@@ -98,17 +117,30 @@ export class UnidadesMaterial implements OnInit {
       materia: this.materiaId,
       titulo: this.nuevoNombreUnidad,
       descripcion: this.nuevoDescripcionUnidad,
+      orden: Number(this.nuevoOrdenUnidad),
       visible: this.visible
     };
 
-    this.unidadesService.crearUnidad(payload).subscribe({
-      next: () => {
-        this.toastService.success('Unidad creada correctamente');
-        this.cargarUnidades();
-        this.cancelarFormularioUnidad();
-      },
-      error: () => this.toastService.error('Error al crear la unidad')
-    });
+    if (this.unidadEditandoId) {
+      // ✏️ ACTUALIZAR UNIDAD
+      this.unidadesService.actualizarUnidad(this.unidadEditandoId, payload).subscribe({
+        next: () => {
+          this.toastService.success('Unidad actualizada correctamente');
+          this.cargarUnidades();
+          this.cancelarFormularioUnidad();
+        },
+        error: () => this.toastService.error('Error al actualizar la unidad')
+      });
+    } else {
+      this.unidadesService.crearUnidad(payload).subscribe({
+        next: () => {
+          this.toastService.success('Unidad creada correctamente');
+          this.cargarUnidades();
+          this.cancelarFormularioUnidad();
+        },
+        error: () => this.toastService.error('Error al crear la unidad')
+      });
+    }
   }
 
   cambiarVisibilidad(unidadId: string | number, event: Event) {
@@ -198,18 +230,18 @@ export class UnidadesMaterial implements OnInit {
     });
   }
 
-eliminarMaterial(materialId: number | string, unidad: any): void {
-  if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
+  eliminarMaterial(materialId: number | string, unidad: any): void {
+    if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
 
-  this.materialesService.eliminarMaterial(materialId).subscribe({
-    next: () => {
-      if (unidad.contenidos) {
-        unidad.contenidos = unidad.contenidos.filter((m: any) => m.id !== materialId);
-      } else if (unidad.materiales) {
-        unidad.materiales = unidad.materiales.filter((m: any) => m.id !== materialId);
-      }
-    },
-    error: (err) => console.error('Error al eliminar el material', err)
-  });
-}
+    this.materialesService.eliminarMaterial(materialId).subscribe({
+      next: () => {
+        if (unidad.contenidos) {
+          unidad.contenidos = unidad.contenidos.filter((m: any) => m.id !== materialId);
+        } else if (unidad.materiales) {
+          unidad.materiales = unidad.materiales.filter((m: any) => m.id !== materialId);
+        }
+      },
+      error: (err) => console.error('Error al eliminar el material', err)
+    });
+  }
 }
