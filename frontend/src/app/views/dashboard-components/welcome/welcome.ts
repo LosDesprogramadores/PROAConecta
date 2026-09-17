@@ -41,6 +41,28 @@ export class Welcome implements OnInit {
   
   noticias = signal<Noticia[]>([]);
 
+  // Anuncios para el sidebar del profesor
+  sidebarAnuncios = signal([
+    {
+      id: 1,
+      titulo: 'Inicio del ciclo lectivo',
+      categoria: 'Institucional',
+      tipo: 'principal',
+    },
+    {
+      id: 3,
+      titulo: 'Cierre de calificaciones en 3 días',
+      categoria: 'Recordatorio',
+      tipo: 'secundario',
+    },
+    {
+      id: 4,
+      titulo: 'Mantenimiento programado sábado',
+      categoria: 'Sistema',
+      tipo: 'secundario',
+    },
+  ]);
+
   cargando = signal(false);
   error = signal<string | null>(null);
 

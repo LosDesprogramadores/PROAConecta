@@ -1,21 +1,135 @@
-<section class="p-6">
-    <h2 class="text-2xl font-bold text-primary mb-6">Novedades</h2>
+<!-- VISTA LISTA DE ANUNCIOS -->
+@if (!vistaDetalle()) {
+  <section class="max-w-4xl mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <header class="border-b border-color-border pb-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 text-primary flex items-center justify-center">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.987 3.987 0 01-1.564-.317z"/></svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold text-color-text-primary">Novedades</h2>
+        <p class="text-color-text-secondary text-sm">Mantente actualizado con los últimos anuncios</p>
+      </div>
+    </header>
 
-    <!-- Si no hay noticias -->
+    <!-- Estado vacío -->
     @if (noticias().length === 0) {
-    <p class="text-slate-600">No hay novedades para mostrar.</p>
-    } @else {
-    <!-- Lista de noticias -->
-    <div class="space-y-6">
-        @for (noticia of noticias(); track noticia.titulo) {
-        <article class="rounded-xl bg-white shadow-md p-6 border border-slate-200">
-            <h3 class="text-xl font-semibold text-slate-800 mb-2">{{ noticia.titulo }}</h3>
-            <div class="text-sm text-slate-500 mb-4">
-                Publicado por {{ noticia.autor }} — {{ noticia.fecha }} a las {{ noticia.hora }}
-            </div>
-            <p class="text-slate-700">{{ noticia.contenido }}</p>
-        </article>
-        }
-    </div>
+      <div class="p-12 rounded-xl bg-color-surface border border-color-border text-center">
+        <p class="text-color-text-secondary">No hay novedades para mostrar.</p>
+      </div>
     }
-</section>
+
+    <!-- Lista de noticias -->
+    @if (noticias().length > 0) {
+      <div class="space-y-4">
+        @for (noticia of noticias(); track noticia.id) {
+          <!-- Card de anuncio -->
+          <article
+            (click)="seleccionarAnuncio(noticia)"
+            class="bg-white rounded-lg border border-color-border hover:border-color-primary hover:shadow-sm transition cursor-pointer p-5 group"
+          >
+            <!-- Header de la card -->
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <div class="flex-1 min-w-0">
+                <!-- Categoría -->
+                <div class="mb-2">
+                  <span [class]="getCategoryBadgeClass(noticia.categoria)">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {{ noticia.categoria || 'General' }}
+                  </span>
+                </div>
+
+                <!-- Título -->
+                <h3 class="text-base font-semibold text-color-text-primary group-hover:text-color-primary transition line-clamp-2">
+                  {{ noticia.titulo }}
+                </h3>
+              </div>
+
+              <!-- Ícono de flecha -->
+              <div class="text-color-text-secondary group-hover:text-color-primary transition shrink-0 pt-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </div>
+            </div>
+
+            <!-- Metadatos -->
+            <div class="flex items-center justify-between text-xs text-color-text-secondary mb-3">
+              <span>Por {{ noticia.autor }}</span>
+              <span class="hidden sm:inline">{{ noticia.fecha }} · {{ noticia.hora }}</span>
+            </div>
+
+            <!-- Preview del contenido -->
+            <p class="text-color-text-secondary text-sm line-clamp-2">
+              {{ noticia.contenido }}
+            </p>
+          </article>
+        }
+      </div>
+    }
+  </section>
+}
+
+<!-- VISTA DETALLE DE ANUNCIO -->
+@if (vistaDetalle() && anuncioSeleccionado()) {
+  <section class="max-w-3xl mx-auto p-6">
+    <!-- Botón volver -->
+    <button
+      (click)="volver()"
+      class="inline-flex items-center gap-2 mb-6 px-3 py-2 rounded-lg bg-color-surface hover:bg-color-light text-color-primary font-medium transition text-sm"
+      type="button"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      Volver a anuncios
+    </button>
+
+    <!-- Card del detalle -->
+    <article class="bg-white rounded-lg border border-color-border shadow-sm overflow-hidden">
+      <!-- Header del detalle -->
+      <div class="bg-color-surface border-b border-color-border p-6">
+        <!-- Categoría -->
+        <div class="mb-3">
+          <span [class]="getCategoryBadgeClass(anuncioSeleccionado()?.categoria)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ anuncioSeleccionado()?.categoria || 'General' }}
+          </span>
+        </div>
+
+        <!-- Título -->
+        <h1 class="text-2xl font-semibold text-color-text-primary mb-4">
+          {{ anuncioSeleccionado()?.titulo }}
+        </h1>
+
+        <!-- Metadatos -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 text-xs text-color-text-secondary">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-semibold">{{ anuncioSeleccionado()?.autor }}</span>
+            <span>•</span>
+            <span>{{ anuncioSeleccionado()?.fecha }}</span>
+            <span>•</span>
+            <span>{{ anuncioSeleccionado()?.hora }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenido -->
+      <div class="p-6 sm:p-8">
+        <div class="text-color-text-secondary text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
+          {{ anuncioSeleccionado()?.contenido }}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-color-surface border-t border-color-border px-6 py-4 flex items-center justify-between gap-3">
+        <span class="text-xs text-color-text-secondary hidden sm:inline">
+          Publicado: {{ anuncioSeleccionado()?.fecha }}
+        </span>
+        <button
+          (click)="volver()"
+          class="px-4 py-2 rounded-lg bg-color-primary text-white hover:opacity-90 font-medium transition text-sm"
+          type="button"
+        >
+          Cerrar
+        </button>
+      </div>
+    </article>
+  </section>
+}
