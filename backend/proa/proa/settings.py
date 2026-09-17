@@ -133,8 +133,10 @@ DATABASES = {
     )
 }
 
-MONGO_URI = "mongodb://localhost:27017/"
-MONGO_DB_NAME = "proa_conecta"
+# --- Nueva configuración MongoDB Atlas ---
+
+MONGO_URI = os.getenv("DATABASE_URL_MONGODB")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "proa_conecta")
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
