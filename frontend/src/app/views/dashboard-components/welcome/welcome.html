@@ -277,36 +277,42 @@
         } @else if (materiasProfesor().length > 0) {
           <div class="grid grid-cols-1 gap-4">
             @for (materia of materiasFiltradasComputed(); track materia.id) {
-              <a [routerLink]="['/view-materia', materia.id, 'portada']" 
-                 class="bg-white p-6 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition block cursor-pointer">
-                <!-- Header de materia -->
-                <div class="flex items-start justify-between mb-4">
-                  <div>
+              <!-- CARD CONTENEDOR -->
+              <div class="bg-white p-6 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition relative">
+                
+                <!-- BOTONES DE ACCIONES - POSICIONADOS ARRIBA A LA DERECHA -->
+                <div class="absolute top-4 right-4 flex gap-2">
+                  <button 
+                    (click)="toggleFavoritaProfesor(materia.id)"
+                    class="text-2xl hover:scale-110 transition-transform duration-200"
+                    [title]="materia.esFavorita ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                    type="button"
+                  >
+                    {{ getFavoritaIcon(materia.esFavorita) }}
+                  </button>
+                  <button type="button" class="text-slate-400 hover:text-slate-700 transition">⋯</button>
+                </div>
+
+                <!-- CONTENIDO CLICKEABLE (NAVEGABLE) -->
+                <a [routerLink]="['/view-materia', materia.id, 'portada']" 
+                   class="block cursor-pointer pr-20 hover:no-underline">
+                  <!-- Header de materia -->
+                  <div class="mb-4">
                     <h3 class="text-lg font-semibold text-slate-800">{{ materia.titulo }}</h3>
                     <p class="text-sm text-slate-500">{{ materia.estudiantes }} estudiantes inscritos</p>
                   </div>
-                  <div class="flex gap-2">
-                    <button 
-                      (click)="$event.stopPropagation(); toggleFavoritaProfesor(materia.id)"
-                      class="text-xl hover:scale-110 transition"
-                      [title]="materia.esFavorita ? 'Quitar de favoritos' : 'Agregar a favoritos'"
-                    >
-                      {{ getFavoritaIcon(materia.esFavorita) }}
-                    </button>
-                    <button (click)="$event.stopPropagation()" class="text-slate-400 hover:text-slate-700 transition">⋯</button>
+
+                  <!-- Estado Badge -->
+                  <div class="mb-3">
+                    <span [class]="getEstadoBadgeClass(materia.estado)">
+                      {{ getEstadoText(materia.estado) }}
+                    </span>
                   </div>
-                </div>
 
-                <!-- Estado Badge -->
-                <div class="mb-3">
-                  <span [class]="getEstadoBadgeClass(materia.estado)">
-                    {{ getEstadoText(materia.estado) }}
-                  </span>
-                </div>
-
-                <!-- Info -->
-                <p class="text-sm text-slate-600">{{ materia.proximaEntrega }}</p>
-              </a>
+                  <!-- Info -->
+                  <p class="text-sm text-slate-600">{{ materia.proximaEntrega }}</p>
+                </a>
+              </div>
             }
           </div>
         }

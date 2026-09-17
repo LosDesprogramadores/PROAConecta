@@ -18,7 +18,7 @@ interface Noticia {
 }
 
 export interface MateriasProfesor extends IMateria {
-  id: number; // Garantizar que siempre es number
+  id: number;
   estado: 'en-progreso' | 'finalizada' | 'archived';
   esFavorita: boolean;
   estudiantes: number;
@@ -33,9 +33,10 @@ export interface MateriasProfesor extends IMateria {
   styleUrls: ['./welcome.css'],
 })
 export class Welcome implements OnInit {
-  // Para estudiante
+  // Señales para estudiante
   materias = signal<IMateria[]>([]);
-  // Para profesor - tipado como MateriasProfesor
+  
+  // Señales para profesor - tipado como MateriasProfesor
   materiasProfesor = signal<MateriasProfesor[]>([]);
   
   noticias = signal<Noticia[]>([]);
@@ -53,6 +54,8 @@ export class Welcome implements OnInit {
     private readonly inscripcionesService: InscripcionesService,
     private readonly authService: AuthService,
   ) {}
+
+  // === COMPUTED SIGNALS ===
 
   userName = computed(() => {
     const persona = this.authService.currentUser()?.persona;
@@ -86,10 +89,14 @@ export class Welcome implements OnInit {
     return all.filter((m) => m.estado === filtro);
   });
 
+  // === LIFECYCLE ===
+
   ngOnInit(): void {
     this.loadMaterias();
     this.loadNoticias();
   }
+
+  // === MÉTODOS PRIVADOS ===
 
   private loadMaterias(): void {
     this.cargando.set(true);
@@ -152,12 +159,13 @@ export class Welcome implements OnInit {
       this.materiaService.obtenerMateriasPorProfesor(personaId).subscribe({
         next: (data: IMateria[]) => {
           // Mapear datos con información adicional para profesor
-          // Garantizar que id siempre es number
           const materiasConInfo: MateriasProfesor[] = data
-            .filter((materia): materia is IMateria & { id: number } => materia.id !== undefined && materia.id !== null)
+            .filter((materia): materia is IMateria & { id: number } => 
+              materia.id !== undefined && materia.id !== null
+            )
             .map((materia) => ({
               ...materia,
-              id: materia.id as number, // Type assertion segura
+              id: materia.id as number,
               estado: 'en-progreso' as const,
               esFavorita: false,
               estudiantes: materia.total_estudiantes || 0,
@@ -195,6 +203,8 @@ export class Welcome implements OnInit {
     ]);
   }
 
+  // === GETTERS PARA ESTUDIANTE ===
+
   get materiasVisibles(): IMateria[] {
     if (this.expandedMaterias()) {
       return this.materias();
@@ -207,12 +217,17 @@ export class Welcome implements OnInit {
     return this.materias().length > this.itemsToShow;
   }
 
+  // === MÉTODOS PÚBLICOS - ESTUDIANTE ===
+
   toggleExpandMaterias(): void {
     this.expandedMaterias.update((value) => !value);
   }
 
-  // --- MÉTODOS PARA PROFESOR ---
+  // === MÉTODOS PÚBLICOS - PROFESOR ===
 
+  /**
+   * Alterna el estado favorito de una materia
+   */
   toggleFavoritaProfesor(materiaId: number): void {
     this.materiasProfesor.update((materias) =>
       materias.map((m) => ({
@@ -222,10 +237,16 @@ export class Welcome implements OnInit {
     );
   }
 
+  /**
+   * Establece el filtro de materias
+   */
   setFiltroProfesor(filtro: 'todas' | 'en-progreso' | 'finalizadas' | 'favoritas'): void {
     this.filtroMaterias.set(filtro);
   }
 
+  /**
+   * Cambia el estado de una materia
+   */
   cambiarEstadoMateria(materiaId: number, nuevoEstado: 'en-progreso' | 'finalizada'): void {
     this.materiasProfesor.update((materias) =>
       materias.map((m) => ({
@@ -235,7 +256,11 @@ export class Welcome implements OnInit {
     );
   }
 
-  // Métodos helper para el template
+  // === MÉTODOS HELPER PARA TEMPLATE ===
+
+  /**
+   * Retorna las clases CSS para el badge de estado
+   */
   getEstadoBadgeClass(estado: string): string {
     const baseClass = 'inline-block px-3 py-1 rounded-full text-xs font-medium';
     
@@ -251,11 +276,24 @@ export class Welcome implements OnInit {
     }
   }
 
+  /**
+   * Retorna el texto legible del estado
+   */
   getEstadoText(estado: string): string {
     if (!estado) return 'Sin estado';
-    return estado.charAt(0).toUpperCase() + estado.slice(1);
+    
+    const estadoMap: Record<string, string> = {
+      'en-progreso': 'En progreso',
+      'finalizada': 'Finalizada',
+      'archived': 'Archivada',
+    };
+
+    return estadoMap[estado] || estado.charAt(0).toUpperCase() + estado.slice(1);
   }
 
+  /**
+   * Retorna el ícono de favorita (estrella llena o vacía)
+   */
   getFavoritaIcon(esFavorita: boolean): string {
     return esFavorita ? '★' : '☆';
   }
