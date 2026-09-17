@@ -26,9 +26,12 @@ export interface RecursoClase {
 }
 
 export interface MateriaPortada {
+  id?: number;
   nombre: string;
   docente: string;
   presentacion: string;
+  anio: number;
+  curso: string;
   unidades: UnidadMateria[];
   recursosClase?: RecursoClase[];
 }
