@@ -277,7 +277,8 @@
         } @else if (materiasProfesor().length > 0) {
           <div class="grid grid-cols-1 gap-4">
             @for (materia of materiasFiltradasComputed(); track materia.id) {
-              <div class="bg-white p-6 rounded-xl border border-slate-200 hover:border-slate-300 transition">
+              <a [routerLink]="['/view-materia', materia.id, 'portada']" 
+                 class="bg-white p-6 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition block cursor-pointer">
                 <!-- Header de materia -->
                 <div class="flex items-start justify-between mb-4">
                   <div>
@@ -286,13 +287,13 @@
                   </div>
                   <div class="flex gap-2">
                     <button 
-                      (click)="toggleFavoritaProfesor(materia.id)"
+                      (click)="$event.stopPropagation(); toggleFavoritaProfesor(materia.id)"
                       class="text-xl hover:scale-110 transition"
                       [title]="materia.esFavorita ? 'Quitar de favoritos' : 'Agregar a favoritos'"
                     >
                       {{ getFavoritaIcon(materia.esFavorita) }}
                     </button>
-                    <button class="text-slate-400 hover:text-slate-700 transition">⋯</button>
+                    <button (click)="$event.stopPropagation()" class="text-slate-400 hover:text-slate-700 transition">⋯</button>
                   </div>
                 </div>
 
@@ -305,7 +306,7 @@
 
                 <!-- Info -->
                 <p class="text-sm text-slate-600">{{ materia.proximaEntrega }}</p>
-              </div>
+              </a>
             }
           </div>
         }
