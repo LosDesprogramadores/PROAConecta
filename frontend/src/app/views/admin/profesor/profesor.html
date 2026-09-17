@@ -86,7 +86,7 @@
 
                     <button 
                       type="button"
-                      (click)="eliminar(item.id)" 
+                      (click)="abrirModalEliminar(item.id)" 
                       class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                       title="Eliminar registro">
                       Eliminar
@@ -320,3 +320,39 @@
   }
 
 </div>
+
+
+@if (isDeleteModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
+    <div class="max-w-md w-full bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 text-center relative overflow-hidden transform transition-all">
+      
+      <!-- Icono de Advertencia -->
+      <div class="w-16 h-16 mx-auto mb-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center text-rose-600 shadow-xs">
+        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+
+      <!-- Títulos y Mensaje -->
+      <h3 class="text-lg font-bold text-slate-900 mb-2">¿Deseas eliminar este profesor?</h3>
+      <p class="text-sm text-slate-500 mb-6 leading-relaxed">Se eliminarán los registros vinculados y el profesor dejará de estar disponible en el sistema.</p>
+
+      <!-- Botones de Acción -->
+      <div class="flex items-center gap-3">
+        <button 
+          type="button" 
+          (click)="cancelarEliminacion()"
+          class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          (click)="eliminar()"
+          class="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-colors">
+          Sí, eliminar
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

@@ -33,5 +33,8 @@ asignarMateriasAProfesor(profesorId: number, materiaIds: number[]): Observable<a
     return this.personaService.actualizarPersona(profesorId, profesorData);
   } 
 
+eliminarProfesor(profesorId: number): Observable<any> {
+    return this.personaService.eliminarPersona(profesorId); 
+  }
 
 }

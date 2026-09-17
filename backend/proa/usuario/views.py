@@ -45,7 +45,7 @@ class PersonaRolView(APIView):
         
         if not rol_id:
             return Response(
-                {"error": "Debe especificar el rol (ej: ?rol=3)"},
+                {"error": "Debe especificar el rol."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
