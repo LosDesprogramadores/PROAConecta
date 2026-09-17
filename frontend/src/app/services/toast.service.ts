@@ -48,4 +48,32 @@ export class ToastService {
   remove(id: number): void {
     this._toasts.update(actuales => actuales.filter(t => t.id !== id));
   }
+
+  readable_message_extraction(err: any): string {
+    let mensaje = "";
+
+    if (err?.error) {
+      if (typeof err.error === 'string') {
+        mensaje = err.error;
+      } else if (err.error.detail) {
+        mensaje = err.error.detail;
+      } else if (typeof err.error === 'object') {
+        const primerCampo = Object.keys(err.error)[0];
+        const errorDetalle = err.error[primerCampo];
+
+        if (Array.isArray(errorDetalle)) {
+          mensaje = `${primerCampo}: ${errorDetalle[0]}`;
+        } else if (typeof errorDetalle === 'string') {
+          mensaje = errorDetalle;
+        }
+      }
+    } else if (err?.message) {
+      mensaje = err.message;
+    }
+
+    return mensaje;
+
+  }
+
+
 }

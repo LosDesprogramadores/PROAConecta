@@ -108,7 +108,7 @@ columnasMaterias = [
           },
           error: (err) => {
             console.error('Error al actualizar el profesor:', err);
-            this.toastService.error('Error al actualizar el profesor. ');
+            this.toastService.error('Error al actualizar el profesor. ', this.toastService.readable_message_extraction(err));
           }
         });
       
@@ -122,11 +122,13 @@ columnasMaterias = [
        this.profesorService.crearProfesores(nuevoProfesor).subscribe({
          next: (res: Persona) => {
            console.log('Profesor creado con éxito:', res);
+           this.toastService.success("Profesor se creo correctamente.")
            this.profesores.update(lista => [...lista, res]);
            this.closeModal();
          },
          error: (err) => {
            console.error('Error al registrar el profesor:', err);
+           this.toastService.error("Error al registar al profesor", this.toastService.readable_message_extraction(err))
          }
        });
      }
@@ -155,7 +157,7 @@ columnasMaterias = [
       },
       error: (err) => {
         console.error('Error al cargar materias:', err);
-        this.toastService.error("Error al cargar  las materias" )
+        this.toastService.error("Error al cargar  las materias",this.toastService.readable_message_extraction(err) )
       
         this.isLoadingMaterias.set(false);
       }
@@ -186,6 +188,7 @@ consultar(profesor: Persona): void {
     },
     error: (err) => {
       console.error('Error HTTP al consultar materias:', err);
+      this.toastService.error("No se pudieron cargar las materias del profesor.", this.toastService.readable_message_extraction(err))
       this.isLoadingConsulta.set(false);
     }
   });
@@ -209,7 +212,7 @@ this.materiaService.asignarProfesorAMaterias(profesor.id, ids).subscribe({
     },
     error: (err) => {
       console.error('Error al asignar materias al profesor:', err);
-        this.toastService.error("Error al asignar las materias al profesor" )
+        this.toastService.error("Error al asignar las materias al profesor. ", this.toastService.readable_message_extraction(err) )
     }
   });
 }
