@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Unidad, Material
+from .models import Unidad, Material, Actividad
 from .helpers import verificar_profesor_materia
 
 
@@ -65,3 +65,39 @@ class MaterialSerializer(serializers.ModelSerializer):
                 })
 
         return attrs
+
+
+class ActividadSerializer(serializers.ModelSerializer):
+    materia_titulo = serializers.CharField(source='materia.titulo', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    cantidad_entregas = serializers.IntegerField(source='entregas.count', read_only=True)
+
+    class Meta:
+        model = Actividad
+        fields = [
+            'id',
+            'materia',
+            'materia_titulo',
+            'titulo',
+            'descripcion',
+            'enlace',
+            'archivo_adjunto',
+            'fecha_limite',
+            'permitir_entrega_tardia',
+            'estado',
+            'estado_display',
+            'cantidad_entregas',
+            'fecha_creacion',
+        ]
+        read_only_fields = ['id', 'fecha_creacion']
+
+    def validate(self, attrs):
+        estado = attrs.get('estado', getattr(self.instance, 'estado', None))
+        fecha_limite = attrs.get('fecha_limite', getattr(self.instance, 'fecha_limite', None))
+
+        if estado == Actividad.EstadoActividad.PUBLICADA and fecha_limite is None:
+            raise serializers.ValidationError({
+                'fecha_limite': 'Una actividad publicada debe tener fecha límite.'
+            })
+        return attrs
+
