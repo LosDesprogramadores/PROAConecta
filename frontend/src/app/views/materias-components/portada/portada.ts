@@ -3,12 +3,17 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
-import {UnidadMateria, ContenidoUnidad, MateriaPortada, RecursoClase,} from '../../../model/unidad-contenido.model';
+import {
+  UnidadMateria,
+  ContenidoUnidad,
+  MateriaPortada,
+  RecursoClase,
+} from '../../../model/unidad-contenido.model';
 
 import { IMateria } from '../../../model/materia.model';
 import { IPersonaResumen } from '../../../model/Persona.model';
 
-import { UnidadesMaterial } from './unidades-material/unidades-material'; 
+import { UnidadesMaterial } from './unidades-material/unidades-material';
 
 import { MateriaService } from '../../../services/materia.service';
 
@@ -18,12 +23,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 @Component({
   selector: 'app-portada',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    FormsModule,
-    UnidadesMaterial
-  ],
+  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial],
   templateUrl: './portada.html',
   styleUrl: './portada.css',
 })
@@ -55,20 +55,24 @@ export class Portada implements OnInit {
   nuevoUrlRecurso = '';
 
   get datosActuales(): MateriaPortada {
-    return this.materia || {
-      nombre: 'Cargando...',
-      docente: 'Cargando profesor...',
-      presentacion: 'Cargando información de la materia...',
-      unidades: [],
-      recursosClase: []
-    };
+    return (
+      this.materia || {
+        nombre: 'Cargando...',
+        docente: 'Cargando profesor...',
+        presentacion: 'Cargando información de la materia...',
+        anio: 0,
+        curso: '',
+        unidades: [],
+        recursosClase: [],
+      }
+    );
   }
 
   constructor(
     private readonly materiaService: MateriaService,
     private readonly route: ActivatedRoute,
-    private readonly authService: AuthService
-  ) { }
+    private readonly authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.detectarRol();
@@ -86,7 +90,7 @@ export class Portada implements OnInit {
 
   private cargarMateriaDesdeRuta(): void {
     // 💡 IMPORTANTE: Capturamos el ID desde la ruta padre ya que la ruta es /view-materia/:id/...
-    this.route.parent?.paramMap.subscribe(params => {
+    this.route.parent?.paramMap.subscribe((params) => {
       const idParam = params.get('id');
 
       if (!idParam) {
@@ -114,45 +118,53 @@ export class Portada implements OnInit {
           console.error('Error cargando la materia:', err);
           this.error.set('No se pudo cargar la materia.');
           this.cargando.set(false);
-        }
+        },
       });
     });
   }
 
-  private convertirMateriaPortada(materia: any): MateriaPortada {
+  private convertirMateriaPortada(materia: IMateria): MateriaPortada {
     const nombreMateria = materia.titulo || 'Materia';
 
-    // Extraemos el nombre del profesor correctamente de la respuesta del backend
     const nombreProfesor = this.obtenerNombreProfesor(materia.profesor_detalle);
 
     return {
       nombre: nombreMateria,
-      presentacion: materia.descripcion || `Esta materia introduce los conceptos fundamentales de ${nombreMateria}.`,
+
+      presentacion:
+        materia.descripcion ||
+        `Esta materia introduce los conceptos fundamentales de ${nombreMateria}.`,
+
       docente: nombreProfesor,
+
+      anio: materia.anio,
+      curso: materia.curso,
+
       unidades: [
         {
           id: 'unidad-1',
           numero: 1,
           nombre: `Introducción a ${nombreMateria}`,
           descripcion: 'Conceptos fundamentales y generalidades',
-          contenidos: []
+          contenidos: [],
         },
         {
           id: 'unidad-2',
           numero: 2,
           nombre: 'Desarrollo Temático',
           descripcion: 'Unidad principal de estudio',
-          contenidos: []
+          contenidos: [],
         },
         {
           id: 'unidad-3',
           numero: 3,
           nombre: 'Aplicaciones Prácticas',
           descripcion: 'Ejercicios y casos de estudio',
-          contenidos: []
-        }
+          contenidos: [],
+        },
       ],
-      recursosClase: []
+
+      recursosClase: [],
     };
   }
 
@@ -167,10 +179,7 @@ export class Portada implements OnInit {
     }
 
     return (
-      profesor.nombre_completo ||
-      profesor.nombre ||
-      profesor.apellido_nombre ||
-      'Profesor Titular'
+      profesor.nombre_completo || profesor.nombre || profesor.apellido_nombre || 'Profesor Titular'
     );
   }
 
@@ -180,8 +189,29 @@ export class Portada implements OnInit {
   }
 
   guardarDescripcion(): void {
-    this.datosActuales.presentacion = this.tempDescripcion;
-    this.editandoDescripcion.set(false);
+    if (!this.materiaId) {
+      return;
+    }
+
+    const materiaActualizada: IMateria = {
+      titulo: this.datosActuales.nombre,
+      descripcion: this.tempDescripcion.trim(),
+      anio: this.datosActuales.anio,
+      curso: this.datosActuales.curso,
+    };
+
+    this.materiaService.actualizarMateria(this.materiaId, materiaActualizada).subscribe({
+      next: (materiaResponse) => {
+        this.materia = this.convertirMateriaPortada(materiaResponse);
+        this.editandoDescripcion.set(false);
+      },
+
+      error: (err) => {
+        console.error('Error actualizando la descripción de la materia:', err);
+
+        this.error.set('No se pudo guardar la descripción de la materia.');
+      },
+    });
   }
 
   cancelarEdicionDescripcion(): void {
@@ -222,7 +252,7 @@ export class Portada implements OnInit {
       numero: unidades.length + 1,
       nombre: this.nuevoNombreUnidad.trim(),
       descripcion: this.nuevoDescripcionUnidad.trim() || undefined,
-      contenidos: []
+      contenidos: [],
     };
 
     unidades.push(nuevaUnidad);
@@ -255,7 +285,7 @@ export class Portada implements OnInit {
       titulo: this.nuevoTituloRecurso,
       tipo: this.nuevoTipoRecurso,
       url: this.nuevoUrlRecurso,
-      fechaCreacion: new Date()
+      fechaCreacion: new Date(),
     });
 
     this.mostrarFormularioRecurso.set(false);
@@ -264,29 +294,34 @@ export class Portada implements OnInit {
   eliminarRecurso(id: string): void {
     if (confirm('¿Eliminar este recurso?')) {
       if (!this.datosActuales.recursosClase) return;
-      this.datosActuales.recursosClase = this.datosActuales.recursosClase.filter(r => r.id !== id);
+      this.datosActuales.recursosClase = this.datosActuales.recursosClase.filter(
+        (r) => r.id !== id,
+      );
     }
   }
 
   onContenidoGuardado(unidadId: string, contenido: ContenidoUnidad): void {
-    const unidad = this.datosActuales.unidades.find(u => u.id === unidadId);
+    const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
     if (!unidad) return;
 
-    const index = unidad.contenidos.findIndex(c => c.id === contenido.id);
+    const index = unidad.contenidos.findIndex((c) => c.id === contenido.id);
     if (index >= 0) {
-      unidad.contenidos[index] = { ...contenido, fechaCreacion: unidad.contenidos[index].fechaCreacion };
+      unidad.contenidos[index] = {
+        ...contenido,
+        fechaCreacion: unidad.contenidos[index].fechaCreacion,
+      };
     } else {
       unidad.contenidos.push(contenido);
     }
   }
 
   onContenidoEliminado(unidadId: string, contenidoId: string): void {
-    const unidad = this.datosActuales.unidades.find(u => u.id === unidadId);
+    const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
     if (!unidad) return;
-    unidad.contenidos = unidad.contenidos.filter(c => c.id !== contenidoId);
+    unidad.contenidos = unidad.contenidos.filter((c) => c.id !== contenidoId);
   }
 
-  abrirModalActividad(): void { }
+  abrirModalActividad(): void {}
   abrirModalRecurso(): void {
     this.abrirFormularioRecurso();
   }
