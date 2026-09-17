@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from .models import Unidad, Material
-from .serializer import UnidadSerializer, MaterialSerializer
+from .models import Unidad, Material, Actividad
+from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer
 from .helpers import (
     es_admin,
     es_profesor,
@@ -190,3 +190,84 @@ class MaterialViewSet(viewsets.ModelViewSet):
             {'mensaje': f'Material "{material.titulo}" restaurado.'},
             status=status.HTTP_200_OK
         )
+
+class ActividadViewSet(viewsets.ModelViewSet):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = ActividadSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['titulo', 'descripcion']
+    ordering_fields = ['fecha_creacion', 'fecha_limite', 'titulo']
+    ordering = ['-fecha_creacion']
+
+    def get_queryset(self):
+        user = self.request.user
+        persona, _ = obtener_persona_y_rol(user)
+
+        materia_id = self.request.query_params.get('materia')
+        estado = self.request.query_params.get('estado')
+
+        qs = Actividad.objects.select_related('materia')
+
+        if materia_id:
+            qs = qs.filter(materia_id=materia_id)
+
+        if es_admin(user):
+            if estado:
+                qs = qs.filter(estado=estado)
+            return qs
+
+        if es_profesor(user):
+            qs = qs.filter(materia__profesor=persona)
+            if estado:
+                qs = qs.filter(estado=estado)
+            return qs
+
+        if es_estudiante(user):
+            # El estudiante nunca ve borradores, sin importar qué mande por query param
+            return qs.filter(
+                materia__estudiantes=persona,
+                estado=Actividad.EstadoActividad.PUBLICADA,
+            )
+
+        return Actividad.objects.none()
+
+    def perform_create(self, serializer):
+        verificar_profesor_materia(self.request.user, serializer.validated_data['materia'])
+        serializer.save()
+
+    def perform_update(self, serializer):
+        verificar_profesor_materia(self.request.user, self.get_object().materia)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        verificar_profesor_materia(self.request.user, instance.materia)
+        instance.delete()
+
+    @action(detail=True, methods=['patch'], url_path='cambiar-estado')
+    def cambiar_estado(self, request, pk=None):
+        actividad = self.get_object()
+        verificar_profesor_materia(request.user, actividad.materia)
+
+        nuevo_estado = (
+            Actividad.EstadoActividad.BORRADOR
+            if actividad.estado == Actividad.EstadoActividad.PUBLICADA
+            else Actividad.EstadoActividad.PUBLICADA
+        )
+        actividad.estado = nuevo_estado
+        actividad.save(update_fields=['estado'])
+
+        return Response({
+            'id': actividad.id,
+            'estado': actividad.estado,
+            'mensaje': f'Actividad {"publicada" if nuevo_estado == Actividad.EstadoActividad.PUBLICADA else "pasada a borrador"}.'
+        })
+
+    @action(detail=True, methods=['get'], url_path='entregas')
+    def entregas(self, request, pk=None):
+        actividad = self.get_object()
+        verificar_profesor_materia(request.user, actividad.materia)
+
+        entregas = actividad.entregas.select_related('estudiante', 'nota')
+        serializer = EntregaSerializer(entregas, many=True)
+        return Response(serializer.data)

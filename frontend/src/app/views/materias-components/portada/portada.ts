@@ -163,7 +163,7 @@ export class Portada implements OnInit {
 
     // Adaptamos según las propiedades que pueda traer el backend (nombre, apellido, nombre_completo, etc.)
     if (profesor.nombre && profesor.apellido) {
-      return `Prof. ${profesor.nombre} ${profesor.apellido}`;
+      return `${profesor.nombre} ${profesor.apellido}`;
     }
 
     return (
