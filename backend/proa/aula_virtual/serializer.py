@@ -29,18 +29,19 @@ class MaterialSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'fecha_publicacion', 'fecha_baja']
 
     def to_internal_value(self, data):
-        try:
-            data = data.copy()
-        except AttributeError:
-            pass
+        if hasattr(data, 'dict'):
+            data_dict = {key: data[key] for key in data}
+        else:
+            data_dict = data.copy()
 
-        enlace = data.get('enlace')
+    # Formateo de la URL del enlace
+        enlace = data_dict.get('enlace')
         if enlace and isinstance(enlace, str):
             enlace = enlace.strip()
-            if enlace and not enlace.startswith(('http://', 'https://')):
-                data['enlace'] = f'https://{enlace}'
+        if enlace and not enlace.startswith(('http://', 'https://')):
+            data_dict['enlace'] = f'https://{enlace}'
 
-        return super().to_internal_value(data)
+        return super().to_internal_value(data_dict)
 
     def validate(self, attrs):
         materia = attrs.get('materia', getattr(self.instance, 'materia', None))
