@@ -74,7 +74,7 @@ export class Profesor implements OnInit {
       },
       error: (err) => {
         console.error('Error al cargar profesores:', err)
-        this.toastService.error('Error al cargar profesores.');
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
         this.isLoading.set(false);
       }
     })
@@ -115,7 +115,7 @@ export class Profesor implements OnInit {
         },
         error: (err) => {
           console.error('Error al actualizar el profesor:', err);
-          this.toastService.error('Error al actualizar el profesor. ', this.toastService.readable_message_extraction(err));
+          this.toastService.error(this.toastService.readable_message_extraction(err),"");
         }
       });
 
@@ -135,7 +135,7 @@ export class Profesor implements OnInit {
         },
         error: (err) => {
           console.error('Error al registrar el profesor:', err);
-          this.toastService.error("Error al registar al profesor", this.toastService.readable_message_extraction(err))
+          this.toastService.error(this.toastService.readable_message_extraction(err),"");
         }
       });
     }
@@ -159,7 +159,7 @@ export class Profesor implements OnInit {
       },
       error: (err) => {
         console.error('Error al eliminar el profesor:', err);
-        this.toastService.error("Error al eliminar el profesor.", this.toastService.readable_message_extraction(err));
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
       }
     });
   }
@@ -181,7 +181,7 @@ export class Profesor implements OnInit {
       },
       error: (err) => {
         console.error('Error al cargar materias:', err);
-        this.toastService.error("Error al cargar  las materias", this.toastService.readable_message_extraction(err))
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
 
         this.isLoadingMaterias.set(false);
       }
@@ -212,7 +212,7 @@ export class Profesor implements OnInit {
       },
       error: (err) => {
         console.error('Error HTTP al consultar materias:', err);
-        this.toastService.error("No se pudieron cargar las materias del profesor.", this.toastService.readable_message_extraction(err))
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
         this.isLoadingConsulta.set(false);
       }
     });
@@ -236,7 +236,7 @@ export class Profesor implements OnInit {
       },
       error: (err) => {
         console.error('Error al asignar materias al profesor:', err);
-        this.toastService.error("Error al asignar las materias al profesor. ", this.toastService.readable_message_extraction(err))
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
       }
     });
   }

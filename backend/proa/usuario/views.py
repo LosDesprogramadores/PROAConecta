@@ -7,6 +7,7 @@ from .serializers import RolSerializer, PersonaSerializer, DNITokenObtainPairSer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from academico.models import Materia
 
 
 class UsuarioCreateView(generics.CreateAPIView):
@@ -24,9 +25,37 @@ class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.filter(fecha_baja__isnull=True)
     serializer_class = PersonaSerializer
 
-    def perform_destroy(self, instance):
+    def destroy(self, request, *args, **kwargs):
+        persona = self.get_object()
+        rol_nombre = persona.rol.nombre 
+        print(rol_nombre)
+        print(f"--- INTENTANDO BORRAR PERSONA ID: {persona.id} ---")
+        print(f"Rol detectado: {persona.rol.nombre if persona.rol else 'Sin Rol'}")
+        if rol_nombre == "Profesor":
+            tiene_materias = Materia.objects.filter(profesor=persona).exists()
+            print(f"¿Dio true o false tiene_materias?: {tiene_materias}")
+            if tiene_materias:
+                return Response(
+                    {'detail': 'No se puede eliminar un profesor con materias asignadas.'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        elif rol_nombre == "Alumno":
+            tiene_materias = Materia.objects.filter(alumno=persona).exists()
+            if tiene_materias:
+                return Response(
+                    {'detail': 'No se puede eliminar un alumno con materias asignadas.'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        persona.fecha_baja = timezone.now()
+        persona.save()
+
+        if rol_nombre == 'Profesor' or rol_nombre == 'Professor':
+            return Response({'detail': 'Profesor eliminado correctamente.'}, status=status.HTTP_200_OK)
+        elif rol_nombre == 'Alumno':
+            return Response({'detail': 'Alumno eliminado correctamente.'}, status=status.HTTP_200_OK)
         
-        instance.soft_delete()
+        return Response({'detail': 'Registro eliminado correctamente.'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def restaurar(self, request, pk=None):

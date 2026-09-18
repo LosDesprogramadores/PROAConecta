@@ -33,8 +33,8 @@ export class ToastService {
     this.show(mensaje, 'exito', titulo);
   }
 
-  error(mensaje: string, titulo: string = ''): void {
-    this.show(mensaje, 'error', titulo, 4000);
+  error(mensaje: string, titulo: string = '' ): void {
+    this.show(mensaje, 'error', "", 4000);
   }
 
   info(mensaje: string, titulo: string = ''): void {
