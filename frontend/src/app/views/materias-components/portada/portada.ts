@@ -2,28 +2,24 @@ import { Component, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-
 import {
   UnidadMateria,
   ContenidoUnidad,
   MateriaPortada,
   RecursoClase,
 } from '../../../model/unidad-contenido.model';
-
 import { IMateria } from '../../../model/materia.model';
 import { IPersonaResumen } from '../../../model/Persona.model';
-
 import { UnidadesMaterial } from './unidades-material/unidades-material';
-
+import { RecursosClaseComponent } from './recursos-clase/recursos-clase';
 import { MateriaService } from '../../../services/materia.service';
-
 import { UserRole } from '../../../core/auth/auth.model';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-portada',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial],
+  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
   templateUrl: './portada.html',
   styleUrl: './portada.css',
 })
@@ -33,12 +29,11 @@ export class Portada implements OnInit {
   cargando = signal<boolean>(false);
   error = signal<string | null>(null);
 
-  private materiaId: number | null = null;
+  materiaId: number | null = null;
 
   private readonly ROL_PROFESOR = UserRole.DOCENTE;
 
   esDocente = signal<boolean>(false);
-
   editandoDescripcion = signal<boolean>(false);
 
   tempDescripcion = '';
@@ -46,10 +41,12 @@ export class Portada implements OnInit {
   unidadExpandida = signal<string | null>(null);
 
   mostrarFormularioUnidad = signal<boolean>(false);
+
   nuevoNombreUnidad = '';
   nuevoDescripcionUnidad = '';
 
   mostrarFormularioRecurso = signal<boolean>(false);
+
   nuevoTituloRecurso = '';
   nuevoTipoRecurso: 'documento' | 'video' | 'enlace' = 'documento';
   nuevoUrlRecurso = '';
@@ -81,6 +78,7 @@ export class Portada implements OnInit {
 
   private detectarRol(): void {
     const rolId = this.authService.rol();
+
     if (rolId === this.ROL_PROFESOR) {
       this.esDocente.set(true);
     } else {
@@ -89,7 +87,7 @@ export class Portada implements OnInit {
   }
 
   private cargarMateriaDesdeRuta(): void {
-    // 💡 IMPORTANTE: Capturamos el ID desde la ruta padre ya que la ruta es /view-materia/:id/...
+    // *💡 IMPORTANTE: Capturamos el ID desde la ruta padre ya que la ruta es /view-materia/:id/...*
     this.route.parent?.paramMap.subscribe((params) => {
       const idParam = params.get('id');
 
@@ -125,21 +123,16 @@ export class Portada implements OnInit {
 
   private convertirMateriaPortada(materia: IMateria): MateriaPortada {
     const nombreMateria = materia.titulo || 'Materia';
-
     const nombreProfesor = this.obtenerNombreProfesor(materia.profesor_detalle);
 
     return {
       nombre: nombreMateria,
-
       presentacion:
         materia.descripcion ||
         `Esta materia introduce los conceptos fundamentales de ${nombreMateria}.`,
-
       docente: nombreProfesor,
-
       anio: materia.anio,
       curso: materia.curso,
-
       unidades: [
         {
           id: 'unidad-1',
@@ -163,7 +156,6 @@ export class Portada implements OnInit {
           contenidos: [],
         },
       ],
-
       recursosClase: [],
     };
   }
@@ -173,7 +165,7 @@ export class Portada implements OnInit {
       return 'Profesor Titular';
     }
 
-    // Adaptamos según las propiedades que pueda traer el backend (nombre, apellido, nombre_completo, etc.)
+    // *Adaptamos según las propiedades que pueda traer el backend (nombre, apellido, nombre_completo, etc.)*
     if (profesor.nombre && profesor.apellido) {
       return `${profesor.nombre} ${profesor.apellido}`;
     }
@@ -205,10 +197,8 @@ export class Portada implements OnInit {
         this.materia = this.convertirMateriaPortada(materiaResponse);
         this.editandoDescripcion.set(false);
       },
-
       error: (err) => {
         console.error('Error actualizando la descripción de la materia:', err);
-
         this.error.set('No se pudo guardar la descripción de la materia.');
       },
     });
@@ -247,6 +237,7 @@ export class Portada implements OnInit {
     }
 
     const unidades = this.datosActuales.unidades;
+
     const nuevaUnidad: UnidadMateria = {
       id: `unidad-${Date.now()}`,
       numero: unidades.length + 1,
@@ -294,6 +285,7 @@ export class Portada implements OnInit {
   eliminarRecurso(id: string): void {
     if (confirm('¿Eliminar este recurso?')) {
       if (!this.datosActuales.recursosClase) return;
+
       this.datosActuales.recursosClase = this.datosActuales.recursosClase.filter(
         (r) => r.id !== id,
       );
@@ -302,9 +294,11 @@ export class Portada implements OnInit {
 
   onContenidoGuardado(unidadId: string, contenido: ContenidoUnidad): void {
     const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
+
     if (!unidad) return;
 
     const index = unidad.contenidos.findIndex((c) => c.id === contenido.id);
+
     if (index >= 0) {
       unidad.contenidos[index] = {
         ...contenido,
@@ -317,11 +311,14 @@ export class Portada implements OnInit {
 
   onContenidoEliminado(unidadId: string, contenidoId: string): void {
     const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
+
     if (!unidad) return;
+
     unidad.contenidos = unidad.contenidos.filter((c) => c.id !== contenidoId);
   }
 
   abrirModalActividad(): void {}
+
   abrirModalRecurso(): void {
     this.abrirFormularioRecurso();
   }
