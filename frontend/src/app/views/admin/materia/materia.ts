@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IMateria} from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
+import { ToastService } from '../../../services/toast.service';
 
 
 @Component({
@@ -14,6 +15,7 @@ import { MateriaService } from '../../../services/materia.service';
 export class Materia implements OnInit {
   private materiaService = inject(MateriaService);
   private fb = inject(FormBuilder);
+  private toastService = inject(ToastService)
 
   materias = signal<IMateria[]>([]);
   isModalOpen = signal<boolean>(false);
@@ -117,4 +119,17 @@ export class Materia implements OnInit {
       error: (err) => console.error('Error al eliminar materia:', err)
     });
   }
+
+consultar(materia:any){
+this.toastService.info("La funcionalidad de consultar està en desarrollo.")
+}
+asignar(materia:any){
+this.toastService.info("La funcionalidad de asignar està en desarrollo.")
+
+} 
+ inscribir(materia:any){
+this.toastService.info("La funcionalidad de inscribir està en desarrollo.")
+
+ }
+
 }
