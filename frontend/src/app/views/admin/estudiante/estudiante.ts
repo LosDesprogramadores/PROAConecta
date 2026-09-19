@@ -10,6 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 import { Toast } from '../../../shared/toast/toast';
 
 
+
 @Component({
   selector: 'app-estudiante',
   imports: [ReactiveFormsModule,RouterModule, CommonModule,Toast],
@@ -21,7 +22,7 @@ private fb = inject(FormBuilder);
 private estudianteService = inject(EstudianteService)
 private materiaService = inject(MateriaService)
 private toastService = inject(ToastService)
-students = signal<Persona[]>([])
+  estudiantes = signal<Persona[]>([])
 
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
@@ -53,7 +54,7 @@ students = signal<Persona[]>([])
     this.isLoading.set(true);
     this.estudianteService.obtenerEstudiates().subscribe({
       next : (data) => {
-        this.students.set(data);
+        this.estudiantes.set(data);
         this.isLoading.set(false);
             console.log(data)
           },
@@ -71,10 +72,10 @@ students = signal<Persona[]>([])
     this.isModalOpen.set(true);
   }
 
-  openEditModal(students: Persona): void {
+  openEditModal(estudiante: Persona): void {
     this.isEditing.set(true);
-    this.selectedId.set(students.id);
-    this.form.patchValue(students);
+    this.selectedId.set(estudiante.id);
+    this.form.patchValue(estudiante);
     this.isModalOpen.set(true);
   }
 
@@ -90,11 +91,18 @@ students = signal<Persona[]>([])
     const formValues = this.form.getRawValue();
 
     if (this.isEditing() && this.selectedId()) {
-     const estudianteActualizado: Persona = {
-      ...formValues,
-      id: this.selectedId()!
-    };
-   
+        this.estudianteService.actualizarEstudiante(this.selectedId()!, formValues).subscribe({
+        next: (res: Persona) => {
+          console.log('Estudiante actualizado con éxito:', res);
+          this.toastService.success('Estudiante actualizado con éxito.');
+          this.estudiantes.update(lista => lista.map(e => e.id === res.id ? res : e));
+          this.closeModal();
+        },
+        error: (err) => {
+          console.error('Error al actualizar el estudiante:', err);
+          this.toastService.error(this.toastService.readable_message_extraction(err),"");
+        }
+      });
   } else {
   
     const nuevoEstudiante: IPersona = {
@@ -106,12 +114,12 @@ students = signal<Persona[]>([])
       next: (res: Persona) => {
         console.log('Estudiante creado con éxito:', res);
         this.toastService.success(`Estudiante ${res.nombre} ${res.apellido} se creó con éxito.`);
-        this.students.update(lista => [...lista, res]);
+        this.estudiantes.update(lista => [...lista, res]);
         this.closeModal();
       },
       error: (err) => {
         console.error('Error al registrar el estudiante:', err);
-        this.toastService.error('Error al intentar registrar el estudiante.');
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
       }
     });
   }
@@ -124,11 +132,11 @@ students = signal<Persona[]>([])
         next: () => {
           console.log('Estudiante eliminado con éxito');  
           this.toastService.success('Estudiante eliminado con éxito.');
-          this.students.update(lista => lista.filter(estudiante => estudiante.id !== id));
+          this.estudiantes.update(lista => lista.filter(estudiante => estudiante.id !== id));
         },
         error: (err) => {
           console.error('Error al eliminar el estudiante:', err);
-          this.toastService.error('Error al eliminar el estudiante.');
+          this.toastService.error(this.toastService.readable_message_extraction(err),"");
         }
       });
   }
@@ -149,7 +157,7 @@ students = signal<Persona[]>([])
     },
       error: (err) => {
         console.error('Error al cargar materias disponibles:', err);
-        this.toastService.error('Error al cargar materias disponibles para inscripción.');
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
         this.materiasDisponibles.set([]);
       this.isLoadingMaterias.set(false);
       }
@@ -194,7 +202,7 @@ students = signal<Persona[]>([])
       },
       error: (err) => {
         console.error('Error al inscribir al estudiante:', err);
-        this.toastService.error('Error al inscribir al estudiante.');
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
       }
     });
   }
@@ -206,7 +214,7 @@ students = signal<Persona[]>([])
   }
 
 
-   consultar(students: Persona): void {
+   consultar(estudiante: Persona): void {
     this.toastService.info(`Consulta de estudiante: en desarrollo`);
    
   }

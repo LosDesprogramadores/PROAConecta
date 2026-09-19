@@ -60,7 +60,7 @@
               </td>
             </tr>
           } @else {
-            @for (item of students(); track item.id) {
+            @for (item of estudiantes(); track item.id) {
               <tr class="hover:bg-slate-50/60 transition-colors">
                 <td class="py-4 px-6 font-mono text-xs font-semibold text-slate-700">{{ item.dni }}</td>
                 <td class="py-4 px-6 font-medium text-slate-900">{{ item.apellido }}, {{ item.nombre }}</td>

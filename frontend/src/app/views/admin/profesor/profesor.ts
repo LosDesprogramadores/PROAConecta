@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal, inject, OnInit, input, output } from '@angular/core';
+import { Component, signal, inject, OnInit} from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { IPersona, Persona, RolId } from '../../../model/Persona.model';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProfesorService } from '../../../services/profesor.service';
-import { IMateria, IMateriaAsignacion } from '../../../model/materia.model';
+import { IMateria} from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
 import { ToastService } from '../../../services/toast.service';

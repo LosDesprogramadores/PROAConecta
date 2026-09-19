@@ -24,8 +24,8 @@ crearEstudiates(nuevoEstudiante:IPersona):Observable<Persona>{
 }
 
 
-actualizarEstudiante(arg0: number, estudianteActualizado: Persona) {
-  throw new Error('Method not implemented.');
+actualizarEstudiante(estudianteId: number, estudianteActualizado: IPersona) {
+  return this.personaService.actualizarPersona(estudianteId, estudianteActualizado);
 }
 
 
