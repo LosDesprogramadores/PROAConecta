@@ -45,9 +45,9 @@ export class Profesor implements OnInit {
   idProfesorAEliminar = signal<number | null>(null);
 
   columnasMaterias = [
-    { titulo: 'Materia', campo: 'titulo' },
-    { titulo: 'Año / Nivel', campo: 'curso' },
-    { titulo: 'Total de Estudiantes', campo: 'total_estudiantes' }
+    { titulo: 'Materia', campo: 'titulo' , alineacion: 'center' },
+    { titulo: 'Año / Nivel', campo: 'curso' , alineacion: 'center' },
+    { titulo: 'Total de Estudiantes', campo: 'total_estudiantes' , alineacion: 'center' }
   ];
 
   form = this.fb.nonNullable.group({
@@ -282,10 +282,31 @@ export class Profesor implements OnInit {
     this.isDeleteModalOpen.set(true);
   }
 
+  abrirModalEliminarAsignacionMateria(id: number): void {
+    this.idProfesorAEliminar.set(id);
+    this.isDeleteModalOpen.set(true);
+  }
+
+
   cancelarEliminacion(): void {
     this.isDeleteModalOpen.set(false);
     this.idProfesorAEliminar.set(null);
   }
+
+manejarDesasignacionMateria(materia: any) {
+  this.materiaService.desasignarProfesor(materia.id).subscribe({
+      next: () => {
+        this.materiasProfesorSeleccionado.update(materias => 
+          materias.filter(m => m.id !== materia.id)
+        );
+        this.toastService.success('La materia fue desasignada correctamente.');
+      },
+      error: (err) => {
+        this.toastService.error(this.toastService.readable_message_extraction(err),"");
+      }
+    });
+  
+}
 
 }
 

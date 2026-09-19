@@ -37,4 +37,6 @@ eliminarProfesor(profesorId: number): Observable<any> {
     return this.personaService.eliminarPersona(profesorId); 
   }
 
+ 
+
 }

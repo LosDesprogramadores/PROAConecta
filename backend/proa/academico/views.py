@@ -85,7 +85,22 @@ class MateriaViewSet(viewsets.ModelViewSet):
             queryset = queryset.exclude(inscripciones__estudiante_id=disponibles_estudiante)
 
         return queryset
-
+    
+    @action(detail=True, methods=['patch'], url_path='desasignar-profesor')
+    def desasignar_profesor(self, request, pk=None):
+        try:
+            materia = self.get_object()
+            materia.profesor = None
+            materia.save()
+            return Response(
+                {'detail': 'Materia desasignada correctamente.'}, 
+                status=status.HTTP_200_OK
+            )
+        except Materia.DoesNotExist:
+            return Response(
+                {'detail': 'Materia no encontrada.'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()

@@ -63,4 +63,8 @@ export class MateriaService {
       materia_ids: materiaIds,
     });
   }
+
+   desasignarProfesor(materiaId: number): Observable<any> {
+   return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`,{});
+  }
 }
