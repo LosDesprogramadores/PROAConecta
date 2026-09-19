@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 
 class Persona(models.Model):
@@ -38,8 +39,17 @@ class Persona(models.Model):
         blank=True
     )
 
+    def soft_delete(self):
+        self.fecha_baja = timezone.now().date()
+        self.save(update_fields=['fecha_baja'])
+
+    def restore(self):
+        self.fecha_baja = None
+        self.save(update_fields=['fecha_baja'])
+
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
+    
 
 
 class Usuario(AbstractUser):

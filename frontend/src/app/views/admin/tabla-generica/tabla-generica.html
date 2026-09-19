@@ -1,0 +1,116 @@
+<div class="w-full bg-white border border-slate-200/80 rounded-lg overflow-hidden relative">
+  
+  @if (titulo) {
+    <div class="px-5 py-3 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">{{ titulo }}</h4>
+      
+      @if (isLoading()) {
+        <span class="text-xs font-medium text-slate-400 animate-pulse">Actualizando...</span>
+      } @else {
+        <span class="text-xs font-semibold px-2 py-0.5 bg-cyan-100 text-cyan-800 rounded-full">
+          {{ datos.length }} registros
+        </span>
+      }
+    </div>
+  }
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm text-slate-600 border-collapse">
+      <thead class="bg-slate-50/50 text-xs font-semibold uppercase text-slate-400 border-b border-slate-200/80">
+        <tr>
+          @for (col of columnas; track col.campo) {
+            <th [class]="'px-5 py-3 tracking-wider ' + (col.claseTh || '') + 
+              (col.alineacion === 'center' ? ' text-center' : col.alineacion === 'right' ? ' text-right' : ' text-left')"> 
+              {{ col.titulo }}
+            </th>
+          }
+          @if (mostrarAcciones) {
+            <th class="px-5 py-3 tracking-wider text-center">Acciones</th>
+          }
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @if (isLoading()) {
+          <tr>
+            <td [attr.colspan]="columnas.length + (mostrarAcciones ? 1 : 0)" class="py-16 text-center">
+              <div class="inline-flex flex-col items-center justify-center gap-3">
+                <svg class="w-8 h-8 animate-spin text-[#155dfc]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-sm font-medium text-slate-500 tracking-wide">Cargando registros...</span>
+              </div>
+            </td>
+          </tr>
+        } @else if (datos.length === 0) {
+          <tr>
+            <td [attr.colspan]="columnas.length + (mostrarAcciones ? 1 : 0)" class="px-5 py-8 text-center text-slate-400 italic text-xs">
+              {{ mensajeVacio }}
+            </td>
+          </tr>
+        } @else {
+          @for (fila of datos; track $index) {
+            <tr class="hover:bg-slate-50/50 transition-colors">
+              @for (col of columnas; track col.campo) {
+                <td [class]="'px-5 py-3.5 align-middle ' + (col.claseTd || '') + 
+                  (col.alineacion === 'center' ? ' text-center' : col.alineacion === 'right' ? ' text-right' : ' text-left')">
+                  {{ obtenerValor(fila, col.campo) }}
+                </td>
+              }
+              
+              @if (mostrarAcciones) {
+                <td class="px-5 py-3.5 align-middle text-center">
+                  <button 
+                    type="button"
+                    (click)="abrirModalEliminar(fila)"
+                    class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    title="Eliminar registro">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+@if (isDeleteModalOpen()) {
+  <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
+    <div class="max-w-md w-full bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 text-center relative overflow-hidden transform transition-all">
+      
+      <!-- Icono de Advertencia -->
+      <div class="w-16 h-16 mx-auto mb-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center text-rose-600 shadow-xs">
+        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+
+      <!-- Títulos configurables -->
+      <h3 class="text-lg font-bold text-slate-900 mb-2">{{ modalTitulo }}</h3>
+      <p class="text-sm text-slate-500 mb-6 leading-relaxed">{{ modalMensaje }}</p>
+
+      <!-- Botones de Acción -->
+      <div class="flex items-center gap-3">
+        <button 
+          type="button" 
+          (click)="cancelarEliminacion()"
+          class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer">
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          (click)="confirmarEliminacion()"
+          class="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-colors cursor-pointer">
+          {{ modalBotonTexto }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

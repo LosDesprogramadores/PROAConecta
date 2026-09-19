@@ -1,0 +1,110 @@
+<!-- Contenedor centrado al nivel del navbar -->
+    <aside 
+      aria-live="polite" 
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-[999999] flex flex-col items-center gap-2.5 w-full max-w-md pointer-events-none px-4"
+    >
+      @for (toast of toastService.toasts(); track toast.id) {
+        <div 
+          role="status"
+          class="pointer-events-auto relative w-full overflow-hidden rounded-2xl bg-white/95 backdrop-blur-xl border shadow-[0_10px_30px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 toast-spring"
+          [ngClass]="{
+            'border-emerald-200/90 shadow-emerald-500/5': toast.tipo === 'exito',
+            'border-rose-200/90 shadow-rose-500/5': toast.tipo === 'error',
+            'border-amber-200/90 shadow-amber-500/5': toast.tipo === 'atención',
+            'border-blue-200/90 shadow-blue-500/5': toast.tipo === 'información'
+          }"
+        >
+          <!-- Aura de color ambiental difuminada -->
+          <div 
+            class="absolute -top-10 -left-10 w-28 h-28 rounded-full blur-2xl opacity-20 pointer-events-none"
+            [ngClass]="{
+              'bg-emerald-500': toast.tipo === 'exito',
+              'bg-rose-500': toast.tipo === 'error',
+              'bg-amber-500': toast.tipo === 'atención',
+              'bg-[#155dfc]': toast.tipo === 'información'
+            }">
+          </div>
+
+          <div class="relative flex items-start gap-3.5 p-4 z-10">
+            <!-- Icono en cápsula de color pastel -->
+            <div 
+              class="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center border shadow-xs"
+              [ngClass]="{
+                'bg-emerald-50 border-emerald-200 text-emerald-600': toast.tipo === 'exito',
+                'bg-rose-50 border-rose-200 text-rose-600': toast.tipo === 'error',
+                'bg-amber-50 border-amber-200 text-amber-600': toast.tipo === 'atención',
+                'bg-blue-50 border-blue-200 text-[#155dfc]': toast.tipo === 'información'
+              }">
+              @switch (toast.tipo) {
+                @case ('exito') {
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                  </svg>
+                }
+                @case ('error') {
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                }
+                @case ('atención') {
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                  </svg>
+                }
+                @default {
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+                  </svg>
+                }
+              }
+            </div>
+
+            <!-- Textos y etiquetas -->
+            <div class="flex-1 min-w-0 pt-0.5">
+              <div class="flex items-center gap-2">
+                <span 
+                  class="text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.2 rounded-md border font-bold"
+                  [ngClass]="{
+                    'bg-emerald-100/70 border-emerald-200 text-emerald-800': toast.tipo === 'exito',
+                    'bg-rose-100/70 border-rose-200 text-rose-800': toast.tipo === 'error',
+                    'bg-amber-100/70 border-amber-200 text-amber-800': toast.tipo === 'atención',
+                    'bg-blue-100/70 border-blue-200 text-blue-800': toast.tipo === 'información'
+                  }">
+                  {{ toast.tipo }}
+                </span>
+                <h4 class="text-xs font-bold text-slate-800 tracking-tight truncate">
+                  {{ toast.titulo }}
+                </h4>
+              </div>
+              <p class="text-xs text-slate-600 mt-1 leading-relaxed break-words font-medium">
+                {{ toast.mensaje }}
+              </p>
+            </div>
+
+            <!-- Botón de cerrado -->
+            <button 
+              type="button" 
+              (click)="toastService.remove(toast.id)"
+              class="shrink-0 p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              title="Cerrar">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Barra de drenaje temporal -->
+          <div class="h-[2px] w-full bg-slate-100 overflow-hidden">
+            <div 
+              class="h-full toast-progress"
+              [ngClass]="{
+                'bg-emerald-500': toast.tipo === 'exito',
+                'bg-rose-500': toast.tipo === 'error',
+                'bg-amber-500': toast.tipo === 'atención',
+                'bg-[#155dfc]': toast.tipo === 'información'
+              }">
+            </div>
+          </div>
+        </div>
+      }
+    </aside>
