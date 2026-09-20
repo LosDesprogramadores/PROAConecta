@@ -2,7 +2,7 @@ from rest_framework import serializers
 from usuario.models import Persona
 from .models import Materia, Inscripcion
 
-# Información básica de la persona para mostrar en la lista sea Docente o Estudiante
+# Información básica de la persona para mostrar en la lista sea profesor o Estudiante
 class PersonaResumenSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
@@ -17,8 +17,8 @@ class PersonaResumenSerializer(serializers.ModelSerializer):
 
 # CRUD de Materia
 class MateriaSerializer(serializers.ModelSerializer):
-    docente_detalle = PersonaResumenSerializer(source='docente', read_only=True)
-    docente = serializers.PrimaryKeyRelatedField(
+    profesor_detalle = PersonaResumenSerializer(source='profesor', read_only=True)
+    profesor = serializers.PrimaryKeyRelatedField(
         queryset=Persona.objects.all(),
         required=False,
         allow_null=True
@@ -29,35 +29,44 @@ class MateriaSerializer(serializers.ModelSerializer):
         model = Materia
         fields = [
             'id', 'titulo', 'descripcion', 'criterios_evaluacion',
-            'anio', 'curso', 'docente', 'docente_detalle',
+            'anio', 'curso', 'profesor', 'profesor_detalle',
             'total_estudiantes', 'activo', 'fecha_creacion', 'fecha_actualizacion'
         ]
 
-    def validate_docente(self, value):
+    def validate_profesor(self, value):
         if value:
             rol = getattr(value.rol, 'nombre', '').strip().lower()
-            if rol != 'docente':
-                raise serializers.ValidationError("La persona seleccionada debe tener rol de 'Docente'.")
+            if rol != 'profesor':
+                raise serializers.ValidationError("La persona seleccionada debe tener rol de 'profesor'.")
             if value.fecha_baja is not None:
-                raise serializers.ValidationError("El docente seleccionado está dado de baja.")
+                raise serializers.ValidationError("El profesor seleccionado está dado de baja.")
         return value
 
 # CRUD de Inscripción uno en uno, Cambio de estado y Baja)
 class InscripcionSerializer(serializers.ModelSerializer):
     estudiante_detalle = PersonaResumenSerializer(source='estudiante', read_only=True)
     materia_titulo = serializers.CharField(source='materia.titulo', read_only=True)
-
+    materia_curso = serializers.CharField(source='materia.curso', read_only=True)
+    materia_anio = serializers.IntegerField(source='materia.anio', read_only=True)
+    profesor_nombre = serializers.SerializerMethodField()
     class Meta:
         model = Inscripcion
         fields = [
-            'id',
+          'id',
             'materia',
             'materia_titulo',
+            'materia_curso',       
+            'materia_anio',       
+            'profesor_nombre',
             'estudiante',
             'estudiante_detalle',
             'estado',
-            'fecha_inscripcion'
+            'fecha_inscripcion',
         ]
+    
+    def get_profesor_nombre(self, obj):
+        prof = obj.materia.profesor
+        return f"{prof.apellido}, {prof.nombre}" if prof else "Sin asignar"
 
     def validate_estudiante(self, value):
         rol = getattr(value.rol, 'nombre', '').strip().lower()

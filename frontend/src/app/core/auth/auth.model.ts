@@ -19,6 +19,7 @@ export interface User {
     id: number;
     userName : string;
     rolId: UserRole;
+    rolNombre?: string;
     persona:Persona;
 }
 

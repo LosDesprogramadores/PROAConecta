@@ -1,23 +1,72 @@
 <section class="p-6">
-    <h2 class="text-2xl font-bold text-primary mb-6">Mis Materias</h2>
 
-    <!-- Si no hay materias -->
-    @if (materias().length === 0) {
-    <p class="text-slate-600">No hay materias para mostrar.</p>
-    } @else {
-    <!-- Grid de materias -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        @for (materia of materias(); track materia.nombre) {
-        <a [routerLink]="materia.path"
-            class="rounded-xl shadow-md p-6 text-center transition hover:shadow-lg cursor-pointer"
-            [ngClass]="materia.color">
-            <div
-                class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/50 flex items-center justify-center font-bold text-slate-800">
-                {{ materia.nombre.charAt(0) }}
-            </div>
-            <h3 class="text-lg font-semibold text-slate-800">{{ materia.nombre }}</h3>
-        </a>
-        }
+  <h2 class="text-2xl font-bold text-primary mb-6">
+    Mis Materias
+  </h2>
+
+  @if (cargando()) {
+
+    <div class="flex justify-center py-10">
+      <div
+        class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+      ></div>
     </div>
-    }
+
+  } @else if (error()) {
+
+    <div
+      class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"
+    >
+      ⚠️ {{ error() }}
+    </div>
+
+  } @else if (materias().length === 0) {
+
+    <p class="text-slate-600">
+      No hay materias para mostrar.
+    </p>
+
+  } @else {
+
+    <div
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+    >
+
+      @for (
+        materia of materias();
+        track materia.id
+      ) {
+
+        <a
+          [routerLink]="obtenerPath(materia)"
+          class="rounded-xl shadow-md p-6 text-center transition hover:shadow-lg cursor-pointer"
+          [ngClass]="obtenerColor($index)"
+        >
+
+          <div
+            class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/50 flex items-center justify-center font-bold text-slate-800"
+          >
+            {{ materia.titulo.charAt(0) }}
+          </div>
+
+          <h3
+            class="text-lg font-semibold text-slate-800"
+          >
+            {{ materia.titulo }}
+          </h3>
+
+          <p
+            class="text-xs text-slate-500 mt-1"
+          >
+            {{ materia.curso }} · {{ materia.anio }}° año
+          </p>
+
+        </a>
+
+      }
+
+    </div>
+
+  }
+
 </section>

@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate
 from .models import Rol, Persona, Usuario
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
 class UsuarioSerializer(serializers.ModelSerializer):
     persona_id = serializers.PrimaryKeyRelatedField(
         queryset=Persona.objects.all(),
@@ -95,5 +96,5 @@ class  PersonaSerializer(serializers.ModelSerializer):
                 persona=persona,
             )
         return persona
-        
 
+    

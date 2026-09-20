@@ -21,6 +21,22 @@ Asegúrate de tener instalado:
 * Gestor de paquetes `pip`
 
 ---
+
+## Roles, Personas y Usuarios en DB de Prueba actuales en la DB
+
+Rol 1- Administrador Ana Gomez: 
+DNI(username): 12345678
+PASS: 12345678
+
+Rol 2- profesor Alan Profesor:
+DNI(username): 35785659
+PASS: 35785659
+
+Rol 3- Estudiante Julio Estudiante:
+DNI(username): 333111333
+PASS: 333111333
+
+
 ## En los siguientes pasos siempre deben tener en consideraciòn la posiciòn donde estàn y donde se encuentra el archivo a ajecutar.
 
 ## 1- Crear y activar el entorno virtual
@@ -108,7 +124,7 @@ print(usuario_autenticado) # si da None algo le pifiaron, debería devolver el D
 
   Crear los 3 Roles 
   Administrador (1)
-  Docente (2)
+  Profesor (2)
   Estudiante (3)
 
   ---
@@ -157,10 +173,10 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         "curso": "1ro A",
         "descripcion": "Fundamentos de lógica y algoritmos",
         "criterios_evaluacion": "70% TPs, 30% Parcial",
-        "docente": 2
+        "profesor": 2
         }
 
-    El campo docente es opcional; si no se asigna al crear, enviar null o no incluir la clave
+    El campo profesor es opcional; si no se asigna al crear, enviar null o no incluir la clave
 
         Listar Materias
         Método: GET
@@ -170,7 +186,7 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
 
         ?anio=2026
         ?curso=1ro A
-        ?docente=2 (Materias que dicta un docente específico)
+        ?profesor=2 (Materias que dicta un profesor específico)
         ?search=Programacion (Búsqueda por título, curso o nombre del profesor)
 
 
@@ -184,15 +200,15 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
             "criterios_evaluacion": "70% TPs, 30% Parcial",
             "anio": 2026,
             "curso": "1ro A",
-            "docente": 2,
-            "docente_detalle": {
-            "id": 2,
-            "dni": "40123456",
-            "nombre": "Carlos",
-            "apellido": "Pérez",
-            "nombre_completo": "Pérez, Carlos",
-            "email": "carlos.perez@aula.com",
-            "rol_nombre": "Docente"
+            "profesor": 2,
+            "profesor_detalle": {
+                "id": 2,
+                "dni": "40123456",
+                "nombre": "Carlos",
+                "apellido": "Pérez",
+                "nombre_completo": "Pérez, Carlos",
+                "email": "carlos.perez@aula.com",
+                "rol_nombre": "profesor"
             },
             "total_estudiantes": 25,
             "activo": true,
@@ -201,12 +217,12 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         }
         ]
 
-    Asignar, Cambiar o Quitar Docente
+    Asignar, Cambiar o Quitar profesor
         Método: PATCH
         Endpoint: /materias/{id}/
         Body (JSON):
-        Asignar / Cambiar: {"docente": 2}
-        Dejar sin profesor: {"docente": null}
+        Asignar / Cambiar: {"profesor": 2}
+        Dejar sin profesor: {"profesor": null}
 
         Respuesta (200 OK): Objeto Materia actualizado.
 
@@ -273,12 +289,52 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
 
         Respuesta (200 OK): Lista de inscripciones de esa materia.
 
+-----------------------------------------------------------------------------------
 
     Listar Materias Cursadas por un Alumno ("Mis Cursadas")
         Método: GET
         Endpoint: /inscripciones/?estudiante={id_estudiante}
         Uso: Dashboard del estudiante para ver sus materias asignadas.
         Respuesta (200 OK): Lista de inscripciones del estudiante.
+
+-----------------------------------------------------------------------------------
+
+    Listar Mis Materias (Dashboard por Rol)
+        Método: GET
+        Endpoint: /materias/mis-materias/
+        Uso: Endpoint para el dashboard de catalogo de materias creadas y vista de lista de Materias segun el rol de profesor o alumno.
+
+            - Administrador (rol ID 1 o superusuario): Devuelve la totalidad de materias del catálogo general.
+            - Profesor: Devuelve únicamente las materias donde se encuentra asignado como docente titular.
+            - Estudiante: Devuelve únicamente las materias en las que posee una inscripción activa.
+            - Sin asignaciones: Retorna un array vacío [] con código 200 OK para renderizar el estado vacío (Empty State) en la interfaz.
+
+        Respuesta (200 OK):
+
+        [
+            {
+                "id": 1,
+                "titulo": "Programación I",
+                "descripcion": "Fundamentos y lógica de programación",
+                "criterios_evaluacion": "70% TPs, 30% Parcial",
+                "anio": 2026,
+                "curso": "1ro A",
+                "profesor": 2,
+                "profesor_detalle": {
+                    "id": 2,
+                    "dni": "40123456",
+                    "nombre": "Carlos",
+                    "apellido": "Pérez",
+                    "nombre_completo": "Pérez, Carlos",
+                    "email": "carlos.perez@aula.com",
+                    "rol_nombre": "profesor"
+                },
+                "total_estudiantes": 25,
+                "activo": true,
+                "fecha_creacion": "2026-08-26T22:50:00Z",
+                "fecha_actualizacion": "2026-08-26T22:52:00Z"
+            }
+        ]
 
     Modificar Condición Académica del Alumno
         Método: PATCH
@@ -298,3 +354,123 @@ Mandar una nueva peticiòn para crear otros usuarios a : (post) http://127.0.0.1
         Endpoint: /inscripciones/{id}/
         Respuesta: 204 No Content
 
+-----------------------------------------------------------------------------------------------------------
+
+    Endpoints de Unidades (/api/unidades/)
+    
+    Listar unidades
+    URL: GET /api/unidades/?materia={materia_id}
+    Parámetros opcionales:
+     ?papelera=true: Lista las unidades en papelera (solo docentes/admin).
+    
+    Respuesta:
+    JSON
+            {
+                "id": 12,
+                "materia": 3,
+                "titulo": "Módulo 1: Introducción a React",
+                "descripcion": "Conceptos básicos de componentes y hooks",
+                "orden": 1,
+                "visible": true
+            }
+
+    Crear unidad
+
+    URL: POST /api/unidades/ (Solo Docente)
+    JSON
+        {
+        "materia": 3,
+        "titulo": "Módulo 2: Estado y Ciclo de Vida",
+        "descripcion": "Manejo de estados complejos",
+        "orden": 2,
+        "visible": true
+        }
+
+    Reordenar (Drag & Drop) y Editar
+    URL: PATCH /api/unidades/{id}/
+    JSON
+        {
+        "orden": 1
+        }
+
+    Switch de Visibilidad (Borrador / Publicado)
+    URL: PATCH /api/unidades/{id}/cambiar-visibilidad/
+    
+    Respuesta (200 OK):
+    JSON
+        {
+        "id": 12,
+        "visible": false,
+        "mensaje": "Unidad en borrador."
+        }
+    Enviar a Papelera (Soft Delete)
+    URL: DELETE /api/unidades/{id}/ : 204 No Content
+
+    Restaurar de Papelera
+    URL: POST /api/unidades/{id}/restaurar/
+    Respuesta (200 OK):
+    JSON
+        {
+        "mensaje": "Unidad \"Módulo 1: Introducción a React\" restaurada correctamente."
+        }
+
+-----------------------------------------------------------------------------------------------------------
+
+   
+    Endpoints de Materiales (/api/materiales/)
+    
+    Listar materiales
+    URL: GET /api/materiales/?materia={materia_id}
+    
+    Filtros por Query Params:
+        ?unidad={unidad_id}: Filtra por unidad específica.
+        ?recurso_general=true:  Solo materiales del encabezado (unidad: null).
+        ?tipo={DOCUMENTO|VIDEO|ENLACE}: Filtra por categoría de recurso.
+        ?search={termino}:  Búsqueda por texto en título o descripción.
+        ?papelera=true: Lista recursos en papelera (solo docentes/admin).
+    
+    Crear material (JSON o FormData)
+    URL: POST /api/materiales/
+    Headers: Content-Type: application/json o multipart/form-data (para subida de archivos).
+    
+    JSON
+        {
+        "materia": 3,
+        "unidad": 12,
+        "tipo": "ENLACE",
+        "titulo": "Documentación Oficial",
+        "descripcion": "Lectura obligatoria",
+        "enlace": "react.dev",
+        "visible": true
+        }
+    
+    Nota: El backend normaliza enlaces sin protocolo añadiendo https:// automáticamente.
+    
+    Mover material entre unidades o a general (Drag & Drop)
+    URL: PATCH /api/materiales/{id}/
+    
+
+    JSON
+    // Mover a otra unidad
+    { "unidad": 15 }
+
+    // Desvincular a recurso general
+    { "unidad": null }
+
+
+    Switch de Visibilidad de Material
+    URL: PATCH /api/materiales/{id}/cambiar-visibilidad/
+    
+    Respuesta (200 OK):
+    
+    JSON
+        {
+        "id": 44,
+        "visible": false,
+        "mensaje": "Material oculto."
+        }
+
+    Enviar a Papelera / Restaurar Material
+    Baja: DELETE /api/materiales/{id}/ : 204 No Content
+    
+    Restaurar: POST /api/materiales/{id}/restaurar/ : 200 OK
