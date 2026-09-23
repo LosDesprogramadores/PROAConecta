@@ -96,13 +96,12 @@ class Actividad(ContenidoSoftDelete):
         return f'{self.titulo} ({self.materia.titulo})'
 
 
-class Entrega(models.Model):
+class Entrega(ContenidoSoftDelete):
     class EstadoEntrega(models.TextChoices):
         BORRADOR = 'BORRADOR', 'Borrador'
         ENTREGADO = 'ENTREGADO', 'Entregado'
         NO_ENTREGADO = 'NO_ENTREGADO', 'No entregado'
         CORREGIDO = 'CORREGIDO', 'Corregido'
-        REENTREGA = 'REENTREGA', 'Reentrega'
 
     actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='entregas')
     estudiante = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='entregas')
@@ -121,6 +120,7 @@ class Entrega(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['actividad', 'estudiante'],
+                condition=models.Q(fecha_baja__isnull=True),
                 name='unique_entrega_actividad_estudiante'
             )
         ]
@@ -131,9 +131,9 @@ class Entrega(models.Model):
 
 class Nota(models.Model):
     entrega = models.OneToOneField(Entrega, on_delete=models.CASCADE, related_name='nota')
-    docente = models.ForeignKey(Persona, on_delete=models.SET_NULL, null=True, blank=True, related_name='notas_asentadas')
+    profesor = models.ForeignKey(Persona, on_delete=models.SET_NULL, null=True, blank=True, related_name='notas_asentadas')
     calificacion = models.DecimalField(max_digits=4, decimal_places=2, help_text='Escala del 1.00 al 10.00')
-    descripcion = models.TextField(null=True, blank=True, help_text='Devolución del docente')
+    descripcion = models.TextField(null=True, blank=True, help_text='Devolución del profesor')
     fecha_publicacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:

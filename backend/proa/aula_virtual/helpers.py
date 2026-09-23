@@ -42,3 +42,10 @@ def validar_rango_nota(valor):
         raise ValidationError({'calificacion': 'La calificación debe estar comprendida entre 1.00 y 10.00.'})
     
     return nota
+
+def verificar_estudiante_materia(user, materia):
+    if es_admin(user):
+        return
+    persona, rol = obtener_persona_y_rol(user)
+    if rol != 'estudiante' or not materia.estudiantes.filter(id=getattr(persona, 'id', None)).exists():
+        raise PermissionDenied("Debes estar inscripto como estudiante en esta materia.")
