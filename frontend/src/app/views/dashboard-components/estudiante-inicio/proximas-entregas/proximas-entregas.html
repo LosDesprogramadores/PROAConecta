@@ -1,0 +1,107 @@
+<div class="space-y-4">
+
+    <h3 class="text-lg font-semibold text-slate-800">Próximas entregas</h3>
+
+    <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
+
+        <div class="flex items-center justify-between pb-1">
+            <span class="text-sm font-bold text-slate-700 capitalize">
+                {{ viewDate | date: 'MMMM yyyy' }}
+            </span>
+
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                <button
+                    class="px-2 py-0.5 text-xs font-semibold rounded bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition"
+                    mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+                    &lt;
+                </button>
+
+                <button
+                    class="px-2 py-0.5 text-xs font-semibold rounded bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition"
+                    mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+                    &gt;
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista Mensual Compacta -->
+        <div class="calendar-container rounded-lg overflow-hidden border border-slate-100 text-xs">
+            <mwl-calendar-month-view 
+                [viewDate]="viewDate" 
+                [events]="events()" 
+                [headerTemplate]="customHeaderTemplate"
+                [cellTemplate]="customCellTemplate" 
+                (dayClicked)="dayClicked($event.day)">
+            </mwl-calendar-month-view>
+        </div>
+
+        <!-- Plantilla Días de la Semana -->
+        <ng-template #customHeaderTemplate let-days="days">
+            <div class="cal-row-head flex text-center border-b border-slate-100 bg-slate-50">
+                @for (day of days; track day.date) {
+                <div class="cal-header-cell flex-1 py-1.5 text-[10px] font-bold text-slate-500 uppercase">
+                    {{ day.date | date: 'EEE' }}
+                </div>
+                }
+            </div>
+        </ng-template>
+
+        <!-- Plantilla Custom para Celdas -->
+        <ng-template #customCellTemplate let-day="day">
+            <div class="relative h-full w-full flex flex-col items-center justify-between p-1 transition-colors cursor-pointer"
+                [class.bg-slate-50/50]="!day.inMonth" 
+                [class.pointer-events-none]="!day.inMonth"
+                [class.bg-emerald-50]="day.inMonth && isSameDay(day.date, selectedDate())">
+
+                @if (day.inMonth) {
+                <span class="text-[11px] font-semibold leading-none" 
+                    [class.text-slate-700]="!day.isToday"
+                    [class.text-primary]="day.isToday" 
+                    [class.font-bold]="day.isToday">
+                    {{ day.date | date: 'd' }}
+                </span>
+
+                <!-- Puntos Indicadores de Entregas -->
+                <div class="flex items-center justify-center gap-0.5 h-1.5">
+                    @for (event of day.events; track event.title) {
+                    <span class="w-1.5 h-1.5 rounded-full" [style.backgroundColor]="event.color?.primary || '#f59e0b'">
+                    </span>
+                    }
+                </div>
+                }
+            </div>
+        </ng-template>
+
+        <!-- Detalle de Entregas del Día Seleccionado -->
+        <div class="pt-2 border-t border-slate-100 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 capitalize">
+                    {{ selectedDate() | date: "dd 'de' MMMM" }}
+                </span>
+                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    {{ selectedDayEvents().length }} {{ selectedDayEvents().length === 1 ? 'entrega' : 'entregas' }}
+                </span>
+            </div>
+
+            @if (selectedDayEvents().length === 0) {
+            <p class="text-xs text-slate-400 italic py-1">Sin entregas para este día.</p>
+            } @else {
+            <div class="space-y-1.5">
+                @for (event of selectedDayEvents(); track event.title) {
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="w-2 h-2 rounded-full shrink-0" [style.backgroundColor]="event.color?.primary || '#f59e0b'"></span>
+                        <span class="font-medium text-slate-700 truncate">{{ event.title }}</span>
+                    </div>
+                    <!-- Hora límite de la entrega -->
+                    <span class="text-[10px] font-semibold text-slate-400 shrink-0 ml-1">
+                        {{ event.start | date: 'HH:mm' }} hs
+                    </span>
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+    </div>
+</div>

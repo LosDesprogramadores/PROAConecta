@@ -4,8 +4,8 @@
 
     <!-- Contenedor principal: sidebar + contenido -->
     <div class="flex flex-1 overflow-hidden">
-        <!-- Sidebar --> 
-        <app-sidebar></app-sidebar>
+        <!-- Sidebar: Oculto en móviles/tablets, visible solo en escritorio -->
+        <app-sidebar class="hidden lg:block"></app-sidebar>
 
         <!-- Main content -->
         <main class="flex-1 overflow-y-auto p-6">

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { Informacion } from '../informacion/informacion';
 import { MateriasResumen } from '../materias-resumen/materias-resumen'; // Importar nuevo componente
+import { ProximasEntregas } from '../proximas-entregas/proximas-entregas';
 
 interface Noticia {
   fecha: string;
@@ -16,7 +17,7 @@ interface Noticia {
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, RouterLink, Informacion, MateriasResumen],
+  imports: [CommonModule, RouterLink, Informacion, MateriasResumen, ProximasEntregas],
   templateUrl: './welcome.html',
   styleUrls: ['./welcome.css'],
 })

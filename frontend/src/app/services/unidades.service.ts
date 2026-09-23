@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Unidad } from '../model/unidad-material.model';
-import { Material } from '../model/unidad-material.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
