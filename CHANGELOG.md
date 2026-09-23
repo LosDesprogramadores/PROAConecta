@@ -6,6 +6,48 @@ El formato sigue una estructura basada en [Keep a Changelog](https://keepachange
 
 ---
 
+## [Unreleased]
+
+### Added
+### Changed
+### Fixed
+### Removed
+
+---
+
+## [0.2.0-alpha] - Septiembre 2026
+
+### Added
+
+#### Base de datos y arquitectura
+- Configuración de la conexión con MongoDB y verificación exitosa de su funcionamiento dentro del entorno.
+
+#### Gestión de materias y contenidos
+- Implementación de endpoints en el backend para la gestión de Unidades.
+- Integración de vistas en Angular para mostrar las materias asignadas según el perfil del usuario.
+- Visualización detallada de cada materia con sus respectivas unidades, material de estudio asociado y material general.
+
+#### Interfaz de usuario y feedback (UI/UX)
+- Implementación de un sistema centralizado de notificaciones flotantes (Toast) para feedback general en la aplicación.
+- Rediseño y actualización estética en el formato de presentación del perfil docente.
+
+### Changed
+
+- Actualización de la navegación en el frontend para consumir datos dinámicos segmentados según la distinción y rol de usuario.
+- Ajustes y mejoras varias en el módulo de gestión administrativa.
+
+### Fixed
+
+- Correcciones de errores y refinamiento de flujos en la sección administrativa.
+
+### Work in Progress / Known Issues
+
+- Modelos en MongoDB: La conexión y pruebas iniciales con MongoDB quedaron listas, pero la definición y migración de modelos queda pendiente para el próximo sprint.
+- Notificaciones del sistema: Se inició el desarrollo de la sección/módulo de Notificaciones, pero su implementación aún no está completa.
+- Se continúa trabajando en la consolidación de la integración entre los servicios del backend y las vistas dinámicas del frontend.
+
+---
+
 ## [0.1.0-alpha] - Agosto 2026
 
 ### Added
@@ -74,15 +116,3 @@ El formato sigue una estructura basada en [Keep a Changelog](https://keepachange
 - Algunas funcionalidades del sistema se encuentran en una etapa inicial de implementación.
 - El proyecto continúa en desarrollo y pueden producirse cambios en las funcionalidades y en la arquitectura.
 - Se requiere continuar mejorando la integración entre los equipos de frontend y backend.
-
----
-
-## [Unreleased]
-
-### Added
-
-### Changed
-
-### Fixed
-
-### Removed

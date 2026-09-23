@@ -1,55 +1,28 @@
 import { Component, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import {
-  UnidadMateria,
-  ContenidoUnidad,
   MateriaPortada,
-  RecursoClase,
 } from '../../../model/unidad-contenido.model';
 import { IMateria } from '../../../model/materia.model';
-import { IPersonaResumen } from '../../../model/Persona.model';
 import { UnidadesMaterial } from './unidades-material/unidades-material';
 import { RecursosClaseComponent } from './recursos-clase/recursos-clase';
 import { MateriaService } from '../../../services/materia.service';
-import { UserRole } from '../../../core/auth/auth.model';
-import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-portada',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
+  imports: [CommonModule, RouterModule, UnidadesMaterial, RecursosClaseComponent],
   templateUrl: './portada.html',
-  styleUrl: './portada.css',
+  styleUrls: ['./portada.css'],
 })
 export class Portada implements OnInit {
   @Input() materia?: MateriaPortada;
 
   cargando = signal<boolean>(false);
   error = signal<string | null>(null);
-
   materiaId: number | null = null;
-
-  private readonly ROL_PROFESOR = UserRole.DOCENTE;
-
-  esDocente = signal<boolean>(false);
-  editandoDescripcion = signal<boolean>(false);
-
-  tempDescripcion = '';
-
   unidadExpandida = signal<string | null>(null);
-
-  mostrarFormularioUnidad = signal<boolean>(false);
-
-  nuevoNombreUnidad = '';
-  nuevoDescripcionUnidad = '';
-
-  mostrarFormularioRecurso = signal<boolean>(false);
-
-  nuevoTituloRecurso = '';
-  nuevoTipoRecurso: 'documento' | 'video' | 'enlace' = 'documento';
-  nuevoUrlRecurso = '';
 
   get datosActuales(): MateriaPortada {
     return (
@@ -68,26 +41,13 @@ export class Portada implements OnInit {
   constructor(
     private readonly materiaService: MateriaService,
     private readonly route: ActivatedRoute,
-    private readonly authService: AuthService,
   ) {}
 
   ngOnInit(): void {
-    this.detectarRol();
     this.cargarMateriaDesdeRuta();
   }
 
-  private detectarRol(): void {
-    const rolId = this.authService.rol();
-
-    if (rolId === this.ROL_PROFESOR) {
-      this.esDocente.set(true);
-    } else {
-      this.esDocente.set(false);
-    }
-  }
-
   private cargarMateriaDesdeRuta(): void {
-    // *💡 IMPORTANTE: Capturamos el ID desde la ruta padre ya que la ruta es /view-materia/:id/...*
     this.route.parent?.paramMap.subscribe((params) => {
       const idParam = params.get('id');
 
@@ -164,48 +124,12 @@ export class Portada implements OnInit {
     if (!profesor) {
       return 'Profesor Titular';
     }
-
-    // *Adaptamos según las propiedades que pueda traer el backend (nombre, apellido, nombre_completo, etc.)*
     if (profesor.nombre && profesor.apellido) {
       return `${profesor.nombre} ${profesor.apellido}`;
     }
-
     return (
       profesor.nombre_completo || profesor.nombre || profesor.apellido_nombre || 'Profesor Titular'
     );
-  }
-
-  iniciarEdicionDescripcion(): void {
-    this.tempDescripcion = this.datosActuales.presentacion;
-    this.editandoDescripcion.set(true);
-  }
-
-  guardarDescripcion(): void {
-    if (!this.materiaId) {
-      return;
-    }
-
-    const materiaActualizada: IMateria = {
-      titulo: this.datosActuales.nombre,
-      descripcion: this.tempDescripcion.trim(),
-      anio: this.datosActuales.anio,
-      curso: this.datosActuales.curso,
-    };
-
-    this.materiaService.actualizarMateria(this.materiaId, materiaActualizada).subscribe({
-      next: (materiaResponse) => {
-        this.materia = this.convertirMateriaPortada(materiaResponse);
-        this.editandoDescripcion.set(false);
-      },
-      error: (err) => {
-        console.error('Error actualizando la descripción de la materia:', err);
-        this.error.set('No se pudo guardar la descripción de la materia.');
-      },
-    });
-  }
-
-  cancelarEdicionDescripcion(): void {
-    this.editandoDescripcion.set(false);
   }
 
   toggleUnidad(unidadId: string): void {
@@ -214,112 +138,5 @@ export class Portada implements OnInit {
     } else {
       this.unidadExpandida.set(unidadId);
     }
-  }
-
-  trackByUnidad(index: number, unidad: UnidadMateria): string {
-    return unidad.id;
-  }
-
-  abrirFormularioUnidad(): void {
-    this.mostrarFormularioUnidad.set(true);
-    this.nuevoNombreUnidad = '';
-    this.nuevoDescripcionUnidad = '';
-  }
-
-  cancelarFormularioUnidad(): void {
-    this.mostrarFormularioUnidad.set(false);
-  }
-
-  guardarUnidad(): void {
-    if (!this.nuevoNombreUnidad.trim()) {
-      alert('El nombre de la unidad es requerido');
-      return;
-    }
-
-    const unidades = this.datosActuales.unidades;
-
-    const nuevaUnidad: UnidadMateria = {
-      id: `unidad-${Date.now()}`,
-      numero: unidades.length + 1,
-      nombre: this.nuevoNombreUnidad.trim(),
-      descripcion: this.nuevoDescripcionUnidad.trim() || undefined,
-      contenidos: [],
-    };
-
-    unidades.push(nuevaUnidad);
-    this.mostrarFormularioUnidad.set(false);
-  }
-
-  abrirFormularioRecurso(): void {
-    this.mostrarFormularioRecurso.set(true);
-    this.nuevoTituloRecurso = '';
-    this.nuevoTipoRecurso = 'documento';
-    this.nuevoUrlRecurso = '';
-  }
-
-  cancelarFormularioRecurso(): void {
-    this.mostrarFormularioRecurso.set(false);
-  }
-
-  guardarRecurso(): void {
-    if (!this.nuevoTituloRecurso.trim() || !this.nuevoUrlRecurso.trim()) {
-      alert('Título y URL son requeridos');
-      return;
-    }
-
-    if (!this.datosActuales.recursosClase) {
-      this.datosActuales.recursosClase = [];
-    }
-
-    this.datosActuales.recursosClase.push({
-      id: `recurso-${Date.now()}`,
-      titulo: this.nuevoTituloRecurso,
-      tipo: this.nuevoTipoRecurso,
-      url: this.nuevoUrlRecurso,
-      fechaCreacion: new Date(),
-    });
-
-    this.mostrarFormularioRecurso.set(false);
-  }
-
-  eliminarRecurso(id: string): void {
-    if (confirm('¿Eliminar este recurso?')) {
-      if (!this.datosActuales.recursosClase) return;
-
-      this.datosActuales.recursosClase = this.datosActuales.recursosClase.filter(
-        (r) => r.id !== id,
-      );
-    }
-  }
-
-  onContenidoGuardado(unidadId: string, contenido: ContenidoUnidad): void {
-    const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
-
-    if (!unidad) return;
-
-    const index = unidad.contenidos.findIndex((c) => c.id === contenido.id);
-
-    if (index >= 0) {
-      unidad.contenidos[index] = {
-        ...contenido,
-        fechaCreacion: unidad.contenidos[index].fechaCreacion,
-      };
-    } else {
-      unidad.contenidos.push(contenido);
-    }
-  }
-
-  onContenidoEliminado(unidadId: string, contenidoId: string): void {
-    const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
-
-    if (!unidad) return;
-
-    unidad.contenidos = unidad.contenidos.filter((c) => c.id !== contenidoId);
-  }
-
-  abrirModalActividad(): void {}
-
-  abrirModalRecurso(): void {
-    this.abrirFormularioRecurso();
   }
 }

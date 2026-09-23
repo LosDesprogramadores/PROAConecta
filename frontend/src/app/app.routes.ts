@@ -6,7 +6,7 @@ import { DashboardLayout } from './layouts/dashboard-layout/dashboard-layout';
 import { Materias } from './views/dashboard-components/materias/materias';
 import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
 import { Contacto } from './views/dashboard-components/contacto/contacto';
-import { Welcome } from './views/dashboard-components/estudiante-inicio/welcome/welcome';
+import { WelcomeContainer } from './views/dashboard-components/welcome-container/welcome-container';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { ForoComponent } from './views/materias-components/foro/foro';
@@ -42,7 +42,7 @@ export const routes: Routes = [
     component: DashboardLayout,
     //canActivate: [authGuard],
     children: [
-      { path: 'welcome', component: Welcome },
+      { path: 'welcome', component: WelcomeContainer },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'contacto', component: Contacto },
