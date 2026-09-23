@@ -1,0 +1,63 @@
+<!-- Módulo Materias -->
+<div class="space-y-4">
+    <!-- Cabecera con título y enlace para Escritorio/Tablet -->
+    <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-slate-800">Tus materias</h3>
+
+        <!-- Enlace superior: Visible en pantallas medianas en adelante (md:inline-flex) -->
+        <a routerLink="/dashboard/materias"
+            class="hidden md:inline-flex text-sm font-medium text-primary hover:text-primary/80 transition items-center gap-1">
+            Ver todas <span aria-hidden="true">&rarr;</span>
+        </a>
+    </div>
+
+    @if (cargando()) {
+    <div class="flex justify-center py-6">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+    </div>
+    }
+
+    @if (error()) {
+    <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+        ⚠️ {{ error() }}
+    </div>
+    }
+
+    @if (materias().length === 0 && !cargando() && !error()) {
+    <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500 text-sm">
+        No tenés materias asignadas.
+    </div>
+    } @else if (materias().length > 0) {
+    <div class="grid grid-cols-1 gap-3">
+        @for (materia of materiasVisibles(); track materia.id) {
+        <a [routerLink]="['/view-materia', materia.id, 'portada']"
+            class="flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition cursor-pointer group">
+            <div
+                class="w-10 h-10 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                {{ materia.titulo.charAt(0) }}
+            </div>
+            <div class="min-w-0 flex-1">
+                <h4 class="text-sm font-semibold text-slate-800 truncate">{{ materia.titulo }}</h4>
+                <span class="text-xs text-slate-400 group-hover:text-primary transition-colors">
+                    Ver contenido &rarr;
+                </span>
+            </div>
+        </a>
+        }
+    </div>
+
+    <!-- Desplegable inferior: Únicamente visible en móviles (md:hidden) -->
+    @if (tieneMasMaterias()) {
+    <div class="md:hidden">
+        <button (click)="toggleExpandMaterias()"
+            class="w-full mt-3 px-4 py-2.5 rounded-lg font-medium text-sm transition-all border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700">
+            @if (expandedMaterias()) {
+            Mostrar menos
+            } @else {
+            Ver todas ({{ materias().length }} total)
+            }
+        </button>
+    </div>
+    }
+    }
+</div>

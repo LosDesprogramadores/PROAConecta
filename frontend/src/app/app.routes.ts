@@ -6,7 +6,7 @@ import { DashboardLayout } from './layouts/dashboard-layout/dashboard-layout';
 import { Materias } from './views/dashboard-components/materias/materias';
 import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
 import { Contacto } from './views/dashboard-components/contacto/contacto';
-import { Welcome } from './views/dashboard-components/welcome/welcome';
+import { Welcome } from './views/dashboard-components/estudiante-inicio/welcome/welcome';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { ForoComponent } from './views/materias-components/foro/foro';
@@ -46,7 +46,7 @@ export const routes: Routes = [
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'contacto', component: Contacto },
-      {path: 'tablaGenerica', component: TablaGenerica},
+      { path: 'tablaGenerica', component: TablaGenerica },
       { path: '', redirectTo: 'welcome', pathMatch: 'full' },
     ],
   },
@@ -67,13 +67,13 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard-admin',
-    component : DashboardAdmin,
-    children : [
-        { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
-        {path: 'admin/estudiantes', component: Estudiante},
-        {path: 'admin/profesores', component: Profesor},
-        {path: 'admin/materias', component: Materia} ,
-        {path: 'admin/notificaciones', component: Notificacion}
-         ]
-    }
+    component: DashboardAdmin,
+    children: [
+      { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
+      { path: 'admin/estudiantes', component: Estudiante },
+      { path: 'admin/profesores', component: Profesor },
+      { path: 'admin/materias', component: Materia },
+      { path: 'admin/notificaciones', component: Notificacion }
+    ]
+  }
 ];
