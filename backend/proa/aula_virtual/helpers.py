@@ -1,5 +1,5 @@
-from rest_framework.exceptions import PermissionDenied
-
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from decimal import Decimal, InvalidOperation
 
 def obtener_persona_y_rol(user):
     persona = getattr(user, 'persona', None)
@@ -30,3 +30,22 @@ def verificar_profesor_materia(user, materia):
     persona, _ = obtener_persona_y_rol(user)
     if not persona or getattr(materia, 'profesor_id', None) != persona.id:
         raise PermissionDenied("Solo el profesor a cargo de esta materia puede realizar esta acción.")
+
+
+def validar_rango_nota(valor):
+    try:
+        nota = Decimal(str(valor))
+    except (InvalidOperation, TypeError):
+        raise ValidationError({'calificacion': 'La calificación debe ser un valor numérico válido.'})
+
+    if nota < Decimal('1.00') or nota > Decimal('10.00'):
+        raise ValidationError({'calificacion': 'La calificación debe estar comprendida entre 1.00 y 10.00.'})
+    
+    return nota
+
+def verificar_estudiante_materia(user, materia):
+    if es_admin(user):
+        return
+    persona, rol = obtener_persona_y_rol(user)
+    if rol != 'estudiante' or not materia.estudiantes.filter(id=getattr(persona, 'id', None)).exists():
+        raise PermissionDenied("Debes estar inscripto como estudiante en esta materia.")

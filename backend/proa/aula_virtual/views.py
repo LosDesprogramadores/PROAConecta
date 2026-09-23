@@ -4,15 +4,18 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from .models import Unidad, Material, Actividad
-from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer
+from .models import Unidad, Material, Actividad, Nota, Entrega
+from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer, EntregaSerializer, NotaSerializer
 from .helpers import (
     es_admin,
     es_profesor,
     es_estudiante,
     obtener_persona_y_rol,
     verificar_profesor_materia,
+    validar_rango_nota,
 )
 
 
@@ -205,29 +208,38 @@ class ActividadViewSet(viewsets.ModelViewSet):
         persona, _ = obtener_persona_y_rol(user)
 
         materia_id = self.request.query_params.get('materia')
+        unidad_id = self.request.query_params.get('unidad')
+        recurso_general = self.request.query_params.get('recurso_general')
         estado = self.request.query_params.get('estado')
+        en_papelera = self.request.query_params.get('papelera') == 'true'
 
-        qs = Actividad.objects.select_related('materia')
+        if en_papelera and es_estudiante(user):
+            return Actividad.objects.none()
+
+        qs = Actividad.objects.filter(
+            fecha_baja__isnull=not en_papelera
+        ).select_related('materia', 'unidad')
 
         if materia_id:
             qs = qs.filter(materia_id=materia_id)
+        if unidad_id:
+            qs = qs.filter(unidad_id=unidad_id)
+        if recurso_general == 'true':
+            qs = qs.filter(unidad__isnull=True)
 
         if es_admin(user):
-            if estado:
-                qs = qs.filter(estado=estado)
-            return qs
+            return qs.filter(estado=estado) if estado else qs
 
         if es_profesor(user):
             qs = qs.filter(materia__profesor=persona)
-            if estado:
-                qs = qs.filter(estado=estado)
-            return qs
+            return qs.filter(estado=estado) if estado else qs
 
         if es_estudiante(user):
-            # El estudiante nunca ve borradores, sin importar qué mande por query param
             return qs.filter(
                 materia__estudiantes=persona,
                 estado=Actividad.EstadoActividad.PUBLICADA,
+            ).filter(
+                Q(unidad__isnull=True) | Q(unidad__visible=True, unidad__fecha_baja__isnull=True)
             )
 
         return Actividad.objects.none()
@@ -242,7 +254,17 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         verificar_profesor_materia(self.request.user, instance.materia)
-        instance.delete()
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'], url_path='restaurar')
+    def restaurar(self, request, pk=None):
+        actividad = Actividad.objects.filter(pk=pk, fecha_baja__isnull=False).select_related('materia').first()
+        if not actividad:
+            return Response({'detail': 'Actividad no encontrada en papelera.'}, status=status.HTTP_404_NOT_FOUND)
+
+        verificar_profesor_materia(request.user, actividad.materia)
+        actividad.restore()
+        return Response({'mensaje': f'Actividad "{actividad.titulo}" restaurada.'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
@@ -254,20 +276,138 @@ class ActividadViewSet(viewsets.ModelViewSet):
             if actividad.estado == Actividad.EstadoActividad.PUBLICADA
             else Actividad.EstadoActividad.PUBLICADA
         )
+
+        if nuevo_estado == Actividad.EstadoActividad.PUBLICADA and not actividad.fecha_limite:
+            return Response(
+                {'detail': 'No se puede publicar una actividad que no tenga fecha límite asignada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         actividad.estado = nuevo_estado
         actividad.save(update_fields=['estado'])
-
-        return Response({
-            'id': actividad.id,
-            'estado': actividad.estado,
-            'mensaje': f'Actividad {"publicada" if nuevo_estado == Actividad.EstadoActividad.PUBLICADA else "pasada a borrador"}.'
-        })
+        return Response({'id': actividad.id, 'estado': actividad.estado})
 
     @action(detail=True, methods=['get'], url_path='entregas')
     def entregas(self, request, pk=None):
         actividad = self.get_object()
         verificar_profesor_materia(request.user, actividad.materia)
 
-        entregas = actividad.entregas.select_related('estudiante', 'nota')
-        serializer = EntregaSerializer(entregas, many=True)
+        entregas = actividad.entregas.filter(fecha_baja__isnull=True).select_related('estudiante', 'nota__profesor')
+        serializer = EntregaSerializer(entregas, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class EntregaViewSet(viewsets.ModelViewSet):
+    serializer_class = EntregaSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        user = self.request.user
+        persona, _ = obtener_persona_y_rol(user)
+        actividad_id = self.request.query_params.get('actividad')
+        en_papelera = self.request.query_params.get('papelera') == 'true'
+
+        if en_papelera and es_estudiante(user):
+            return Entrega.objects.none()
+
+        qs = Entrega.objects.filter(fecha_baja__isnull=not en_papelera).select_related(
+            'actividad__materia', 'estudiante', 'nota__profesor'
+        )
+
+        if actividad_id:
+            qs = qs.filter(actividad_id=actividad_id)
+
+        if es_admin(user):
+            return qs
+        if es_profesor(user):
+            return qs.filter(actividad__materia__profesor=persona)
+        if es_estudiante(user):
+            return qs.filter(estudiante=persona)
+
+        return Entrega.objects.none()
+
+    def perform_create(self, serializer):
+        persona, _ = obtener_persona_y_rol(self.request.user)
+        if not persona:
+            raise ValidationError("Tu usuario no tiene un registro de Persona asociado.")
+
+        actividad = serializer.validated_data['actividad']
+        limite = actividad.fecha_limite
+        fuera_termino = bool(limite and timezone.now() > limite)
+
+        if fuera_termino and not actividad.permitir_entrega_tardia:
+            raise ValidationError("La fecha límite venció y no se aceptan entregas tardías.")
+
+        serializer.save(
+            estudiante=persona,
+            fuera_de_termino=fuera_termino,
+            estado=Entrega.EstadoEntrega.ENTREGADO
+        )
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        if es_estudiante(user):
+            serializer.save(
+                fecha_entrega=timezone.now(),
+                estado=Entrega.EstadoEntrega.ENTREGADO
+            )
+        else:
+            serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        persona, _ = obtener_persona_y_rol(user)
+        if es_profesor(user):
+            verificar_profesor_materia(user, instance.actividad.materia)
+        elif es_estudiante(user) and instance.estudiante != persona:
+            raise PermissionDenied("No puedes eliminar la entrega de otro alumno.")
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'], url_path='restaurar')
+    def restaurar(self, request, pk=None):
+        entrega = Entrega.objects.filter(pk=pk, fecha_baja__isnull=False).select_related('actividad__materia').first()
+        if not entrega:
+            return Response({'detail': 'Entrega no encontrada en papelera.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if es_profesor(request.user):
+            verificar_profesor_materia(request.user, entrega.actividad.materia)
+        elif not es_admin(request.user):
+            raise PermissionDenied("No tienes permiso para restaurar esta entrega.")
+
+        ya_existe_activa = Entrega.objects.filter(
+            actividad=entrega.actividad,
+            estudiante=entrega.estudiante,
+            fecha_baja__isnull=True
+        ).exists()
+
+        if ya_existe_activa:
+            return Response(
+                {'detail': 'No se puede restaurar: el estudiante ya posee otra entrega activa en esta actividad.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        entrega.restore()
+        return Response({'mensaje': 'Entrega restaurada correctamente.'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='calificar')
+    def calificar(self, request, pk=None):
+        entrega = self.get_object()
+        verificar_profesor_materia(request.user, entrega.actividad.materia)
+
+        nota_val = validar_rango_nota(request.data.get('calificacion'))
+        descripcion = (request.data.get('descripcion') or '').strip()
+        profesor, _ = obtener_persona_y_rol(request.user)
+
+        nota, _ = Nota.objects.update_or_create(
+            entrega=entrega,
+            defaults={
+                'calificacion': nota_val,
+                'descripcion': descripcion,
+                'profesor': profesor
+            }
+        )
+        entrega.estado = Entrega.EstadoEntrega.CORREGIDO
+        entrega.save(update_fields=['estado'])
+
+        return Response(NotaSerializer(nota).data, status=status.HTTP_200_OK)
