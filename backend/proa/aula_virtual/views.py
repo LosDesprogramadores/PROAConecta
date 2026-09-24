@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from .services import calificar_o_rectificar_estudiante
 
 from .models import Unidad, Material, Actividad, Nota, Entrega
 from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer, EntregaSerializer, NotaSerializer
@@ -296,6 +297,24 @@ class ActividadViewSet(viewsets.ModelViewSet):
         serializer = EntregaSerializer(entregas, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post', 'put'], url_path='calificar-estudiante')
+    def calificar_estudiante(self, request, pk=None):
+        estudiante_id = request.data.get('estudiante_id')
+        calificacion = request.data.get('calificacion')
+        descripcion = request.data.get('descripcion', '')
+
+        if not estudiante_id or calificacion is None:
+            raise ValidationError({'detail': 'Se requieren "estudiante_id" y "calificacion".'})
+
+        nota = calificar_o_rectificar_estudiante(
+            profesor_user=request.user,
+            actividad_id=pk,
+            estudiante_id=estudiante_id,
+            calificacion=calificacion,
+            descripcion=descripcion
+        )
+
+        return Response(NotaSerializer(nota).data, status=status.HTTP_200_OK)
 
 class EntregaViewSet(viewsets.ModelViewSet):
     serializer_class = EntregaSerializer
@@ -348,8 +367,13 @@ class EntregaViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         user = self.request.user
         if es_estudiante(user):
+            actividad = serializer.instance.actividad
+            limite = actividad.fecha_limite
+            fuera_termino = bool(limite and timezone.now() > limite)
+
             serializer.save(
                 fecha_entrega=timezone.now(),
+                fuera_de_termino=serializer.instance.fuera_de_termino or fuera_termino,
                 estado=Entrega.EstadoEntrega.ENTREGADO
             )
         else:
@@ -390,8 +414,9 @@ class EntregaViewSet(viewsets.ModelViewSet):
         entrega.restore()
         return Response({'mensaje': 'Entrega restaurada correctamente.'}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], url_path='calificar')
+    @action(detail=True, methods=['post', 'put', 'patch'], url_path='calificar')
     def calificar(self, request, pk=None):
+        """Asienta o modifica la calificación de una entrega existente."""
         entrega = self.get_object()
         verificar_profesor_materia(request.user, entrega.actividad.materia)
 
