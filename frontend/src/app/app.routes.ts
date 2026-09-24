@@ -24,6 +24,7 @@ import { Notificacion } from './views/admin/notificacion/notificacion';
 import { welcomeRedirectGuard } from './guards/welcome-redirect-guard';
 import { Welcome } from './views/dashboard-components/estudiante-inicio/welcome/welcome';
 import { WelcomeProfesor } from './views/dashboard-components/welcome-profesor/welcome-profesor';
+import { ActividadesDashboard } from './views/dashboard-components/actividades-dashboard/actividades-dashboard';
 
 
 export const routes: Routes = [
@@ -60,6 +61,7 @@ export const routes: Routes = [
       },
 
       { path: 'welcome', component: WelcomeProfesor },
+      { path: 'actividades', component: ActividadesDashboard },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },
