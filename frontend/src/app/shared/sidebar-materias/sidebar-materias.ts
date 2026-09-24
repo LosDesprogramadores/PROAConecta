@@ -29,7 +29,6 @@ export class SidebarMaterias implements OnInit {
         { label: 'Anuncios', path: `/view-materia/${this.materiaId}/anuncios` },
         { label: 'Material', path: `/view-materia/${this.materiaId}/material` },
         { label: 'Actividades', path: `/view-materia/${this.materiaId}/actividades` },
-        { label: 'Foro', path: `/view-materia/${this.materiaId}/foro` },
         { label: 'Calificaciones', path: `/view-materia/${this.materiaId}/calificaciones` }
       ];
     }
