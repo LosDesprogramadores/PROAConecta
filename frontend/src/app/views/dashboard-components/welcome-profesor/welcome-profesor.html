@@ -32,15 +32,16 @@
       </div>
     </div>
 
-    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
-      <div class="w-12 h-12 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold text-lg">
-        🔥
+    <a [routerLink]="['/dashboard/actividades']"
+       class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4 hover:border-slate-300 hover:shadow-md transition cursor-pointer">
+      <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+        ✏️
       </div>
       <div>
-        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Foros</span>
-        <p class="text-xl font-bold text-slate-800">8 Temas nuevos</p>
+        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Actividades</span>
+        <p class="text-xl font-bold text-slate-800">{{ totalActividadesActivas() }} Vigentes</p>
       </div>
-    </div>
+    </a>
   </div>
 
   <!-- Grilla Principal: Materias + Anuncios -->
