@@ -41,6 +41,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
+    canActivate: [authGuard],
     component: DashboardLayout,
     children: [
       {
@@ -69,7 +70,7 @@ export const routes: Routes = [
   {
     path: 'view-materia/:id',
     component: MateriasLayout,
-    //canActivate: [authGuard],
+    canActivate: [authGuard],
     children: [
       { path: 'portada', component: Portada },
       { path: 'anuncios', component: AnunciosMateriaComponent },
