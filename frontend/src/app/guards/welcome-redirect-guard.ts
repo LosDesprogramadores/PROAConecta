@@ -10,7 +10,7 @@ export const welcomeRedirectGuard: CanActivateFn = (route, state) => {
   const userRole = authService.currentUser()?.rolId;
 
   if (userRole === UserRole.DOCENTE) {
-    return router.createUrlTree(['/dashboard/welcome-profesor']);
+    return router.createUrlTree(['/dashboard/welcome']);
   }
 
   return router.createUrlTree(['/dashboard/estudiante/welcome']);

@@ -45,7 +45,7 @@ export const routes: Routes = [
     component: DashboardLayout,
     children: [
       {
-        path: 'welcome',
+        path: 'ingreso',
         canActivate: [welcomeRedirectGuard],
         children: []
       },
@@ -59,12 +59,12 @@ export const routes: Routes = [
         ]
       },
 
-      { path: 'welcome-profesor', component: WelcomeProfesor },
+      { path: 'welcome', component: WelcomeProfesor },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },
 
-      { path: '', redirectTo: 'welcome', pathMatch: 'full' },
+      { path: '', redirectTo: 'ingreso', pathMatch: 'full' },
     ],
   },
   {
