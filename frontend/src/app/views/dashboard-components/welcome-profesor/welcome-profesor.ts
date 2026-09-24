@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { MateriaService } from '../../../services/materia.service';
+import { ActividadesService } from '../../../services/actividades.service';
 import { IMateria } from '../../../model/materia.model';
 import { AuthService } from '../../../core/auth/auth.service';
 
@@ -24,6 +25,7 @@ export interface MateriasProfesor extends IMateria {
 export class WelcomeProfesor implements OnInit {
   // Señales exclusivas para profesor
   materiasProfesor = signal<MateriasProfesor[]>([]);
+  actividadesActivas = signal<number>(0);
 
   // Anuncios para el sidebar del profesor
   sidebarAnuncios = signal([
@@ -54,6 +56,7 @@ export class WelcomeProfesor implements OnInit {
 
   constructor(
     private readonly materiaService: MateriaService,
+    private readonly actividadesService: ActividadesService,
     private readonly authService: AuthService,
   ) {}
 
@@ -75,10 +78,14 @@ export class WelcomeProfesor implements OnInit {
     return all.filter((m) => m.estado === filtro);
   });
 
+  // Computed para total de actividades activas
+  totalActividadesActivas = computed(() => this.actividadesActivas());
+
   // === LIFECYCLE ===
 
   ngOnInit(): void {
     this.loadMateriasProfesor();
+    this.loadActividadesActivas();
   }
 
   // === MÉTODOS PRIVADOS ===
@@ -119,6 +126,23 @@ export class WelcomeProfesor implements OnInit {
         console.error('Error cargando materias del profesor:', err);
         this.error.set('No se pudieron cargar tus materias.');
         this.cargando.set(false);
+      },
+    });
+  }
+
+  private loadActividadesActivas(): void {
+    this.actividadesService.getActividades().subscribe({
+      next: (data) => {
+        // Contar actividades que estén activas/vigentes
+        // Si la Actividad tiene un campo 'estado', puedes filtrar aquí
+        const actividadesVigentes = data.filter((a: any) => a.estado === 'activa' || a.estado === 'vigente');
+        this.actividadesActivas.set(actividadesVigentes.length || data.length);
+      },
+
+      error: (err: any) => {
+        console.error('Error cargando actividades activas:', err);
+        // No interrumpimos el flujo, solo dejamos el contador en 0
+        this.actividadesActivas.set(0);
       },
     });
   }
