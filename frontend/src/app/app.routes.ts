@@ -6,7 +6,6 @@ import { DashboardLayout } from './layouts/dashboard-layout/dashboard-layout';
 import { Materias } from './views/dashboard-components/materias/materias';
 import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
 import { Contacto } from './views/dashboard-components/contacto/contacto';
-import { WelcomeContainer } from './views/dashboard-components/welcome-container/welcome-container';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { ForoComponent } from './views/materias-components/foro/foro';
@@ -22,6 +21,9 @@ import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
 import { TablaGenerica } from './views/admin/tabla-generica/tabla-generica';
 import { Notificacion } from './views/admin/notificacion/notificacion';
+import { welcomeRedirectGuard } from './guards/welcome-redirect-guard';
+import { Welcome } from './views/dashboard-components/estudiante-inicio/welcome/welcome';
+import { WelcomeProfesor } from './views/dashboard-components/welcome-profesor/welcome-profesor';
 
 
 export const routes: Routes = [
@@ -40,13 +42,27 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardLayout,
-    //canActivate: [authGuard],
     children: [
-      { path: 'welcome', component: WelcomeContainer },
+      {
+        path: 'welcome',
+        canActivate: [welcomeRedirectGuard],
+        children: []
+      },
+      {
+        path: 'estudiante',
+        children: [
+          { path: 'welcome', component: Welcome },
+          { path: 'anuncios', component: Anuncios },
+          { path: 'materias', component: Materias },
+          { path: 'contacto', component: Contacto },
+        ]
+      },
+
+      { path: 'welcome-profesor', component: WelcomeProfesor },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
-      { path: 'contacto', component: Contacto },
       { path: 'tablaGenerica', component: TablaGenerica },
+
       { path: '', redirectTo: 'welcome', pathMatch: 'full' },
     ],
   },

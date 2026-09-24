@@ -37,9 +37,9 @@ export class Sidebar implements OnInit{
 
       case UserRole.ESTUDIANTE: 
         this.links = [
-          { label: 'Anuncios', path: '/dashboard/anuncios' },
-          { label: 'Materias', path: '/dashboard/materias' },
-          { label: 'Contacto', path: '/dashboard/contacto' }
+          { label: 'Anuncios', path: '/dashboard/estudiante/anuncios' },
+          { label: 'Materias', path: '/dashboard/estudiante/materias' },
+          { label: 'Contacto', path: '/dashboard/estudiante/contacto' }
         ]
         break;
 
