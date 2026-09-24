@@ -15,7 +15,7 @@ class UnidadSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and 'materia' in attrs:
             verificar_profesor_materia(request.user, attrs['materia'])
-
+        
         return attrs
 
 
@@ -154,24 +154,30 @@ class EntregaSerializer(serializers.ModelSerializer):
         if actividad.estado != Actividad.EstadoActividad.PUBLICADA and not (user and es_admin(user)):
             raise serializers.ValidationError({"actividad": "No se pueden realizar entregas en actividades en borrador."})
 
+        ahora = timezone.now()
+        plazo_vencido = bool(actividad.fecha_limite and ahora > actividad.fecha_limite)
+
         if self.instance is not None:
             if user and es_estudiante(user):
                 if self.instance.estado == Entrega.EstadoEntrega.CORREGIDO:
                     raise serializers.ValidationError("Esta entrega ya ha sido calificada y no se puede modificar.")
 
-                if actividad.fecha_limite and timezone.now() > actividad.fecha_limite:
+                if plazo_vencido and not actividad.permitir_entrega_tardia:
                     raise serializers.ValidationError("El plazo límite de la actividad finalizó. No puedes modificar ni reemplazar los archivos.")
 
         else:
             if user and not es_admin(user):
                 verificar_estudiante_materia(user, actividad.materia)
 
+            if plazo_vencido and not actividad.permitir_entrega_tardia:
+                raise serializers.ValidationError("El plazo de entrega ha vencido y no se aceptan entregas fuera de término.")
+
             if user:
                 persona, _ = obtener_persona_y_rol(user)
                 if not persona:
-                    raise serializers.ValidationError("El usuario autenticado no posee un perfil de Persona asociado.")
+                    raise serializers.ValidationError("El usuario autenticado no posee un perfil asociado.")
                 if Entrega.objects.filter(actividad=actividad, estudiante=persona, fecha_baja__isnull=True).exists():
-                    raise serializers.ValidationError("Ya tienes una entrega activa para esta actividad. Modifícala mediante PATCH para reemplazar tu archivo.")
+                    raise serializers.ValidationError("Ya tienes una entrega activa para esta actividad.")
 
         archivo = attrs.get('archivo', getattr(self.instance, 'archivo', None))
         enlace = attrs.get('enlace', getattr(self.instance, 'enlace', None))
