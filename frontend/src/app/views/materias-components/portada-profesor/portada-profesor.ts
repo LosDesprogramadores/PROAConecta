@@ -1,6 +1,6 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
   UnidadMateria,
@@ -11,6 +11,8 @@ import { IMateria } from '../../../model/materia.model';
 import { UnidadesMaterial } from '../portada/unidades-material/unidades-material';
 import { RecursosClaseComponent } from '../portada/recursos-clase/recursos-clase';
 import { MateriaService } from '../../../services/materia.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserRole } from '../../../core/auth/auth.model';
 
 @Component({
   selector: 'app-portada-profesor',
@@ -21,6 +23,17 @@ import { MateriaService } from '../../../services/materia.service';
 })
 export class PortadaProfesor implements OnInit {
   @Input() materia?: MateriaPortada;
+
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private materiaService = inject(MateriaService);
+  private route = inject(ActivatedRoute);
+
+  currentUser = this.authService.currentUser;
+
+  esEstudiante = computed(() =>
+    this.currentUser()?.rolId === UserRole.ESTUDIANTE
+  );
 
   cargando = signal<boolean>(false);
   error = signal<string | null>(null);
@@ -53,12 +66,14 @@ export class PortadaProfesor implements OnInit {
     );
   }
 
-  constructor(
-    private readonly materiaService: MateriaService,
-    private readonly route: ActivatedRoute,
-  ) {}
-
   ngOnInit(): void {
+    // Si es estudiante, redirigir a portada
+    if (this.esEstudiante()) {
+      const id = this.route.snapshot.parent?.paramMap.get('id');
+      this.router.navigate([`/view-materia/${id}/portada`]);
+      return;
+    }
+
     this.cargarMateriaDesdeRuta();
   }
 

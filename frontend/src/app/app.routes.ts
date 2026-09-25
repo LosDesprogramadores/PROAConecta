@@ -8,6 +8,7 @@ import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
 import { Contacto } from './views/dashboard-components/contacto/contacto';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
+import { PortadaProfesor } from './views/materias-components/portada-profesor/portada-profesor';
 import { ForoComponent } from './views/materias-components/foro/foro';
 import { ForoDetalleComponent } from './views/materias-components/foro/foro-detalle/foro-detalle';
 import { authGuard } from './guards/auth.guard';
@@ -75,6 +76,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'portada', component: Portada },
+      { path: 'portada-profesor', component: PortadaProfesor },
       { path: 'anuncios', component: AnunciosMateriaComponent },
       { path: 'material', component: Material },
       { path: 'actividades', component: Actividades },
