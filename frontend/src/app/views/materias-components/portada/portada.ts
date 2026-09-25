@@ -1,28 +1,44 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import {
+  UnidadMateria,
+  ContenidoUnidad,
   MateriaPortada,
 } from '../../../model/unidad-contenido.model';
 import { IMateria } from '../../../model/materia.model';
-import { UnidadesMaterial } from './unidades-material/unidades-material';
-import { RecursosClaseComponent } from './recursos-clase/recursos-clase';
+import { UnidadesMaterial } from '../portada/unidades-material/unidades-material';
+import { RecursosClaseComponent } from '../portada/recursos-clase/recursos-clase';
 import { MateriaService } from '../../../services/materia.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserRole } from '../../../core/auth/auth.model';
 
 @Component({
   selector: 'app-portada',
   standalone: true,
-  imports: [CommonModule, RouterModule, UnidadesMaterial, RecursosClaseComponent],
+  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
   templateUrl: './portada.html',
   styleUrls: ['./portada.css'],
 })
 export class Portada implements OnInit {
   @Input() materia?: MateriaPortada;
 
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private materiaService = inject(MateriaService);
+  private route = inject(ActivatedRoute);
+
+  currentUser = this.authService.currentUser;
+
+  esDocente = computed(() =>
+    this.currentUser()?.rolId === UserRole.DOCENTE
+  );
+
   cargando = signal<boolean>(false);
   error = signal<string | null>(null);
+
   materiaId: number | null = null;
-  unidadExpandida = signal<string | null>(null);
 
   get datosActuales(): MateriaPortada {
     return (
@@ -38,12 +54,14 @@ export class Portada implements OnInit {
     );
   }
 
-  constructor(
-    private readonly materiaService: MateriaService,
-    private readonly route: ActivatedRoute,
-  ) {}
-
   ngOnInit(): void {
+    // Si es docente, redirigir a portada-profesor
+    if (this.esDocente()) {
+      const id = this.route.snapshot.parent?.paramMap.get('id');
+      this.router.navigate([`/view-materia/${id}/portada-profesor`]);
+      return;
+    }
+
     this.cargarMateriaDesdeRuta();
   }
 
@@ -130,13 +148,5 @@ export class Portada implements OnInit {
     return (
       profesor.nombre_completo || profesor.nombre || profesor.apellido_nombre || 'Profesor Titular'
     );
-  }
-
-  toggleUnidad(unidadId: string): void {
-    if (this.unidadExpandida() === unidadId) {
-      this.unidadExpandida.set(null);
-    } else {
-      this.unidadExpandida.set(unidadId);
-    }
   }
 }
