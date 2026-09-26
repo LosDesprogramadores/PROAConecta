@@ -16,7 +16,6 @@ import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
 import { Estudiante } from './views/admin/estudiante/estudiante';
 import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
 import { Material } from './views/materias-components/material/material';
-import { Actividades } from './views/materias-components/actividades/actividades';
 import { Calificaciones } from './views/materias-components/calificaciones/calificaciones';
 import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
@@ -25,8 +24,9 @@ import { Notificacion } from './views/admin/notificacion/notificacion';
 import { welcomeRedirectGuard } from './guards/welcome-redirect-guard';
 import { Welcome } from './views/dashboard-components/estudiante-inicio/welcome/welcome';
 import { WelcomeProfesor } from './views/dashboard-components/welcome-profesor/welcome-profesor';
+import { Actividades } from './views/materias-components/actividades/actividades';
 import { ActividadesDashboard } from './views/dashboard-components/actividades-dashboard/actividades-dashboard';
-
+import { ActividadForm } from './views/dashboard-components/actividad-form/actividad-form';
 
 export const routes: Routes = [
   {
@@ -63,6 +63,8 @@ export const routes: Routes = [
 
       { path: 'welcome', component: WelcomeProfesor },
       { path: 'actividades', component: ActividadesDashboard },
+      { path: 'actividades/nueva', component: ActividadForm },
+      { path: 'actividades/editar/:id', component: ActividadForm },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },

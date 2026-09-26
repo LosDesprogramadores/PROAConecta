@@ -3,18 +3,8 @@ import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ActividadesService } from '../../../services/actividades.service';
+import { Actividad } from '../../../model/actividad-model';
 import { UserRole } from '../../../core/auth/auth.model';
-
-export interface ActividadDashboard {
-  id: number;
-  titulo: string;
-  descripcion: string;
-  materia: string;
-  materiaId?: number;
-  fechaLimite: string;
-  estado: 'activa' | 'cerrada' | 'vencida';
-  fechaCreacion?: string;
-}
 
 @Component({
   selector: 'app-actividades-dashboard',
@@ -24,40 +14,44 @@ export interface ActividadDashboard {
   styleUrl: './actividades-dashboard.css',
 })
 export class ActividadesDashboard implements OnInit {
-
   private authService = inject(AuthService);
   private actividadesService = inject(ActividadesService);
   private router = inject(Router);
 
   currentUser = this.authService.currentUser;
 
-  esEstudiante = computed(() =>
-    this.currentUser()?.rolId === UserRole.ESTUDIANTE
-  );
-
   esDocente = computed(() =>
     this.currentUser()?.rolId === UserRole.DOCENTE
   );
 
   // Señales
-  actividades = signal<ActividadDashboard[]>([]);
+  actividades = signal<Actividad[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  // Computed para estados
+  // Helper para determinar si está vencida
+  private estaVencida(fechaLimite: string): boolean {
+    return new Date(fechaLimite) < new Date();
+  }
+
+  // Computed para estados usando 'PUBLICADA'
+  actividadesPublicadas = computed(() =>
+    this.actividades().filter(a => a.estado === 'PUBLICADA')
+  );
+
   actividadesActivas = computed(() =>
-    this.actividades().filter(a => a.estado === 'activa')
+    this.actividadesPublicadas().filter(a => a.fecha_baja === null && !this.estaVencida(a.fecha_limite))
   );
 
   actividadesVencidas = computed(() =>
-    this.actividades().filter(a => a.estado === 'vencida')
+    this.actividadesPublicadas().filter(a => a.fecha_baja === null && this.estaVencida(a.fecha_limite))
   );
 
   actividadesCerradas = computed(() =>
-    this.actividades().filter(a => a.estado === 'cerrada')
+    this.actividades().filter(a => a.fecha_baja !== null)
   );
 
-  // Filtro actual
+  // Filtro
   filtroActual = signal<'todas' | 'activas' | 'vencidas' | 'cerradas'>('todas');
 
   actividadesFiltradas = computed(() => {
@@ -77,31 +71,18 @@ export class ActividadesDashboard implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadActividades();
+    this.cargarActividades();
   }
 
-  private loadActividades(): void {
+  private cargarActividades(): void {
     this.cargando.set(true);
     this.error.set(null);
 
     this.actividadesService.getActividades().subscribe({
-      next: (data: any[]) => {
-        // Mapear datos de la API al modelo local
-        const actividadesFormateadas: ActividadDashboard[] = data.map(a => ({
-          id: a.id,
-          titulo: a.titulo || a.title,
-          descripcion: a.descripcion || a.description,
-          materia: a.materia?.titulo || a.materia_titulo || 'Sin materia',
-          materiaId: a.materia?.id || a.materia_id,
-          fechaLimite: a.fecha_limite || a.fechaLimite || 'Sin fecha',
-          estado: this.determinarEstado(a.fecha_limite || a.fechaLimite),
-          fechaCreacion: a.fecha_creacion || a.fechaCreacion,
-        }));
-
-        this.actividades.set(actividadesFormateadas);
+      next: (data: Actividad[]) => {
+        this.actividades.set(data);
         this.cargando.set(false);
       },
-
       error: (err) => {
         console.error('Error cargando actividades:', err);
         this.error.set('No se pudieron cargar las actividades. Intenta más tarde.');
@@ -110,42 +91,27 @@ export class ActividadesDashboard implements OnInit {
     });
   }
 
-  private determinarEstado(fechaLimite: string): 'activa' | 'cerrada' | 'vencida' {
-    if (!fechaLimite) return 'activa';
-    
-    const fecha = new Date(fechaLimite);
-    const hoy = new Date();
-    
-    // Si la fecha es menor a hoy, está vencida
-    if (fecha < hoy) return 'vencida';
-    
-    // Por defecto activa
-    return 'activa';
-  }
-
   setFiltro(filtro: 'todas' | 'activas' | 'vencidas' | 'cerradas'): void {
     this.filtroActual.set(filtro);
   }
 
   nuevaActividad(): void {
-    // Redirigir a crear nueva actividad (o abrir modal)
-    console.log('Crear nueva actividad');
-    // this.router.navigate(['/dashboard/actividades/nueva']);
+    this.router.navigate(['/dashboard/actividades/nueva']);
   }
 
-  verActividad(actividad: ActividadDashboard): void {
-    console.log('Ver actividad:', actividad);
-    // Redirigir a la vista de actividad
-    // this.router.navigate(['/dashboard/actividades', actividad.id]);
+  verActividad(actividad: Actividad): void {
+    this.router.navigate(['/dashboard/actividades', actividad.id]);
   }
 
-  entrarAMateria(materiaId?: number): void {
-    if (materiaId) {
-      this.router.navigate(['/view-materia', materiaId, 'actividades']);
-    }
+  gestionarActividad(actividad: Actividad): void {
+    this.router.navigate(['/dashboard/actividades/editar', actividad.id]);
+  }
+
+  irAMateria(materiaId: number): void {
+    this.router.navigate(['/view-materia', materiaId, 'actividades']);
   }
 
   recargar(): void {
-    this.loadActividades();
+    this.cargarActividades();
   }
 }
