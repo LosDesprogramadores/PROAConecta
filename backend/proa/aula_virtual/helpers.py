@@ -1,5 +1,5 @@
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
 def obtener_persona_y_rol(user):
     persona = getattr(user, 'persona', None)
@@ -49,3 +49,12 @@ def verificar_estudiante_materia(user, materia):
     persona, rol = obtener_persona_y_rol(user)
     if rol != 'estudiante' or not materia.estudiantes.filter(id=getattr(persona, 'id', None)).exists():
         raise PermissionDenied("Debes estar inscripto como estudiante en esta materia.")
+
+
+
+def calcular_promedio(calificaciones: list) -> str | None:
+    if not calificaciones:
+        return None
+    total = sum(Decimal(str(c)) for c in calificaciones)
+    prom = total / Decimal(len(calificaciones))
+    return str(prom.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
