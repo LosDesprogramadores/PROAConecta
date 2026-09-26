@@ -1,17 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ActividadesService } from '../../../services/actividades.service';
+import { Actividad } from '../../../model/actividad-model';
 import { UserRole } from '../../../core/auth/auth.model';
-
-interface Actividad {
-  id: number;
-  titulo: string;
-  descripcion: string;
-  materia: string;
-  fechaLimite: string;
-  estado: 'Pendiente' | 'Entregada' | 'Vencida';
-}
 
 @Component({
   selector: 'app-actividades',
@@ -20,68 +13,96 @@ interface Actividad {
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
-export class Actividades {
-
+export class Actividades implements OnInit {
   private authService = inject(AuthService);
+  private actividadesService = inject(ActividadesService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   currentUser = this.authService.currentUser;
-
-  esEstudiante = computed(() =>
-    this.currentUser()?.rolId === UserRole.ESTUDIANTE
-  );
 
   esDocente = computed(() =>
     this.currentUser()?.rolId === UserRole.DOCENTE
   );
 
-  actividades = signal<Actividad[]>([
-    {
-      id: 1,
-      titulo: 'Trabajo Práctico N° 1',
-      descripcion: 'Resolución de ejercicios sobre funciones y ecuaciones.',
-      materia: 'Matemática I',
-      fechaLimite: '30/08/2026',
-      estado: 'Pendiente'
-    },
-    {
-      id: 2,
-      titulo: 'Análisis de texto',
-      descripcion: 'Realizar un análisis sintáctico del texto trabajado en clase.',
-      materia: 'Lengua',
-      fechaLimite: '02/09/2026',
-      estado: 'Pendiente'
-    },
-    {
-      id: 3,
-      titulo: 'Introducción a la programación',
-      descripcion: 'Resolver las actividades correspondientes a la unidad 2.',
-      materia: 'Programación',
-      fechaLimite: '25/08/2026',
-      estado: 'Entregada'
-    },
-    {
-      id: 4,
-      titulo: 'Revolución Industrial',
-      descripcion: 'Investigar las principales consecuencias sociales y económicas.',
-      materia: 'Historia',
-      fechaLimite: '20/08/2026',
-      estado: 'Vencida'
-    }
-  ]);
+  esEstudiante = computed(() =>
+    this.currentUser()?.rolId === UserRole.ESTUDIANTE
+  );
+
+  // Señales
+  materiaId = signal<number | null>(null);
+  materiaTitulo = signal<string>('');
+  actividades = signal<Actividad[]>([]);
+  cargando = signal(false);
+  error = signal<string | null>(null);
+
+  private estaVencida(fechaLimite: string): boolean {
+    return new Date(fechaLimite) < new Date();
+  }
 
   actividadesPendientes = computed(() =>
-    this.actividades().filter(a => a.estado === 'Pendiente')
+    this.actividades().filter(a => a.fecha_baja === null && !this.estaVencida(a.fecha_limite))
   );
 
   actividadesEntregadas = computed(() =>
-    this.actividades().filter(a => a.estado === 'Entregada')
+    this.actividades().filter(a => a.fecha_baja !== null || this.estaVencida(a.fecha_limite))
   );
 
+  ngOnInit(): void {
+    this.route.parent?.params.subscribe(params => {
+      const id = params['id'];
+      if (id) {
+        this.materiaId.set(Number(id));
+        this.cargarActividades(Number(id));
+      }
+    });
+  }
+
+  private cargarActividades(materiaId: number): void {
+    this.cargando.set(true);
+    this.error.set(null);
+
+    this.actividadesService.getActividadesPorMateria(materiaId).subscribe({
+      next: (data: Actividad[]) => {
+        this.actividades.set(data);
+        
+        if (data.length > 0) {
+          this.materiaTitulo.set(data[0].materia_titulo);
+        }
+        
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error cargando actividades:', err);
+        this.error.set('No se pudieron cargar las actividades. Intenta más tarde.');
+        this.cargando.set(false);
+      },
+    });
+  }
+
   nuevaActividad(): void {
-    console.log('Crear nueva actividad');
+    const id = this.materiaId();
+    this.router.navigate(['/dashboard/actividades/nueva'], {
+      queryParams: { materiaId: id }
+    });
   }
 
   verActividad(actividad: Actividad): void {
-    console.log('Ver actividad:', actividad);
+    this.router.navigate(['/dashboard/actividades', actividad.id]);
+  }
+
+  gestionarActividad(actividad: Actividad): void {
+    this.router.navigate(['/dashboard/actividades/editar', actividad.id]);
+  }
+
+  entrarActividad(actividad: Actividad): void {
+    this.router.navigate(['/dashboard/actividades', actividad.id, 'entregar']);
+  }
+
+  recargar(): void {
+    const id = this.materiaId();
+    if (id) {
+      this.cargarActividades(id);
+    }
   }
 }
