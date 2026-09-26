@@ -6,6 +6,8 @@ from .models import Materia, Inscripcion
 from .serializer import MateriaSerializer, InscripcionSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
+
 
 
 @extend_schema_view(
@@ -101,6 +103,22 @@ class MateriaViewSet(viewsets.ModelViewSet):
                 {'detail': 'Materia no encontrada.'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+    @action(detail=True, methods=['get'], url_path='mi-rendimiento')
+    def mi_rendimiento(self, request, pk=None):
+        # Dashboard Estudiante
+
+        materia = self.get_object()
+        data = obtener_rendimiento_estudiante(request.user, materia)
+        return Response(data, status=status.HTTP_200_OK)
+
+        # Dash Profesor
+    @action(detail=True, methods=['get'], url_path='rendimiento-curso')
+    def rendimiento_curso(self, request, pk=None):
+
+        materia = self.get_object()
+        data = obtener_rendimiento_curso_profesor(request.user, materia)
+        return Response(data, status=status.HTTP_200_OK)
 
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
