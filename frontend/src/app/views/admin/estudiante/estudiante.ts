@@ -244,29 +244,6 @@ export class Estudiante implements OnInit {
     });
 
   }
-<<<<<<< HEAD
-  
-desinscribirMateria(materia: any) {
-  const estudiante = this.estudianteSeleccionado();
-  if (!estudiante) return;
-
-  if (!confirm(`¿Estás seguro de dar de baja al alumno de la materia ${materia.titulo}?`)) {
-    return;
-  }
-
-  this.materiaService.desinscribirEstudiante(estudiante.id, materia.id).subscribe({
-    next: () => {
-       this.materiasEstudianteSeleccionado.update(materias => 
-        materias.filter(m => m.id !== materia.id)
-      );
-      // Opcional: Notificar éxito
-    },
-    error: (err) => {
-      console.error('Error al desinscribir:', err);
-      // Muestra el mensaje que envía el backend (ej: "No se puede desinscribir porque ya tiene notas cargadas")
-      const mensajeError = err.error?.error || 'No se pudo realizar la desinscripción.';
-      alert(mensajeError);
-=======
 
   desinscribirMateria(materia: any) {
   const estudiante = this.estudianteSeleccionado();
@@ -281,7 +258,6 @@ desinscribirMateria(materia: any) {
     },
     error: (err) => {
       console.error('Error al desinscribir:', err);
->>>>>>> ab938a64fc38e1ae8db6b69ea166d48cab91fbd7
     }
   });
 }
