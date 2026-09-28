@@ -172,3 +172,28 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             'estudiante_id': estudiante_id,
             'cantidad': len(inscripciones_creadas)
         }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='desinscribir')
+    def desinscribir_estudiante(self, request):
+        estudiante_id = request.data.get('estudiante_id')
+        materia_id = request.data.get('materia_id')
+
+        tiene_notas = Nota.objects.filter(estudiante_id=estudiante_id, materia_id=materia_id).exists()
+
+        if tiene_notas:
+            return Response(
+                {"error": "No se puede desinscribir al estudiante porque ya tiene notas cargadas en esta materia."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        inscripcion = Inscripcion.objects.filter(
+            estudiante_id=estudiante_id, 
+            materia_id=materia_id
+        ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).first()
+
+        if inscripcion:
+            inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
+            inscripcion.save()
+            return Response({"message": "Estudiante dado de baja correctamente de la materia."}, status=status.HTTP_200_OK)
+        
+        return Response({"error": "No se encontró una inscripción activa para este estudiante."}, status=status.HTTP_404_NOT_FOUND)

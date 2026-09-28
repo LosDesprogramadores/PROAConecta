@@ -67,4 +67,12 @@ export class MateriaService {
    desasignarProfesor(materiaId: number): Observable<any> {
    return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`,{});
   }
+
+  desinscribirEstudiante(estudianteId: number, materiaId: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}$desinscribir/`, {
+      estudiante_id: estudianteId,
+      materia_id: materiaId
+    });
+  }
+
 }

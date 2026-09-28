@@ -218,4 +218,29 @@ private toastService = inject(ToastService)
     this.toastService.info(`Consulta de estudiante: en desarrollo`);
    
   }
+  
+desinscribirMateria(materia: any) {
+  const estudiante = this.estudianteSeleccionado();
+  if (!estudiante) return;
+
+  if (!confirm(`¿Estás seguro de dar de baja al alumno de la materia ${materia.titulo}?`)) {
+    return;
+  }
+
+  this.materiaService.desinscribirEstudiante(estudiante.id, materia.id).subscribe({
+    next: () => {
+       this.materiasEstudianteSeleccionado.update(materias => 
+        materias.filter(m => m.id !== materia.id)
+      );
+      // Opcional: Notificar éxito
+    },
+    error: (err) => {
+      console.error('Error al desinscribir:', err);
+      // Muestra el mensaje que envía el backend (ej: "No se puede desinscribir porque ya tiene notas cargadas")
+      const mensajeError = err.error?.error || 'No se pudo realizar la desinscripción.';
+      alert(mensajeError);
+    }
+  });
+}
+
 }
