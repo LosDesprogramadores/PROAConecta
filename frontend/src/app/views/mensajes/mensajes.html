@@ -1,0 +1,71 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">Mensajes</h1>
+    <p class="text-sm text-slate-500">Comunícate de forma directa con estudiantes y profesores.</p>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[550px]">
+    
+    <!-- Panel Izquierdo: Lista de Chats -->
+    <div class="border-r border-slate-200 bg-slate-50/50 flex flex-col">
+      <div class="p-4 border-b border-slate-200">
+        <input type="text" placeholder="Buscar mensajes..." class="w-full px-3 py-2 text-sm bg-white rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      
+      <div class="overflow-y-auto flex-1 divide-y divide-slate-100">
+        @for (conv of conversaciones(); track conv.id) {
+          <div (click)="seleccionarConversacion(conv)" 
+               [class.bg-sky-50/80]="conversacionActiva()?.id === conv.id"
+               class="p-4 hover:bg-white transition cursor-pointer flex items-start gap-3">
+            <div class="bg-sky-600 text-white rounded-full h-10 w-10 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+              {{ conv.remitente.charAt(0) }}
+            </div>
+            <div class="overflow-hidden flex-1">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-sm font-semibold text-slate-800 truncate">{{ conv.remitente }}</span>
+                <span class="text-[10px] text-slate-400">{{ conv.tiempo }}</span>
+              </div>
+              <p class="text-xs text-slate-500 truncate">{{ conv.ultimoMensaje }}</p>
+              <span class="inline-block mt-1 text-[10px] font-medium text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">{{ conv.curso }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Panel Derecho: Conversación Activa -->
+    <div class="col-span-2 flex flex-col justify-between bg-white">
+      @if (conversacionActiva()) {
+        <!-- Cabecera del Chat -->
+        <div class="p-4 border-b border-slate-200 flex items-center gap-3 bg-slate-50/30">
+          <div class="bg-sky-600 text-white rounded-full h-9 w-9 flex items-center justify-center font-bold text-sm">
+            {{ conversacionActiva().remitente.charAt(0) }}
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">{{ conversacionActiva().remitente }}</h3>
+            <p class="text-xs text-sky-600 font-medium">{{ conversacionActiva().curso }}</p>
+          </div>
+        </div>
+
+        <!-- Cuerpo de Mensajes -->
+        <div class="p-6 flex-1 overflow-y-auto space-y-4 bg-slate-50/20">
+          <div class="flex justify-start">
+            <div class="bg-slate-100 text-slate-800 p-3 rounded-2xl rounded-tl-sm max-w-md text-sm shadow-xs">
+              {{ conversacionActiva().ultimoMensaje }}
+              <span class="block text-[10px] text-slate-400 text-right mt-1">10:45 AM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caja de Texto para Responder -->
+        <div class="p-4 border-t border-slate-200 bg-white flex items-center gap-2">
+          <input type="text" placeholder="Escribe tu respuesta..." class="flex-1 px-4 py-2 text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <button class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-sm">
+            Enviar
+          </button>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>
