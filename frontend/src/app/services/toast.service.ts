@@ -34,7 +34,7 @@ export class ToastService {
   }
 
   error(mensaje: string, titulo: string = '' ): void {
-    this.show(mensaje, 'error', "", 4000);
+    this.show(mensaje, 'error', "Al carcag los datos", 4000);
   }
 
   info(mensaje: string, titulo: string = ''): void {
