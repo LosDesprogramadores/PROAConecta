@@ -46,6 +46,10 @@ export class MateriaService {
     return this.http.get<IMateria[]>(`${this.baseUrl}?profesor=${profesorId}`);
   }
 
+  obteberMateriasPorEstudiante(estudianteId: number): Observable<IMateria[]> {
+    return this.http.get<IMateria[]>(`${this.baseUrl}por-estudiante/${estudianteId}/`);
+  }
+
   cargarMateriasDisponiblesParaEstudiante(estudianteId: number): Observable<IMateria[]> {
     return this.http.get<IMateria[]>(`${this.baseUrl}?disponibles_estudiante=${estudianteId}`);
   }
@@ -68,6 +72,7 @@ export class MateriaService {
    return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`,{});
   }
 
+<<<<<<< HEAD
   desinscribirEstudiante(estudianteId: number, materiaId: number): Observable<any> {
     return this.http.post(`${this.baseUrl}$desinscribir/`, {
       estudiante_id: estudianteId,
@@ -75,4 +80,10 @@ export class MateriaService {
     });
   }
 
+=======
+  desinscribirEstudiante(materiaId: number, estudianteId: number): Observable<any> {
+    return this.http.delete<void>(`${this.baseUrl}${materiaId}/inscripciones/${estudianteId}/`);
+  }
+  
+>>>>>>> ab938a64fc38e1ae8db6b69ea166d48cab91fbd7
 }

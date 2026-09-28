@@ -120,6 +120,12 @@ class MateriaViewSet(viewsets.ModelViewSet):
         data = obtener_rendimiento_curso_profesor(request.user, materia)
         return Response(data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'], url_path='por-estudiante/(?P<estudiante_id>[^/.]+)')
+    def materias_por_estudiante(self, request, estudiante_id=None):
+        materias = Materia.objects.filter(estudiantes__id=estudiante_id)
+        serializer = self.get_serializer(materias, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer

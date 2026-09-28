@@ -2,6 +2,7 @@ import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { IPersona, Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";
+import { MateriaService } from "./materia.service";
 
 
 @Injectable({
@@ -11,6 +12,7 @@ import { PersonaService } from "./persona.service";
 export class EstudianteService {
 
 private readonly personaService = inject(PersonaService);
+private readonly materiaService = inject(MateriaService);
 
 
 obtenerEstudiates():Observable<Persona[]>{
@@ -32,5 +34,10 @@ actualizarEstudiante(estudianteId: number, estudianteActualizado: IPersona) {
 eliminarEstudiante(id: number): Observable<void> {
   return this.personaService.eliminarPersona(id);       
 }
+
+obtenerMateriasEstudiante(estudianteId: number): Observable<any[]> {
+  return this.materiaService.obteberMateriasPorEstudiante(estudianteId);  
+  }
+
 
 }
