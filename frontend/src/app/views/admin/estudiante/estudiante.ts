@@ -86,6 +86,7 @@ export class Estudiante implements OnInit {
   }
 
   openEditModal(estudiante: Persona): void {
+    this.ocultarModalConsultar();
     this.isEditing.set(true);
     this.selectedId.set(estudiante.id);
     this.form.patchValue(estudiante);
@@ -140,6 +141,7 @@ export class Estudiante implements OnInit {
   }
 
   eliminar(id: number): void {
+    this.ocultarModalConsultar();
     if (confirm('¿Deseas eliminar este estudiante?')) {
       this.estudianteService.eliminarEstudiante(id).subscribe({
         next: () => {
@@ -156,6 +158,7 @@ export class Estudiante implements OnInit {
   }
 
   inscribir(estudiante: Persona): void {
+    this.ocultarModalConsultar();
     console.log('Iniciando proceso de inscripción para el estudiante:', estudiante);
     this.estudianteParaInscribir.set(estudiante);
     this.selectedMateriaIds.set([]);
@@ -244,22 +247,28 @@ export class Estudiante implements OnInit {
     });
 
   }
-
-  desinscribirMateria(materia: any) {
+  
+desinscribirMateria(materia: any) {
   const estudiante = this.estudianteSeleccionado();
   if (!estudiante) return;
 
-  this.materiaService.desinscribirEstudiante(materia.id, estudiante.id).subscribe({
+  this.materiaService.desinscribirEstudiante(estudiante.id, materia.id).subscribe({
     next: () => {
-      this.materiasEstudianteSeleccionado.update(materias => 
+       this.materiasEstudianteSeleccionado.update(materias => 
         materias.filter(m => m.id !== materia.id)
       );
-     
+     this.toastService.success("Se ha desinscrito al estudiante.");
     },
     error: (err) => {
-      console.error('Error al desinscribir:', err);
+      this.toastService.error("No se pudo desinscribir al estudiante tiene datos cargados en la materia.");
     }
   });
 }
+
+ocultarModalConsultar() {
+  this.estudianteSeleccionado.set(null);
+  this.materiasEstudianteSeleccionado.set([]);
+  this.isLoadingConsulta.set(false);
+   }
 
 }

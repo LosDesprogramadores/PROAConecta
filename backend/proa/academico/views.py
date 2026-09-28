@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
 from .serializer import MateriaSerializer, InscripcionSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -122,7 +123,14 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='por-estudiante/(?P<estudiante_id>[^/.]+)')
     def materias_por_estudiante(self, request, estudiante_id=None):
-        materias = Materia.objects.filter(estudiantes__id=estudiante_id)
+        materias_activas_ids = Inscripcion.objects.filter(
+            estudiante_id=estudiante_id
+        ).exclude(
+            estado=Inscripcion.EstadoInscripcion.BAJA
+        ).values_list('materia_id', flat=True)
+
+        materias = Materia.objects.filter(id__in=materias_activas_ids)
+        
         serializer = self.get_serializer(materias, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -178,3 +186,30 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             'estudiante_id': estudiante_id,
             'cantidad': len(inscripciones_creadas)
         }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='desinscribir')
+    def desinscribir_estudiante(self, request):
+        estudiante_id = request.data.get('estudiante_id')
+        materia_id = request.data.get('materia_id')
+
+        tiene_notas = Nota.objects.filter(
+            entrega__estudiante_id=estudiante_id,
+            entrega__actividad__materia_id=materia_id
+        ).exists()
+
+        if tiene_notas:
+            return Response(
+                {"error": "No se puede desinscribir al estudiante porque ya tiene notas cargadas en esta materia."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        inscripcion = Inscripcion.objects.filter(
+            estudiante_id=estudiante_id, 
+            materia_id=materia_id
+        ).first()
+
+        if inscripcion:
+            inscripcion.delete()
+            return Response({"message": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
+        
+        return Response({"error": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)
