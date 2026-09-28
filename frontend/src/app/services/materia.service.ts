@@ -46,6 +46,10 @@ export class MateriaService {
     return this.http.get<IMateria[]>(`${this.baseUrl}?profesor=${profesorId}`);
   }
 
+  obteberMateriasPorEstudiante(estudianteId: number): Observable<IMateria[]> {
+    return this.http.get<IMateria[]>(`${this.baseUrl}por-estudiante/${estudianteId}/`);
+  }
+
   cargarMateriasDisponiblesParaEstudiante(estudianteId: number): Observable<IMateria[]> {
     return this.http.get<IMateria[]>(`${this.baseUrl}?disponibles_estudiante=${estudianteId}`);
   }
@@ -67,4 +71,9 @@ export class MateriaService {
    desasignarProfesor(materiaId: number): Observable<any> {
    return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`,{});
   }
+
+  desinscribirEstudiante(materiaId: number, estudianteId: number): Observable<any> {
+    return this.http.delete<void>(`${this.baseUrl}${materiaId}/inscripciones/${estudianteId}/`);
+  }
+  
 }
