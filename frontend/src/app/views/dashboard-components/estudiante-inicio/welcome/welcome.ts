@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { Informacion } from '../informacion/informacion';
-import { MateriasResumen } from '../materias-resumen/materias-resumen'; // Importar nuevo componente
+import { Materias } from '../../materias/materias';
 import { ProximasEntregas } from '../proximas-entregas/proximas-entregas';
 import { Anuncios } from '../anuncios/anuncios';
 
@@ -18,7 +18,7 @@ interface Noticia {
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, RouterLink, Informacion, MateriasResumen, ProximasEntregas, Anuncios],
+  imports: [CommonModule, Materias, Informacion, ProximasEntregas, Anuncios],
   templateUrl: './welcome.html',
   styleUrls: ['./welcome.css'],
 })
