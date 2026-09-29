@@ -68,12 +68,15 @@ export class MateriaService {
     });
   }
 
-   desasignarProfesor(materiaId: number): Observable<any> {
-   return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`,{});
+  desasignarProfesor(materiaId: number): Observable<any> {
+    return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`, {});
   }
 
-  desinscribirEstudiante(materiaId: number, estudianteId: number): Observable<any> {
-    return this.http.delete<void>(`${this.baseUrl}${materiaId}/inscripciones/${estudianteId}/`);
+  desinscribirEstudiante(estudianteId: number, materiaId: number): Observable<any> {
+    return this.http.post(`${environment.apiUrl}inscripciones/desinscribir/`, {
+      estudiante_id: estudianteId,
+      materia_id: materiaId
+    });
   }
-  
+
 }
