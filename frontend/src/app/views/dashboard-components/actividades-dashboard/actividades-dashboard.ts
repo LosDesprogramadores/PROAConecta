@@ -89,13 +89,12 @@ export class ActividadesDashboard implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
 
-    // Usa exactamente el método que el servicio ya tiene
     this.actividadesService.getActividades().subscribe({
       next: (data: Actividad[]) => {
         this.actividades.set(data);
         this.cargando.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error cargando actividades:', err);
         this.error.set('No se pudieron cargar las actividades. Intenta más tarde.');
         this.cargando.set(false);
@@ -112,15 +111,33 @@ export class ActividadesDashboard implements OnInit {
   }
 
   verActividad(actividad: Actividad): void {
-    this.router.navigate(['/dashboard/actividades', actividad.id]);
+    const idMat = typeof actividad.materia === 'object' ? (actividad.materia as any).id : actividad.materia;
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'detalle']);
   }
 
   gestionarActividad(actividad: Actividad): void {
-    this.router.navigate(['/dashboard/actividades/editar', actividad.id]);
+    const idMat = typeof actividad.materia === 'object' ? (actividad.materia as any).id : actividad.materia;
+    // Redirige al formulario de edición de la materia correspondiente
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'editar']);
   }
 
   verEntregas(actividad: Actividad): void {
-    this.router.navigate(['/dashboard/actividades', actividad.id, 'entregas']);
+    const idMat = typeof actividad.materia === 'object' ? (actividad.materia as any).id : actividad.materia;
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'entregas']);
+  }
+
+  eliminarActividad(actividad: Actividad): void {
+    if (confirm(`¿Estás seguro de que deseas eliminar la actividad "${actividad.titulo}"?`)) {
+      this.actividadesService.eliminarActividad(actividad.id).subscribe({
+        next: () => {
+          this.actividades.update(acts => acts.filter(a => a.id !== actividad.id));
+        },
+        error: (err: any) => {
+          console.error('Error al eliminar la actividad:', err);
+          alert('No se pudo eliminar la actividad. Intenta nuevamente.');
+        }
+      });
+    }
   }
 
   irAMateria(materiaId: number): void {
@@ -131,9 +148,6 @@ export class ActividadesDashboard implements OnInit {
     this.cargarActividades();
   }
 
-  /**
-   * Determina el estado visual de la actividad para mostrar en badge
-   */
   getEstadoBadge(actividad: Actividad): { estado: string; clase: string } {
     if (actividad.estado === 'BORRADOR') {
       return { estado: 'Borrador', clase: 'bg-slate-100 text-slate-700 border-slate-200' };

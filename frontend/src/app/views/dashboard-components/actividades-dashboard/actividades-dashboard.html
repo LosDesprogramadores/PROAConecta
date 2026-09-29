@@ -200,6 +200,14 @@
                     class="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition">
                     Entregas ({{ actividad.cantidad_entregas }})
                   </button>
+
+                  <!-- 👈 BOTÓN ELIMINAR AÑADIDO -->
+                  <button
+                    type="button"
+                    (click)="eliminarActividad(actividad)"
+                    class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100 transition">
+                    Eliminar
+                  </button>
                 }
               </div>
             </div>
