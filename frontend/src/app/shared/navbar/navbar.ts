@@ -27,6 +27,10 @@ export class Navbar {
   isProfileMenuOpen = signal<boolean>(false);
   isProfileModalOpen = signal<boolean>(false);
 
+  // Estados para los nuevos menús desplegables
+  isMessagesOpen = signal<boolean>(false);
+  isNotificationsOpen = signal<boolean>(false);
+
   unreadCount = signal<number>(4);
 
   /**
@@ -201,11 +205,27 @@ export class Navbar {
 
   toggleProfileMenu(): void {
     this.isProfileMenuOpen.update((value) => !value);
+    this.isMessagesOpen.set(false);
+    this.isNotificationsOpen.set(false);
+  }
+
+  toggleMessages(): void {
+    this.isMessagesOpen.update((value) => !value);
+    this.isNotificationsOpen.set(false);
+    this.isProfileMenuOpen.set(false);
+  }
+
+  toggleNotifications(): void {
+    this.isNotificationsOpen.update((value) => !value);
+    this.isMessagesOpen.set(false);
+    this.isProfileMenuOpen.set(false);
   }
 
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
     this.isProfileMenuOpen.set(false);
+    this.isMessagesOpen.set(false);
+    this.isNotificationsOpen.set(false);
   }
 
   openProfileModal(): void {
@@ -226,8 +246,17 @@ export class Navbar {
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
 
-    if (!target.closest('#user-menu-button') && !target.closest('#user-menu-dropdown')) {
+    if (
+      !target.closest('#user-menu-button') &&
+      !target.closest('#user-menu-dropdown') &&
+      !target.closest('#messages-button') &&
+      !target.closest('#messages-dropdown') &&
+      !target.closest('#notifications-button') &&
+      !target.closest('#notifications-dropdown')
+    ) {
       this.isProfileMenuOpen.set(false);
+      this.isMessagesOpen.set(false);
+      this.isNotificationsOpen.set(false);
     }
   }
 
