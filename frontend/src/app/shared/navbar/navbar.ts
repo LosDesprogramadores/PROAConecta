@@ -1,12 +1,14 @@
 import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
-
-import { RouterModule } from '@angular/router';
-
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
-
 import { Toast } from '../toast/toast';
 import { ToastService } from '../../services/toast.service';
+
+interface NavLink {
+  label: string;
+  path: string;
+}
 
 @Component({
   selector: 'app-navbar',
@@ -17,39 +19,38 @@ import { ToastService } from '../../services/toast.service';
 export class Navbar {
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   currentUser = this.authService.currentUser;
 
-  loading = signal<boolean>(true);
-
   isMobileMenuOpen = signal<boolean>(false);
-
   isProfileMenuOpen = signal<boolean>(false);
-
   isProfileModalOpen = signal<boolean>(false);
 
   unreadCount = signal<number>(4);
 
+  /**
+   * Rutas administrativas.
+   * Se muestran únicamente dentro del toggler en pantallas menores a lg.
+   */
   navLinksAdmi: NavLink[] = [];
+
+  /**
+   * Rutas del dashboard según el rol.
+   * Se muestran únicamente dentro del toggler en pantallas menores a lg.
+   */
+  navLinks: NavLink[] = [];
+
+  /**
+   * Rutas específicas de una materia.
+   * Se muestran únicamente dentro del toggler cuando estamos
+   * dentro de /view-materia/:id.
+   */
+  navLinksMateria: NavLink[] = [];
 
   userAvatar = signal<string>(
     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
   );
-
-  navLinks = [
-    {
-      label: 'Materias',
-      path: '/materias',
-    },
-    {
-      label: 'Foros',
-      path: '/foros',
-    },
-    {
-      label: 'Actividades',
-      path: '/actividades',
-    },
-  ];
 
   userName = computed(() => {
     const persona = this.currentUser()?.persona;
@@ -61,45 +62,96 @@ export class Navbar {
     return `${persona.nombre} ${persona.apellido}`;
   });
 
+  /**
+   * Indica si actualmente estamos dentro del dashboard de una materia.
+   */
+  isMateriaRoute = computed(() => {
+    return this.router.url.startsWith('/view-materia/');
+  });
+
   constructor() {
     effect(() => {
       const user = this.currentUser();
 
+      // Limpiamos todas las rutas si no hay usuario autenticado.
       if (!user) {
         this.navLinksAdmi = [];
+        this.navLinks = [];
+        this.navLinksMateria = [];
+        return;
+      }
+
+      // Si estamos dentro de una materia, solamente cargamos
+      // las rutas propias de la materia.
+      if (this.isMateriaRoute()) {
+        this.navLinksAdmi = [];
+        this.navLinks = [];
+
+        this.navLinksMateria = this.obtenerLinksMateria();
 
         return;
       }
+
+      // Si estamos fuera de una materia, limpiamos sus rutas.
+      this.navLinksMateria = [];
 
       switch (user.rolId) {
         case UserRole.ADMIN:
           this.navLinksAdmi = [
             {
               label: 'Profesores',
-              path: 'admin/profesores',
+              path: '/admin/profesores',
             },
             {
               label: 'Estudiantes',
-              path: 'admin/estudiantes',
+              path: '/admin/estudiantes',
             },
             {
               label: 'Materias',
-              path: 'admin/materias',
+              path: '/admin/materias',
             },
             {
               label: 'Notificaciones',
-              path: 'admin/notificaciones',
+              path: '/admin/notificaciones',
+            },
+          ];
+
+          this.navLinks = [];
+          break;
+
+        case UserRole.DOCENTE:
+          this.navLinksAdmi = [];
+
+          this.navLinks = [
+            {
+              label: 'Mis Clases',
+              path: '/docente/materias',
+            },
+            {
+              label: 'Calificaciones',
+              path: '/docente/calificaciones',
             },
           ];
 
           break;
 
-        case UserRole.DOCENTE:
-
         case UserRole.ESTUDIANTE:
-          // Profesores y estudiantes no tienen
-          // enlaces administrativos.
           this.navLinksAdmi = [];
+
+          this.navLinks = [
+            {
+              label: 'Anuncios',
+              path: '/dashboard/estudiante/anuncios',
+            },
+            {
+              label: 'Materias',
+              path: '/dashboard/estudiante/materias',
+            },
+            {
+              label: 'Contacto',
+              path: '/dashboard/estudiante/contacto',
+            },
+          ];
 
           break;
 
@@ -107,10 +159,40 @@ export class Navbar {
           console.warn('Rol no reconocido:', user.rolId);
 
           this.navLinksAdmi = [];
-
+          this.navLinks = [];
           break;
       }
     });
+  }
+
+  private obtenerLinksMateria(): NavLink[] {
+    const url = this.router.url;
+
+    const match = url.match(/^\/view-materia\/([^/]+)/);
+    const materiaId = match?.[1];
+
+    if (!materiaId) {
+      return [];
+    }
+
+    return [
+      {
+        label: 'Anuncios',
+        path: `/view-materia/${materiaId}/anuncios`,
+      },
+      {
+        label: 'Material',
+        path: `/view-materia/${materiaId}/material`,
+      },
+      {
+        label: 'Actividades',
+        path: `/view-materia/${materiaId}/actividades`,
+      },
+      {
+        label: 'Calificaciones',
+        path: `/view-materia/${materiaId}/calificaciones`,
+      },
+    ];
   }
 
   toggleMobileMenu(): void {
@@ -123,13 +205,11 @@ export class Navbar {
 
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
-
     this.isProfileMenuOpen.set(false);
   }
 
   openProfileModal(): void {
     this.closeMenus();
-
     this.isProfileModalOpen.set(true);
   }
 
@@ -139,7 +219,6 @@ export class Navbar {
 
   logout(): void {
     this.closeMenus();
-
     this.authService.logout();
   }
 

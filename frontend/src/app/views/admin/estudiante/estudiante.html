@@ -340,4 +340,41 @@
   </div>
 }
 
+@if (estudianteAEliminar(); as est) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in">
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xl max-w-md w-full p-6 space-y-4">
+      
+      <div class="flex items-center space-x-3 text-rose-600">
+        <div class="p-3 bg-rose-50 rounded-xl">
+          <!-- Icono de advertencia o papelera -->
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">¿Eliminar estudiante?</h3>
+      </div>
+
+      <p class="text-sm text-slate-600">
+        Estás a punto de eliminar al alumno <strong class="text-slate-800">{{ est.apellido }}, {{ est.nombre }}</strong>. Esta acción no se puede deshacer.
+      </p>
+
+      <div class="flex justify-end space-x-3 pt-2">
+        <button 
+          type="button"
+          (click)="cancelarEliminacion()" 
+          class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
+          Cancelar
+        </button>
+        <button 
+          type="button"
+          (click)="confirmarEliminacion()" 
+          class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition-colors cursor-pointer">
+          Sí, eliminar
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
 <app-toast></app-toast>
