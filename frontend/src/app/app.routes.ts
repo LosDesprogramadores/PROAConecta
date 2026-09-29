@@ -27,6 +27,8 @@ import { WelcomeProfesor } from './views/dashboard-components/welcome-profesor/w
 import { Actividades } from './views/materias-components/actividades/actividades';
 import { ActividadesDashboard } from './views/dashboard-components/actividades-dashboard/actividades-dashboard';
 import { ActividadForm } from './views/dashboard-components/actividad-form/actividad-form';
+import { MensajesComponent } from './views/mensajes/mensajes';
+import { NotificacionesComponent } from './views/notificaciones/notificaciones';
 
 export const routes: Routes = [
   {
@@ -68,6 +70,8 @@ export const routes: Routes = [
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },
+      { path: 'mensajes', component: MensajesComponent },
+      { path: 'notificaciones', component: NotificacionesComponent },
 
       { path: '', redirectTo: 'ingreso', pathMatch: 'full' },
     ],

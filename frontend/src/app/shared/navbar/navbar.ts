@@ -8,6 +8,11 @@ import { UserRole } from '../../core/auth/auth.model';
 import { Toast } from '../toast/toast';
 import { ToastService } from '../../services/toast.service';
 
+interface NavLink {
+  label: string;
+  path: string;
+}
+
 @Component({
   selector: 'app-navbar',
   imports: [RouterModule, Toast],
@@ -28,7 +33,22 @@ export class Navbar {
 
   isProfileModalOpen = signal<boolean>(false);
 
+  // Estados para los nuevos menús desplegables
+  isMessagesOpen = signal<boolean>(false);
+  isNotificationsOpen = signal<boolean>(false);
+
   unreadCount = signal<number>(4);
+
+  // Datos mock de prueba visual
+  messages = [
+    { sender: 'Ana López', text: 'Hola profe, le consulto sobre la consigna...', time: 'Hace 10 min' },
+    { sender: 'Carlos Ruiz', text: '¿Hay clases de consulta esta semana?', time: 'Hace 1 hora' }
+  ];
+
+  notifications = [
+    { title: 'Nueva entrega', description: 'Juan Pérez subió la actividad de Backend.', time: 'Hace 5 min' },
+    { title: 'Recordatorio', description: 'Cierre de calificaciones en 3 días.', time: 'Hace 2 horas' }
+  ];
 
   navLinksAdmi: NavLink[] = [];
 
@@ -95,10 +115,7 @@ export class Navbar {
           break;
 
         case UserRole.DOCENTE:
-
         case UserRole.ESTUDIANTE:
-          // Profesores y estudiantes no tienen
-          // enlaces administrativos.
           this.navLinksAdmi = [];
 
           break;
@@ -119,12 +136,27 @@ export class Navbar {
 
   toggleProfileMenu(): void {
     this.isProfileMenuOpen.update((value) => !value);
+    this.isMessagesOpen.set(false);
+    this.isNotificationsOpen.set(false);
+  }
+
+  toggleMessages(): void {
+    this.isMessagesOpen.update((value) => !value);
+    this.isNotificationsOpen.set(false);
+    this.isProfileMenuOpen.set(false);
+  }
+
+  toggleNotifications(): void {
+    this.isNotificationsOpen.update((value) => !value);
+    this.isMessagesOpen.set(false);
+    this.isProfileMenuOpen.set(false);
   }
 
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
-
     this.isProfileMenuOpen.set(false);
+    this.isMessagesOpen.set(false);
+    this.isNotificationsOpen.set(false);
   }
 
   openProfileModal(): void {
@@ -147,8 +179,17 @@ export class Navbar {
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
 
-    if (!target.closest('#user-menu-button') && !target.closest('#user-menu-dropdown')) {
+    if (
+      !target.closest('#user-menu-button') &&
+      !target.closest('#user-menu-dropdown') &&
+      !target.closest('#messages-button') &&
+      !target.closest('#messages-dropdown') &&
+      !target.closest('#notifications-button') &&
+      !target.closest('#notifications-dropdown')
+    ) {
       this.isProfileMenuOpen.set(false);
+      this.isMessagesOpen.set(false);
+      this.isNotificationsOpen.set(false);
     }
   }
 
