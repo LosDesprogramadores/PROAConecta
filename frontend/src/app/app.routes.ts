@@ -27,6 +27,8 @@ import { WelcomeProfesor } from './views/dashboard-components/welcome-profesor/w
 import { Actividades } from './views/materias-components/actividades/actividades';
 import { ActividadesDashboard } from './views/dashboard-components/actividades-dashboard/actividades-dashboard';
 import { ActividadForm } from './views/dashboard-components/actividad-form/actividad-form';
+import { ActividadDetalleComponent } from './views/dashboard-components/actividad-detalle/actividad-detalle';
+import { ActividadEntregasComponent } from './views/dashboard-components/actividad-entregas/actividad-entregas';
 import { MensajesComponent } from './views/mensajes/mensajes';
 import { NotificacionesComponent } from './views/notificaciones/notificaciones';
 
@@ -86,6 +88,11 @@ export const routes: Routes = [
       { path: 'anuncios', component: AnunciosMateriaComponent },
       { path: 'material', component: Material },
       { path: 'actividades', component: Actividades },
+      { path: 'actividades/nueva', component: ActividadForm },
+      { path: 'actividades/:id/detalle', component: ActividadDetalleComponent }, // 👈 Vista de sólo lectura ("Ver")
+      { path: 'actividades/:id/editar', component: ActividadForm },             // 👈 Formulario editable ("Editar")
+      { path: 'actividades/:id/entregar', component: ActividadForm },           // 👈 Vista de entrega alumno
+      { path: 'actividades/:id/entregas', component: ActividadEntregasComponent }, // 👈 Panel de entregas profesor
       { path: 'foro', component: ForoComponent },
       { path: 'foro/:id', component: ForoDetalleComponent },
       { path: 'calificaciones', component: Calificaciones },

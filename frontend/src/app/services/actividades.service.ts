@@ -7,7 +7,7 @@ import { Actividad } from '../model/actividad-model';
   providedIn: 'root'
 })
 export class ActividadesService {
-  private apiUrl = 'http://localhost:8000/api/actividades/'; // Ajusta según tu entorno si es necesario
+  private apiUrl = 'http://localhost:8000/api/actividades'; // Ajusta según tu entorno si es necesario
 
   constructor(private http: HttpClient) {}
 
