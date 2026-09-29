@@ -19,42 +19,9 @@
       <app-materias-resumen></app-materias-resumen>
     </div>
 
-    <!-- 2. Columna Central: Última novedad -->
+    <!-- 2. Columna Central: Última novedad (Componente Encapsulado) -->
     <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-slate-800">Última novedad</h3>
-        <a routerLink="/dashboard/anuncios"
-          class="text-sm font-medium text-primary hover:text-primary/80 transition flex items-center gap-1">
-          Ver todas <span aria-hidden="true">&rarr;</span>
-        </a>
-      </div>
-
-      @if (noticias().length === 0) {
-      <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500 text-sm">
-        No hay novedades registradas.
-      </div>
-      } @else {
-      <article
-        class="rounded-xl bg-white p-6 border border-slate-200 hover:border-slate-300 transition cursor-pointer space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-primary border border-blue-100">
-            Institucional
-          </span>
-          <time class="text-xs text-slate-400">{{ noticias()[0].fecha }} — {{ noticias()[0].hora }}</time>
-        </div>
-
-        <div>
-          <h4 class="text-lg font-bold text-slate-800 leading-snug mb-1">
-            {{ noticias()[0].titulo }}
-          </h4>
-          <p class="text-xs text-slate-400">Publicado por {{ noticias()[0].autor }}</p>
-        </div>
-
-        <p class="text-sm text-slate-600 leading-relaxed">
-          {{ noticias()[0].contenido }}
-        </p>
-      </article>
-      }
+      <app-anuncios></app-anuncios>
     </div>
 
     <!-- 3. Columna Derecha: Próximas Entregas -->
