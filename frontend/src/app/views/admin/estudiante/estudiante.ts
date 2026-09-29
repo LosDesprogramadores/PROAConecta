@@ -247,20 +247,20 @@ export class Estudiante implements OnInit {
     });
 
   }
-  
-desinscribirMateria(materia: any) {
+
+  desinscribirMateria(materia: any) {
   const estudiante = this.estudianteSeleccionado();
   if (!estudiante) return;
 
-  this.materiaService.desinscribirEstudiante(estudiante.id, materia.id).subscribe({
+  this.materiaService.desinscribirEstudiante(materia.id, estudiante.id).subscribe({
     next: () => {
-       this.materiasEstudianteSeleccionado.update(materias => 
+      this.materiasEstudianteSeleccionado.update(materias => 
         materias.filter(m => m.id !== materia.id)
       );
-     this.toastService.success("Se ha desinscrito al estudiante.");
+     
     },
     error: (err) => {
-      this.toastService.error("No se pudo desinscribir al estudiante tiene datos cargados en la materia.");
+      console.error('Error al desinscribir:', err);
     }
   });
 }
