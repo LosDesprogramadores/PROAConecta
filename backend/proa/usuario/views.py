@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, login
-from rest_framework import viewsets, status, generics
+from rest_framework import viewsets, status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Rol, Persona
@@ -9,6 +9,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from academico.models import Materia
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.conf import settings
+
+
+
 
 
 class UsuarioCreateView(generics.CreateAPIView):
@@ -115,3 +124,82 @@ class PerfilUsuarioView(APIView):
             } if persona else None
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+User = get_user_model()
+
+class CambiarPasswordPrimerIngresoView(APIView):
+    """
+    Para cambiar clave provisoria
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        usuario = request.user
+        password_actual = request.data.get('password_actual')
+        password_nuevo = request.data.get('password_nuevo')
+
+        if not password_actual or not password_nuevo:
+            return Response({'error': 'Debe ingresar la contraseña actual y la nueva contrtaseña.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not usuario.check_password(password_actual):
+            return Response({'error': 'La contraseña actual no es correcta.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(password_nuevo) < 8:
+            return Response({'error': 'La nueva contraseña debe contener al menos 8 caracteres.'},status=status.HTTP_400_BAD_REQUEST)
+
+        if password_actual == password_nuevo:
+            return Response({'error': 'La nueva contraseña no debe ser igual a la provisoria.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario.set_password(password_nuevo)
+        usuario.debe_cambiar_password = False
+        usuario.save()
+
+        return Response({'mensaje': 'Contraseña actualizada con éxito.'},status=status.HTTP_200_OK)
+
+
+class SolicitarRecuperacionPasswordView(APIView):
+    """
+    Recibe el email registrado al crear la persona y envia token seguro
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        if not email:
+            return Response({'error': 'Debe ingresar un correo electrónico.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario = User.objects.filter(persona__email__iexact=email,activo=True,persona__fecha_baja__isnull=True).select_related('persona').first()
+        if usuario:
+            uid = urlsafe_base64_decode(force_bytes(usuario.pk))
+            token = default_token_generator.make_token(usuario)
+            frontend_url = getattr(settings, 'FRONTEND_URL','http://localhost:4200')
+            enlace = f"{frontend_url}/restablecer-password?uid={uid}&token={token}"
+
+            asunto = "PROA Conecta - Recuperación de contraseña"
+            cuerpo = f"""Hola {usuario.persona.nombre if usuario.persona else 'Usuario'},
+
+            Recibimos una solicitud para restablecer la contraseña de tu cuenta institucional en PROA Conecta.
+
+            Para crear una nueva clave, ingresá al siguiente enlace:
+            {enlace}
+
+            Este enlace es de uso único y tiene validez temporal. Si no solicitaste este cambio, podés desestimar este mensaje.
+
+            Atentamente,
+            Equipo PROA Conecta.
+            """
+            send_mail(
+                subject=asunto,
+                message=cuerpo,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False
+            )
+
+        return Response(
+            {'mensaje': 'Si el correo ingresado se encuentra registrado, recibirás un enlace de restablecimiento a la brevedad.'},
+            status=status.HTTP_200_OK
+        )
