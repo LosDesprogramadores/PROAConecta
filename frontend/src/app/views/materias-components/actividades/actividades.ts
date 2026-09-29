@@ -83,7 +83,7 @@ export class Actividades implements OnInit {
         }
         this.cargando.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error cargando actividades:', err);
         this.error.set('No se pudieron cargar las actividades. Intenta más tarde.');
         this.cargando.set(false);
@@ -94,7 +94,6 @@ export class Actividades implements OnInit {
   nuevaActividad(): void {
     const idMat = this.materiaId();
     if (idMat) {
-      // Redirige correctamente a la ruta hija de la materia configurada en app.routes.ts
       this.router.navigate(['/view-materia', idMat, 'actividades', 'nueva']);
     } else {
       this.router.navigate(['/dashboard/actividades/nueva']);
@@ -119,6 +118,21 @@ export class Actividades implements OnInit {
   verEntregas(actividad: Actividad): void {
     const idMat = actividad.materia || this.materiaId();
     this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'entregas']);
+  }
+
+  // 👈 MÉTODO DE ELIMINACIÓN CON TIPADO CORRECTO
+  eliminarActividad(actividad: Actividad): void {
+    if (confirm(`¿Estás seguro de que deseas eliminar la actividad "${actividad.titulo}"?`)) {
+      this.actividadesService.eliminarActividad(actividad.id).subscribe({
+        next: () => {
+          this.actividades.update(acts => acts.filter(a => a.id !== actividad.id));
+        },
+        error: (err: any) => {
+          console.error('Error al eliminar la actividad:', err);
+          alert('No se pudo eliminar la actividad. Intenta nuevamente.');
+        }
+      });
+    }
   }
 
   recargar(): void {
