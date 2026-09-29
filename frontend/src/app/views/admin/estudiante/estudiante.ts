@@ -41,6 +41,8 @@ export class Estudiante implements OnInit {
   materiasEstudianteSeleccionado = signal<any[]>([]);
   isLoadingConsulta = signal<boolean>(false);
 
+  estudianteAEliminar = signal<any | null>(null);
+
   form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
     apellido: ['', [Validators.required]],
@@ -140,22 +142,35 @@ export class Estudiante implements OnInit {
     this.closeModal();
   }
 
-  eliminar(id: number): void {
-    this.ocultarModalConsultar();
-    if (confirm('¿Deseas eliminar este estudiante?')) {
-      this.estudianteService.eliminarEstudiante(id).subscribe({
-        next: () => {
-          console.log('Estudiante eliminado con éxito');
-          this.toastService.success('Estudiante eliminado con éxito.');
-          this.estudiantes.update(lista => lista.filter(estudiante => estudiante.id !== id));
-        },
-        error: (err) => {
-          console.error('Error al eliminar el estudiante:', err);
-          this.toastService.error(this.toastService.readable_message_extraction(err), "");
-        }
-      });
-    }
+  eliminar(id: any): void {
+   
+   this.ocultarModalConsultar();
+   this.estudianteAEliminar.set(id);
   }
+
+confirmarEliminacion(): void {
+  const estudianteId = this.estudianteAEliminar();
+  if (!estudianteId) return;
+  console.log("Estudiante eliminado " + estudianteId)
+  this.estudianteService.eliminarEstudiante(estudianteId).subscribe({
+    next: () => {
+      console.log('Estudiante eliminado con éxito');
+      this.toastService.success('Estudiante eliminado con éxito.');
+      this.estudiantes.update(lista => lista.filter(e => e.id !== estudianteId));
+      this.cancelarEliminacion();
+    },
+    error: (err) => {
+      console.log("Error al eliminar el estudiante:", err)
+      this.toastService.error(this.toastService.readable_message_extraction(err), "");
+      this.cancelarEliminacion();
+    }
+  });
+}
+
+
+cancelarEliminacion(): void {
+  this.estudianteAEliminar.set(null);
+}
 
   inscribir(estudiante: Persona): void {
     this.ocultarModalConsultar();

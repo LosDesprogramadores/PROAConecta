@@ -7,7 +7,7 @@ from .serializers import RolSerializer, PersonaSerializer, DNITokenObtainPairSer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from academico.models import Materia
+from academico.models import Materia, Inscripcion
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -47,19 +47,22 @@ class PersonaViewSet(viewsets.ModelViewSet):
                     {'detail': 'No se puede eliminar un profesor con materias asignadas.'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        elif rol_nombre == "Alumno":
-            tiene_materias = Materia.objects.filter(alumno=persona).exists()
-            if tiene_materias:
-                return Response(
-                    {'detail': 'No se puede eliminar un alumno con materias asignadas.'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        elif rol_nombre == "Estudiante":
+          tiene_inscripciones = Inscripcion.objects.filter(
+            estudiante=persona
+          ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).exists()
+
+        if tiene_inscripciones:
+            return Response(
+                {'detail': 'No se puede eliminar un estudiante que tiene materias o inscripciones activas.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         persona.fecha_baja = timezone.now().date()
         persona.save()
         if rol_nombre == 'Profesor':
                return Response({'detail': 'Profesor {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'.format(persona=persona)}, status=status.HTTP_200_OK)
-        elif rol_nombre == 'Alumno':
-               return Response({'detail': 'Alumno {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'.format(persona=persona)}, status=status.HTTP_200_OK)
+        elif rol_nombre == 'Estudiante':
+               return Response({'detail': 'Estudiante {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'.format(persona=persona)}, status=status.HTTP_200_OK)
         
         return Response({'detail': 'Registro eliminado correctamente.'}, status=status.HTTP_200_OK)
 
