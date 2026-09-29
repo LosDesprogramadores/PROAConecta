@@ -1,5 +1,5 @@
+@charset "UTF-8";
 @import "tailwindcss";
-@import '../node_modules/angular-calendar/css/angular-calendar.css';
 @plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
 

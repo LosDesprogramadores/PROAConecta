@@ -10,6 +10,18 @@ interface NavLink {
   path: string;
 }
 
+interface Message {
+  sender: string;
+  text: string;
+  time: string;
+}
+
+interface NotificationItem {
+  title: string;
+  description: string;
+  time: string;
+}
+
 @Component({
   selector: 'app-navbar',
   imports: [RouterModule, Toast],
@@ -32,6 +44,17 @@ export class Navbar {
   isNotificationsOpen = signal<boolean>(false);
 
   unreadCount = signal<number>(4);
+
+  // Propiedades añadidas para evitar errores de compilación en el template
+  messages = signal<Message[]>([
+    { sender: 'Profesor Gomez', text: 'Hola, te escribo por la tarea...', time: 'Hace 10 min' },
+    { sender: 'Maria Perez', text: '¿Nos juntamos a estudiar?', time: 'Hace 1 hora' }
+  ]);
+
+  notifications = signal<NotificationItem[]>([
+    { title: 'Nueva nota', description: 'Se subió la calificación del parcial.', time: 'Hace 30 min' },
+    { title: 'Recordatorio', description: 'Entrega de trabajo práctico pendiente.', time: 'Hace 2 horas' }
+  ]);
 
   /**
    * Rutas administrativas.
