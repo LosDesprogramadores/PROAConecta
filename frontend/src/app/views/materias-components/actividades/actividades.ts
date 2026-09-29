@@ -36,7 +36,7 @@ export class Actividades implements OnInit {
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  // Computed para estados (solo mostrar publicadas a estudiantes)
+  // Computed para estados
   actividadesPublicadas = computed(() =>
     this.actividades().filter(a => a.estado === 'PUBLICADA')
   );
@@ -45,7 +45,6 @@ export class Actividades implements OnInit {
     this.actividades().filter(a => a.estado === 'BORRADOR')
   );
 
-  // Actividades publicadas activas (no vencidas)
   actividadesActivas = computed(() => {
     const hoy = new Date();
     return this.actividadesPublicadas().filter(a => {
@@ -54,7 +53,6 @@ export class Actividades implements OnInit {
     });
   });
 
-  // Actividades publicadas vencidas
   actividadesVencidas = computed(() => {
     const hoy = new Date();
     return this.actividadesPublicadas().filter(a => {
@@ -64,9 +62,8 @@ export class Actividades implements OnInit {
   });
 
   ngOnInit(): void {
-    // Obtener el ID de la materia de los parámetros de ruta
     this.route.parent?.params.subscribe(params => {
-      const id = params['id'];
+      const id = params['id'] || this.route.snapshot.queryParams['materiaId'];
       if (id) {
         this.materiaId.set(Number(id));
         this.cargarActividades(Number(id));
@@ -78,11 +75,9 @@ export class Actividades implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
 
-    // Usa exactamente el método que el servicio ya tiene
     this.actividadesService.getActividadesPorMateria(materiaId).subscribe({
       next: (data: Actividad[]) => {
         this.actividades.set(data);
-        // Extraer el título de la materia del primer registro
         if (data.length > 0) {
           this.materiaTitulo.set(data[0].materia_titulo);
         }
@@ -97,25 +92,33 @@ export class Actividades implements OnInit {
   }
 
   nuevaActividad(): void {
-    this.router.navigate(['/dashboard/actividades/nueva'], {
-      queryParams: { materiaId: this.materiaId() }
-    });
+    const idMat = this.materiaId();
+    if (idMat) {
+      // Redirige correctamente a la ruta hija de la materia configurada en app.routes.ts
+      this.router.navigate(['/view-materia', idMat, 'actividades', 'nueva']);
+    } else {
+      this.router.navigate(['/dashboard/actividades/nueva']);
+    }
   }
 
   verActividad(actividad: Actividad): void {
-    this.router.navigate(['/dashboard/actividades', actividad.id]);
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'detalle']);
   }
 
   gestionarActividad(actividad: Actividad): void {
-    this.router.navigate(['/dashboard/actividades/editar', actividad.id]);
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'editar']);
   }
 
   entregarActividad(actividad: Actividad): void {
-    this.router.navigate(['/view-materia', this.materiaId(), 'actividades', actividad.id, 'entregar']);
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'entregar']);
   }
 
   verEntregas(actividad: Actividad): void {
-    this.router.navigate(['/dashboard/actividades', actividad.id, 'entregas']);
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'entregas']);
   }
 
   recargar(): void {
@@ -125,9 +128,6 @@ export class Actividades implements OnInit {
     }
   }
 
-  /**
-   * Determina el estado visual
-   */
   getEstadoBadge(actividad: Actividad): { estado: string; clase: string } {
     if (actividad.estado === 'BORRADOR') {
       return { estado: 'Borrador', clase: 'bg-slate-100 text-slate-700 border-slate-200' };
@@ -143,9 +143,6 @@ export class Actividades implements OnInit {
     }
   }
 
-  /**
-   * Verifica si estudiante puede entregar
-   */
   puedeEntregar(actividad: Actividad): boolean {
     if (!this.esEstudiante()) return false;
     if (actividad.estado !== 'PUBLICADA') return false;
@@ -153,7 +150,6 @@ export class Actividades implements OnInit {
     const hoy = new Date();
     const fecha = new Date(actividad.fecha_limite);
 
-    // Puede entregar si no vence o si permite entrega tardía
     return fecha >= hoy || actividad.permitir_entrega_tardia;
   }
 }

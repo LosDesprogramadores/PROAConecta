@@ -1,0 +1,64 @@
+<section class="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+
+  <!-- HEADER -->
+  <header class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-slate-500 mb-1">Detalle de actividad</p>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
+        {{ actividad()?.titulo || 'Cargando...' }}
+      </h1>
+    </div>
+    <button
+      (click)="volver()"
+      class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition">
+      ← Volver
+    </button>
+  </header>
+
+  <!-- ERROR -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+      ⚠️ {{ error() }}
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="flex justify-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  } @else if (actividad()) {
+    <!-- CONTENIDO -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+      
+      <!-- ESTADO Y FECHA -->
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-primary border border-blue-100">
+          Estado: {{ actividad()?.estado }}
+        </span>
+        <span class="text-xs text-slate-500 font-medium">
+          📅 Fecha límite: {{ actividad()?.fecha_limite | slice:0:16 }}
+        </span>
+      </div>
+
+      <!-- DESCRIPCIÓN -->
+      <div class="space-y-2">
+        <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider">Consignas / Descripción</h3>
+        <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100">
+          {{ actividad()?.descripcion || 'Sin descripción detallada.' }}
+        </p>
+      </div>
+
+      <!-- ENLACE DE REFERENCIA -->
+      @if (actividad()?.enlace) {
+        <div class="space-y-2">
+          <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider">Enlace de referencia</h3>
+          <a [href]="actividad()?.enlace" target="_blank" class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+            🔗 {{ actividad()?.enlace }}
+          </a>
+        </div>
+      }
+
+    </div>
+  }
+
+</section>
