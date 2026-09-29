@@ -41,7 +41,7 @@ class PersonaViewSet(viewsets.ModelViewSet):
         elif rol_nombre == "Estudiante":
           tiene_inscripciones = Inscripcion.objects.filter(
             estudiante=persona
-        ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).exists()
+          ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).exists()
 
         if tiene_inscripciones:
             return Response(
