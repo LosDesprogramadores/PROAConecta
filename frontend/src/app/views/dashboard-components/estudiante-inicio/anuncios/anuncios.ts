@@ -1,34 +1,36 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Anuncio } from '../../../model/anuncio.model';
-import { AnunciosService } from '../../../services/anuncios.service';
+import { RouterLink } from '@angular/router';
+import { Anuncio } from '../../../../model/anuncio.model';
+import { AnunciosService } from '../../../../services/anuncios.service';
 
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './anuncios.html',
   styleUrls: ['./anuncios.css']
 })
 export class Anuncios implements OnInit {
   private readonly anunciosService = inject(AnunciosService);
 
-  anuncios = signal<Anuncio[]>([]);
+  ultimaNovedad = signal<Anuncio | null>(null);
   anuncioSeleccionado = signal<Anuncio | null>(null);
   cargando = signal<boolean>(true);
 
   ngOnInit(): void {
-    this.cargarAnuncios();
+    this.loadUltimaNovedad();
   }
 
-  cargarAnuncios(): void {
+  private loadUltimaNovedad(): void {
     this.cargando.set(true);
 
     this.anunciosService.getAnuncios().subscribe({
-      next: (data) => {
-        const filtrados = data.filter((a) => {
-          if (!a.dirigido_a) return true;
-          const alcance = a.dirigido_a.toUpperCase();
+      next: (anuncios) => {
+        
+        const anunciosEstudiante = anuncios.filter((n) => {
+          if (!n.dirigido_a) return true;
+          const alcance = n.dirigido_a.toUpperCase();
           return (
             alcance === 'AMBOS' ||
             alcance === 'ESTUDIANTE' ||
@@ -37,11 +39,11 @@ export class Anuncios implements OnInit {
           );
         });
 
-        this.anuncios.set(filtrados);
+        this.ultimaNovedad.set(anunciosEstudiante[0] ?? null);
         this.cargando.set(false);
       },
       error: (err) => {
-        console.error('Error al cargar la lista de anuncios:', err);
+        console.error('Error al obtener los anuncios:', err);
         this.cargando.set(false);
       }
     });

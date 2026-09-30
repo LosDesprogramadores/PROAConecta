@@ -9,7 +9,6 @@ import {
 } from '../../../model/unidad-contenido.model';
 import { IMateria } from '../../../model/materia.model';
 import { UnidadesMaterial } from '../portada/unidades-material/unidades-material';
-import { RecursosClaseComponent } from '../portada/recursos-clase/recursos-clase';
 import { MateriaService } from '../../../services/materia.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/auth/auth.model';
@@ -17,7 +16,7 @@ import { UserRole } from '../../../core/auth/auth.model';
 @Component({
   selector: 'app-portada-profesor',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
+  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial], // 👈 Ya no incluye RecursosClaseComponent
   templateUrl: './portada-profesor.html',
   styleUrls: ['./portada-profesor.css'],
 })
@@ -46,11 +45,6 @@ export class PortadaProfesor implements OnInit {
   mostrarFormularioUnidad = signal<boolean>(false);
   nuevoNombreUnidad = '';
   nuevoDescripcionUnidad = '';
-
-  mostrarFormularioRecurso = signal<boolean>(false);
-  nuevoTituloRecurso = '';
-  nuevoTipoRecurso: 'documento' | 'video' | 'enlace' = 'documento';
-  nuevoUrlRecurso = '';
 
   get datosActuales(): MateriaPortada {
     return (
@@ -234,47 +228,6 @@ export class PortadaProfesor implements OnInit {
     this.mostrarFormularioUnidad.set(false);
   }
 
-  abrirFormularioRecurso(): void {
-    this.mostrarFormularioRecurso.set(true);
-    this.nuevoTituloRecurso = '';
-    this.nuevoTipoRecurso = 'documento';
-    this.nuevoUrlRecurso = '';
-  }
-
-  cancelarFormularioRecurso(): void {
-    this.mostrarFormularioRecurso.set(false);
-  }
-
-  guardarRecurso(): void {
-    if (!this.nuevoTituloRecurso.trim() || !this.nuevoUrlRecurso.trim()) {
-      alert('Título y URL son requeridos');
-      return;
-    }
-
-    if (!this.datosActuales.recursosClase) {
-      this.datosActuales.recursosClase = [];
-    }
-
-    this.datosActuales.recursosClase.push({
-      id: `recurso-${Date.now()}`,
-      titulo: this.nuevoTituloRecurso,
-      tipo: this.nuevoTipoRecurso,
-      url: this.nuevoUrlRecurso,
-      fechaCreacion: new Date(),
-    });
-
-    this.mostrarFormularioRecurso.set(false);
-  }
-
-  eliminarRecurso(id: string): void {
-    if (confirm('¿Eliminar este recurso?')) {
-      if (!this.datosActuales.recursosClase) return;
-      this.datosActuales.recursosClase = this.datosActuales.recursosClase.filter(
-        (r) => r.id !== id,
-      );
-    }
-  }
-
   onContenidoGuardado(unidadId: string, contenido: ContenidoUnidad): void {
     const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
     if (!unidad) return;
@@ -299,7 +252,5 @@ export class PortadaProfesor implements OnInit {
 
   abrirModalActividad(): void {}
 
-  abrirModalRecurso(): void {
-    this.abrirFormularioRecurso();
-  }
+  abrirModalRecurso(): void {}
 }
