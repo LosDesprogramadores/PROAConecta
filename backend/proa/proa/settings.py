@@ -54,12 +54,13 @@ INSTALLED_APPS = [
     'academico',
     'usuario',
     'foro',
-    'notificacion',
     'aula_virtual',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist', 
     'corsheaders',   
+    'channels',
+    'notificacion',
 ]
 
 MIDDLEWARE = [
@@ -216,3 +217,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+ASGI_APPLICATION = 'proa.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}

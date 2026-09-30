@@ -11,4 +11,8 @@ sqlparse==0.5.5
 drf-spectacular>=0.27.0
 pymongo==4.17.0
 dnspython==2.8.0
+google-genai
+channels>=4.0.0
+channels_redis>=4.0.0
+uvicorn>=0.20.0
 twilio==9.11.2
