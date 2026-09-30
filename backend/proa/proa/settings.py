@@ -137,6 +137,8 @@ DATABASES = {
         ssl_require=True,
     )
 }
+# --- Discord
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
 
 # --- Nueva configuración MongoDB Atlas ---
 
