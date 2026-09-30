@@ -1,3 +1,5 @@
+from django.db import transaction
+from .notificaciones import avisar_nueva_actividad
 from django.db.models import Q
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
@@ -286,6 +288,11 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
         actividad.estado = nuevo_estado
         actividad.save(update_fields=['estado'])
+
+        # Aviso a Discord solo cuando la actividad pasa a PUBLICADA
+        if nuevo_estado == Actividad.EstadoActividad.PUBLICADA:
+            transaction.on_commit(lambda: avisar_nueva_actividad(actividad))
+
         return Response({'id': actividad.id, 'estado': actividad.estado})
 
     @action(detail=True, methods=['get'], url_path='entregas')
