@@ -1,3 +1,5 @@
+from django.db import transaction
+from .notificaciones import avisar_nueva_actividad
 from django.utils import timezone
 from rest_framework import serializers
 from .models import Unidad, Material, Actividad, Entrega, Nota
@@ -114,6 +116,25 @@ class ActividadSerializer(serializers.ModelSerializer):
             })
         
         return attrs
+
+    # --- Aviso a Discord -------------------------------------------------
+    def create(self, validated_data):
+        actividad = super().create(validated_data)
+        self._notificar_si_corresponde(actividad, estado_previo=None)
+        return actividad
+
+    def update(self, instance, validated_data):
+        estado_previo = instance.estado
+        actividad = super().update(instance, validated_data)
+        self._notificar_si_corresponde(actividad, estado_previo)
+        return actividad
+
+    def _notificar_si_corresponde(self, actividad, estado_previo):
+        # Avisa solo cuando pasa a PUBLICADA (nueva o desde borrador),
+        # no en cada edición posterior
+        if (actividad.estado == Actividad.EstadoActividad.PUBLICADA
+                and estado_previo != Actividad.EstadoActividad.PUBLICADA):
+            transaction.on_commit(lambda: avisar_nueva_actividad(actividad))
 
 
 class NotaSerializer(serializers.ModelSerializer):
