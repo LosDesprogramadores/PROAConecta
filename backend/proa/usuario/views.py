@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from .models import Rol, Persona
 from .serializers import RolSerializer, PersonaSerializer, DNITokenObtainPairSerializer, UsuarioSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from academico.models import Materia, Inscripcion
 from django.utils import timezone
@@ -176,7 +176,7 @@ class SolicitarRecuperacionPasswordView(APIView):
 
         usuario = User.objects.filter(persona__email__iexact=email,activo=True,persona__fecha_baja__isnull=True).select_related('persona').first()
         if usuario:
-            uid = urlsafe_base64_decode(force_bytes(usuario.pk))
+            uid = urlsafe_base64_encode(force_bytes(usuario.pk))
             token = default_token_generator.make_token(usuario)
             frontend_url = getattr(settings, 'FRONTEND_URL','http://localhost:4200')
             enlace = f"{frontend_url}/restablecer-password?uid={uid}&token={token}"
@@ -204,5 +204,50 @@ class SolicitarRecuperacionPasswordView(APIView):
 
         return Response(
             {'mensaje': 'Si el correo ingresado se encuentra registrado, recibirás un enlace de restablecimiento a la brevedad.'},
+            status=status.HTTP_200_OK
+        )
+
+class ConfirmarRecuperacionPasswordView(APIView):
+    """Valida el token de un solo uso recibido por email y actualiza la contraseña."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        uidb64 = request.data.get('uid')
+        token = request.data.get('token')
+        password_nuevo = request.data.get('password_nuevo')
+
+        if not all([uidb64, token, password_nuevo]):
+            return Response(
+                {'error': 'Faltan parámetros requeridos (uid, token o nueva contraseña).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            usuario = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response(
+                {'error': 'El enlace de recuperación es inválido o ha expirado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not default_token_generator.check_token(usuario, token):
+            return Response(
+                {'error': 'El enlace ha expirado o ya fue utilizado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(password_nuevo) < 8:
+            return Response(
+                {'error': 'La contraseña debe contener al menos 8 caracteres.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        usuario.set_password(password_nuevo)
+        usuario.debe_cambiar_password = False
+        usuario.save()
+
+        return Response(
+            {'mensaje': 'Contraseña restablecida exitosamente. Ya podés iniciar sesión.'},
             status=status.HTTP_200_OK
         )
