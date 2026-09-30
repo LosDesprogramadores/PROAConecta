@@ -1,65 +1,27 @@
-<section class="max-w-7xl mx-auto p-6 space-y-4">
-  <!-- Header de Bienvenida Personalizado -->
-  <header class="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-    <div>
-      <h2 class="text-2xl font-bold text-slate-800">¡Hola, {{userName()}}! 👋</h2>
-      <p class="text-sm text-slate-500">Aquí tienes el resumen de tu actividad académica.</p>
-    </div>
-  </header>
-
-  <div>
-    <app-informacion class="hidden lg:block"></app-informacion>
-  </div>
-
-  <!-- Grilla Principal en 3 Columnas de igual tamaño -->
+<section class="max-w-7xl mx-auto p-6">
+  <!-- Grilla Principal de 3 Columnas -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-    <!-- 1. Columna Izquierda: Materias -->
-    <div class="space-y-4">
-      <app-materias-resumen></app-materias-resumen>
+    <!-- Sección Izquierda: Materias Resumen (Ocupa 2 Columnas) -->
+    <div class="lg:col-span-2 space-y-4">
+      <app-materias></app-materias>
     </div>
 
-    <!-- 2. Columna Central: Última novedad -->
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-slate-800">Última novedad</h3>
-        <a routerLink="/dashboard/anuncios"
-          class="text-sm font-medium text-primary hover:text-primary/80 transition flex items-center gap-1">
-          Ver todas <span aria-hidden="true">&rarr;</span>
-        </a>
+    <!-- Sección Derecha: Información, Anuncios y Próximas Entregas (1 Columna) -->
+    <div class="lg:col-span-1 space-y-6">
+
+      <!-- 1. Información de la institución/carrera -->
+      <div class="space-y-4">
+        <app-informacion></app-informacion>
       </div>
-
-      @if (noticias().length === 0) {
-      <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500 text-sm">
-        No hay novedades registradas.
+      <!-- 2. Última Novedad -->
+      <div class="space-y-4">
+        <app-anuncios></app-anuncios>
       </div>
-      } @else {
-      <article
-        class="rounded-xl bg-white p-6 border border-slate-200 hover:border-slate-300 transition cursor-pointer space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-primary border border-blue-100">
-            Institucional
-          </span>
-          <time class="text-xs text-slate-400">{{ noticias()[0].fecha }} — {{ noticias()[0].hora }}</time>
-        </div>
-
-        <div>
-          <h4 class="text-lg font-bold text-slate-800 leading-snug mb-1">
-            {{ noticias()[0].titulo }}
-          </h4>
-          <p class="text-xs text-slate-400">Publicado por {{ noticias()[0].autor }}</p>
-        </div>
-
-        <p class="text-sm text-slate-600 leading-relaxed">
-          {{ noticias()[0].contenido }}
-        </p>
-      </article>
-      }
-    </div>
-
-    <!-- 3. Columna Derecha: Próximas Entregas -->
-    <div class="space-y-4">
-      <app-proximas-entregas></app-proximas-entregas>
+      <!-- 3. Calendario / Próximas Entregas -->
+      <div class="space-y-4">
+        <app-proximas-entregas></app-proximas-entregas>
+      </div>
     </div>
 
   </div>

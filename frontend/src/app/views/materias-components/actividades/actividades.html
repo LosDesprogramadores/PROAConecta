@@ -139,6 +139,7 @@
 
               <div class="flex gap-2 flex-wrap">
                 <button
+                  type="button"
                   (click)="verActividad(actividad)"
                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
                   Ver actividad
@@ -146,6 +147,7 @@
 
                 @if (esEstudiante() && puedeEntregar(actividad)) {
                   <button
+                    type="button"
                     (click)="entregarActividad(actividad)"
                     class="px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition">
                     Entregar
@@ -154,15 +156,25 @@
 
                 @if (esDocente()) {
                   <button
+                    type="button"
                     (click)="gestionarActividad(actividad)"
                     class="px-3 py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition">
-                    Gestionar
+                    Editar
                   </button>
 
                   <button
+                    type="button"
                     (click)="verEntregas(actividad)"
                     class="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition">
                     Entregas
+                  </button>
+
+                  <!-- 👈 BOTÓN ELIMINAR AÑADIDO -->
+                  <button
+                    type="button"
+                    (click)="eliminarActividad(actividad)"
+                    class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100 transition">
+                    Eliminar
                   </button>
                 }
               </div>

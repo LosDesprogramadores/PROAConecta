@@ -1,0 +1,45 @@
+<section class="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+
+  <!-- HEADER -->
+  <header class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-slate-500 mb-1">Gestión académica</p>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
+        Entregas de Alumnos
+      </h1>
+    </div>
+    <button
+      (click)="volver()"
+      class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition">
+      ← Volver
+    </button>
+  </header>
+
+  <!-- CONTENIDO -->
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+    <h2 class="text-lg font-semibold text-slate-800">Listado de presentaciones</h2>
+    
+    <!-- Tabla o listado simulado de entregas -->
+    <div class="border border-slate-100 rounded-xl overflow-hidden">
+      <div class="bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider grid grid-cols-3">
+        <span>Estudiante</span>
+        <span>Fecha de Entrega</span>
+        <span>Acciones</span>
+      </div>
+      
+      <div class="divide-y divide-slate-100 text-sm text-slate-600">
+        <div class="px-4 py-4 grid grid-cols-3 items-center">
+          <span class="font-medium text-slate-800">Estudiante de Ejemplo</span>
+          <span class="text-xs text-slate-400">2026-09-29 14:00</span>
+          <div>
+            <button class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+              Calificar / Ver archivo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
