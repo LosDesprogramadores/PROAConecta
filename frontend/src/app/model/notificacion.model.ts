@@ -7,5 +7,6 @@ export interface INotificacion {
   alcance: string;
   fecha_desde?: string;
   fecha_hasta?: string;
-  leida: boolean; // Estado de lectura para el usuario actual
+  leida: boolean; 
+  materia_id?: string | null;
 }

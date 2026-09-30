@@ -48,7 +48,8 @@ class NotificacionListCreateView(APIView):
                 "fecha_hasta": data.get('fecha_hasta'),
                 "referencia_tipo": None,
                 "referencia_id": None,
-                "alcance": data.get('alcance', 'AMBOS') # <-- Leemos 'alcance' del request
+                "alcance": data.get('alcance', 'AMBOS'), 
+                "materia_id": data.get('materia_id')
             }
             
             result = notificaciones_collection.insert_one(nueva_noti)
@@ -73,7 +74,6 @@ class NotificacionDetailView(APIView):
             obj_id = ObjectId(pk)
             data = request.data
             
-            # Actualizamos todos los campos necesarios al editar
             update_data = {
                 "$set": {
                     "titulo": data.get('titulo'),
@@ -81,7 +81,8 @@ class NotificacionDetailView(APIView):
                     "tipo_notificacion_codigo": data.get('tipo_notificacion_codigo', 'GENERAL'),
                     "alcance": data.get('alcance'),
                     "fecha_desde": data.get('fecha_desde'),
-                    "fecha_hasta": data.get('fecha_hasta')
+                    "fecha_hasta": data.get('fecha_hasta'),
+                    "materia_id": data.get('materia_id')
                 }
             }
             
