@@ -103,11 +103,11 @@ export const routes: Routes = [
     path: 'dashboard-admin',
     component: DashboardAdmin,
     children: [
-      { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
-      { path: 'admin/estudiantes', component: Estudiante },
-      { path: 'admin/profesores', component: Profesor },
-      { path: 'admin/materias', component: Materia },
-      { path: 'admin/notificaciones', component: Notificacion }
+      { path: '', redirectTo: 'profesores', pathMatch: 'full' },
+      { path: 'estudiantes', component: Estudiante },
+      { path: 'profesores', component: Profesor },
+      { path: 'materias', component: Materia },
+      { path: 'notificaciones', component: Notificacion }
     ]
   }
 ];
