@@ -29,8 +29,11 @@ def avisar_nueva_actividad(actividad):
         timezone.localtime(actividad.fecha_limite).strftime('%d/%m/%Y %H:%M')
         if actividad.fecha_limite else 'Sin fecha límite'
     )
+    materia = actividad.materia
     descripcion = (
-        f'**Materia:** {actividad.materia.titulo}\n'
+        f'**Materia:** {materia.titulo}\n'
+        f'**Año:** {materia.anio}\n'
+        f'**Curso:** {materia.curso}\n'
         f'**Fecha límite:** {limite}'
     )
     if actividad.descripcion:
