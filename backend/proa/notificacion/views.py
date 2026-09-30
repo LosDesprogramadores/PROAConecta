@@ -16,13 +16,15 @@ class NotificacionListCreateView(APIView):
             
         cursor = notificaciones_collection.find().sort('fecha_creacion', -1)
         
+        # Sincronizamos las propiedades exactamente con lo que espera INotificacion de Angular
         data = [{
             "id": str(n["_id"]),
             "titulo": n.get('titulo', 'Aviso'),
             "mensaje": n.get('mensaje'),
-            "dirigido_a": n.get('alcance'),
-            "fecha_desde": n.get('fecha_creacion').isoformat() if n.get('fecha_creacion') else None,
-            "fecha_hasta": n.get('fecha_creacion').isoformat() if n.get('fecha_creacion') else None,
+            "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'), # <-- Añadido
+            "alcance": n.get('alcance', 'AMBOS'), # <-- Usamos 'alcance' directo
+            "fecha_desde": n.get('fecha_desde'),
+            "fecha_hasta": n.get('fecha_hasta'),
             "leida": n.get('leida', False)
         } for n in cursor]
         
@@ -42,10 +44,11 @@ class NotificacionListCreateView(APIView):
                 "mensaje": data.get('mensaje'),
                 "leida": False,
                 "fecha_creacion": datetime.utcnow(),
-                "fecha_lectura": None,
+                "fecha_desde": data.get('fecha_desde'),
+                "fecha_hasta": data.get('fecha_hasta'),
                 "referencia_tipo": None,
                 "referencia_id": None,
-                "alcance": data.get('dirigido_a', 'AMBOS')
+                "alcance": data.get('alcance', 'AMBOS') # <-- Leemos 'alcance' del request
             }
             
             result = notificaciones_collection.insert_one(nueva_noti)
@@ -70,10 +73,15 @@ class NotificacionDetailView(APIView):
             obj_id = ObjectId(pk)
             data = request.data
             
+            # Actualizamos todos los campos necesarios al editar
             update_data = {
                 "$set": {
+                    "titulo": data.get('titulo'),
                     "mensaje": data.get('mensaje'),
-                    "alcance": data.get('dirigido_a')
+                    "tipo_notificacion_codigo": data.get('tipo_notificacion_codigo', 'GENERAL'),
+                    "alcance": data.get('alcance'),
+                    "fecha_desde": data.get('fecha_desde'),
+                    "fecha_hasta": data.get('fecha_hasta')
                 }
             }
             
