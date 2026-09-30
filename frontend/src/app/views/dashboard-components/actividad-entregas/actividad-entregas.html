@@ -18,28 +18,130 @@
   <!-- CONTENIDO -->
   <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
     <h2 class="text-lg font-semibold text-slate-800">Listado de presentaciones</h2>
-    
-    <!-- Tabla o listado simulado de entregas -->
-    <div class="border border-slate-100 rounded-xl overflow-hidden">
-      <div class="bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider grid grid-cols-3">
-        <span>Estudiante</span>
-        <span>Fecha de Entrega</span>
-        <span>Acciones</span>
-      </div>
-      
-      <div class="divide-y divide-slate-100 text-sm text-slate-600">
-        <div class="px-4 py-4 grid grid-cols-3 items-center">
-          <span class="font-medium text-slate-800">Estudiante de Ejemplo</span>
-          <span class="text-xs text-slate-400">2026-09-29 14:00</span>
-          <div>
-            <button class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
-              Calificar / Ver archivo
-            </button>
-          </div>
+
+    @if (cargando()) {
+      <p class="text-sm text-slate-500">Cargando entregas...</p>
+    } @else if (errorCarga()) {
+      <p class="text-sm text-red-600">{{ errorCarga() }}</p>
+    } @else if (entregas().length === 0) {
+      <p class="text-sm text-slate-500">Todavía no hay entregas para esta actividad.</p>
+    } @else {
+      <div class="border border-slate-100 rounded-xl overflow-hidden">
+        <div class="bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider grid grid-cols-4">
+          <span>Estudiante</span>
+          <span>Fecha de Entrega</span>
+          <span>Nota</span>
+          <span>Acciones</span>
+        </div>
+
+        <div class="divide-y divide-slate-100 text-sm text-slate-600">
+          @for (e of entregas(); track e.id) {
+            <div class="px-4 py-4 grid grid-cols-4 items-center">
+              <span class="font-medium text-slate-800">{{ e.estudiante_nombre }}</span>
+              <span class="text-xs text-slate-400">{{ e.fecha_entrega | date: 'yyyy-MM-dd HH:mm' }}</span>
+              <span>
+                @if (e.nota) {
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-primary font-bold">
+                    {{ e.nota.calificacion | number: '1.0-2' }}
+                  </span>
+                } @else {
+                  <span class="text-xs text-amber-600 font-semibold">Sin calificar</span>
+                }
+              </span>
+              <div>
+                <button
+                  type="button"
+                  (click)="abrirModal(e)"
+                  class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+                  Calificar / Ver archivo
+                </button>
+              </div>
+            </div>
+          }
         </div>
       </div>
-    </div>
-
+    }
   </div>
 
 </section>
+
+<!-- MODAL DE CALIFICACIÓN -->
+@if (entregaSeleccionada(); as entrega) {
+  <div
+    class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+    (click)="cerrarModal()">
+
+    <div
+      class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()">
+
+      <h3 class="text-lg font-semibold text-slate-800">
+        Calificar a {{ entrega.estudiante_nombre }}
+      </h3>
+
+      <div class="space-y-2 text-sm">
+        @if (entrega.archivo) {
+          <a [href]="entrega.archivo" target="_blank" rel="noopener"
+             class="inline-block px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+            Ver archivo entregado
+          </a>
+        }
+        @if (entrega.enlace) {
+          <a [href]="entrega.enlace" target="_blank" rel="noopener"
+             class="inline-block px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+            Abrir enlace entregado
+          </a>
+        }
+        @if (entrega.contenido_texto) {
+          <p class="text-slate-600 bg-slate-50 rounded-lg p-3">{{ entrega.contenido_texto }}</p>
+        }
+      </div>
+
+      <div class="space-y-1">
+        <label for="nota" class="text-sm font-semibold text-slate-700">Nota (0 a 10)</label>
+        <input
+          id="nota"
+          type="number"
+          min="0"
+          max="10"
+          step="0.5"
+          [ngModel]="nota()"
+          (ngModelChange)="nota.set($event)"
+          class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label for="comentario" class="text-sm font-semibold text-slate-700">Comentario / devolución</label>
+        <textarea
+          id="comentario"
+          rows="4"
+          [ngModel]="comentario()"
+          (ngModelChange)="comentario.set($event)"
+          class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"></textarea>
+      </div>
+
+      @if (errorModal()) {
+        <p class="text-sm text-red-600">{{ errorModal() }}</p>
+      }
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button
+          type="button"
+          (click)="cerrarModal()"
+          [disabled]="guardando()"
+          class="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="guardar()"
+          [disabled]="guardando()"
+          class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-60">
+          {{ guardando() ? 'Guardando...' : 'Guardar calificación' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
