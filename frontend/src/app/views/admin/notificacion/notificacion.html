@@ -1,49 +1,250 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PROAConecta - En Desarrollo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16 relative">
 
-</head>
-<body class="bg-[#f8f9fa] text-slate-800 min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white overflow-x-hidden">
-
-    <main class="flex-1 w-full flex items-center justify-center p-6">
-        <div class="max-w-md w-full bg-white/95 backdrop-blur-2xl border border-slate-200/80 rounded-3xl p-8 shadow-[0_18px_45px_rgba(15,23,42,0.05)] text-center relative overflow-hidden">
-            
-            <div class="absolute -top-12 -left-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="relative w-20 h-20 mx-auto mb-6 bg-amber-50 border border-amber-200/60 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner animate-float">
-             <svg class="w-14 h-14 relative z-10 animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-           </div>
-
-            <span class="inline-flex items-center gap-1.5 text-[11px] font-mono tracking-wider uppercase px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 text-amber-700 font-bold mb-4 shadow-2xs">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
-                Módulo en Construcción
-            </span>
-
-            <h1 class="text-xl font-bold tracking-tight text-slate-900 mb-2">
-                Estamos mejorando el sistema
-            </h1>
-            <p class="text-xs text-slate-500 leading-relaxed mb-8 px-2">
-                Estamos optimizando los componentes y estructurando nuevas herramientas para brindarte una mejor experiencia.
+    <div class="mb-8 border-b border-gray-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Panel de Administración</h1>
+            <p class="text-sm text-gray-500 mt-1">Gestión centralizada de avisos institucionales y vigencias globales.
             </p>
+        </div>
 
-            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-6 border border-slate-200/50">
-                <div class="bg-amber-500 h-full w-2/3 rounded-full animate-pulse"></div>
+        <button (click)="mostrarFormulario = !mostrarFormulario"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-white font-medium shadow-sm transition duration-200"
+            [ngClass]="mostrarFormulario ? 'bg-slate-700 hover:bg-slate-800' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'">
+            <svg class="w-5 h-5 transition-transform duration-200" [ngClass]="{'rotate-45': mostrarFormulario}"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            {{ mostrarFormulario ? 'Ocultar Formulario' : 'Nueva Notificación Global' }}
+        </button>
+    </div>
+
+    <!-- Alertas de Feedback -->
+    <div *ngIf="mensajeExito"
+        class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 text-sm rounded-r-lg shadow-sm">
+        <span>{{ mensajeExito }}</span>
+    </div>
+    <div *ngIf="mensajeError"
+        class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-800 text-sm rounded-r-lg shadow-sm">
+        <span>{{ mensajeError }}</span>
+    </div>
+
+    <div *ngIf="mostrarFormulario || editandoId"
+        class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-10 transition-all duration-300">
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                    </path>
+                </svg>
+                {{ editandoId ? 'Editar Notificación Institucional' : 'Crear Nueva Notificación Global' }}
+            </h3>
+            <button *ngIf="editandoId"
+                class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition shadow-sm"
+                (click)="cancelarEdicion()">
+                Cancelar Edición
+            </button>
+        </div>
+
+        <form #notiForm="ngForm" (ngSubmit)="guardarNotificacion()" class="p-6 sm:p-8 space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Columna Izquierda: Título y Mensaje -->
+        <div class="lg:col-span-2 space-y-6">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+              Título de la Notificación <span class="text-red-500">*</span>
+            </label>
+            <input type="text" 
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                   [(ngModel)]="nuevaNoti.titulo" 
+                   name="titulo" 
+                   required 
+                   #tituloField="ngModel"
+                   placeholder="Ej: Inscripciones Abiertas - Ciclo Lectivo">
+            <div *ngIf="tituloField.invalid && (tituloField.dirty || tituloField.touched)" class="text-red-500 text-xs mt-1">
+              El título es obligatorio.
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+              Contenido / Mensaje <span class="text-red-500">*</span>
+            </label>
+            <textarea class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                      [(ngModel)]="nuevaNoti.mensaje" 
+                      name="mensaje" 
+                      rows="4" 
+                      required 
+                      #mensajeField="ngModel"
+                      placeholder="Escriba los detalles del comunicado institucional..."></textarea>
+            <div *ngIf="mensajeField.invalid && (mensajeField.dirty || mensajeField.touched)" class="text-red-500 text-xs mt-1">
+              El contenido del mensaje es obligatorio.
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Configuración, Destinatarios y Fechas -->
+        <div class="space-y-6 bg-gray-50/70 p-5 rounded-xl border border-gray-200/60">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Dirigido a (Alcance): <span class="text-red-500">*</span></label>
+            <select class="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 transition" 
+                    [(ngModel)]="nuevaNoti.alcance" 
+                    name="alcance" 
+                    required>
+              <option value="AMBOS">Ambos (Estudiantes y Profesores)</option>
+              <option value="ESTUDIANTE">Solo Estudiantes</option>
+              <option value="PROFESOR">Solo Profesores</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Tipo de Notificación <span class="text-red-500">*</span></label>
+            <select class="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 transition" 
+                    [(ngModel)]="nuevaNoti.tipo_notificacion_codigo" 
+                    name="tipo_notificacion_codigo" 
+                    required>
+              <option value="GENERAL">General</option>
+              <option value="ACADEMICO">Académico</option>
+              <option value="URGENTE">Urgente</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 pt-2 border-t border-gray-200">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Vigente Desde <span class="text-red-500">*</span></label>
+              <input type="date" 
+                     class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600" 
+                     [(ngModel)]="nuevaNoti.fecha_desde"
+                     name="fecha_desde"
+                     required>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Vigente Hasta <span class="text-red-500">*</span></label>
+              <input type="date" 
+                     class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600" 
+                     [(ngModel)]="nuevaNoti.fecha_hasta"
+                     name="fecha_hasta"
+                     required>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+    <div class="flex items-center justify-end pt-4 border-t border-gray-100 gap-3">
+       <button type="button" 
+                class="px-4 py-2.5 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 font-medium transition duration-200 text-sm"
+                (click)="cancelarEdicion()">
+          Cancelar
+        </button>
+
+        <button type="submit" 
+                [disabled]="notiForm.invalid"
+                [ngClass]="notiForm.invalid ? 'opacity-50 cursor-not-allowed bg-gray-400' : (editandoId ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200')" 
+                class="px-6 py-2.5 rounded-lg text-white font-medium shadow-md transition duration-200 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          {{ editandoId ? 'Guardar Cambios' : 'Publicar Notificación Global' }}
+        </button>
+      </div>
+    </form>
+    </div>
+
+    <div class="mb-6 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                </path>
+            </svg>
+            Notificaciones Registradas en el Sistema
+        </h3>
+        <span class="text-xs font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+            Total: {{ notificaciones.length }}
+        </span>
+    </div>
+
+    <div *ngIf="cargando" class="flex justify-center my-12">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+    </div>
+
+    <div *ngIf="!cargando && notificaciones.length === 0"
+        class="bg-blue-50 border-l-4 border-blue-500 p-6 text-blue-800 rounded-r-lg shadow-sm">
+        No hay notificaciones creadas en el sistema actualmente.
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div *ngFor="let noti of notificaciones"
+            class="bg-white rounded-xl border border-gray-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between p-6">
+            <div>
+                <div class="flex justify-between items-start gap-4 mb-3">
+                    <h4 class="text-lg font-bold text-gray-900 leading-snug">
+                        {{ noti.titulo }}
+                    </h4>
+                    <span
+                        class="shrink-0 px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700 rounded-md border border-slate-200">
+                        {{ noti.tipo_notificacion_codigo || 'GENERAL' }}
+                    </span>
+                </div>
+
+                <p class="text-gray-600 text-sm mb-4 leading-relaxed">{{ noti.mensaje }}</p>
+
+                <div
+                    class="text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 flex flex-col gap-1.5">
+                    <div class="flex items-center gap-2" *ngIf="noti.fecha_desde">
+                        <span class="font-semibold text-gray-700">📅 Desde:</span> {{ noti.fecha_desde |
+                        date:'mediumDate' }}
+                    </div>
+                    <div class="flex items-center gap-2" *ngIf="noti.fecha_hasta">
+                        <span class="font-semibold text-gray-700">⏳ Hasta:</span> {{ noti.fecha_hasta |
+                        date:'mediumDate' }}
+                    </div>
+                    <div class="text-gray-400 italic" *ngIf="!noti.fecha_desde && !noti.fecha_hasta">
+                        📅 Vigencia permanente en el sistema
+                    </div>
+                </div>
             </div>
 
-            <p class="text-[11px] text-slate-400 font-medium">
-                PROAConecta &copy; 2026
-            </p>
+            <div>
+                <div class="flex flex-wrap justify-between items-center pt-4 border-t border-gray-100 gap-2">
+                    <span
+                        class="px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">
+                        Destinatarios: {{ noti.alcance }}
+                    </span>
+
+                    <div class="space-x-2">
+                        <button
+                            class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition shadow-sm"
+                            (click)="cargarParaEditar(noti)">
+                            Editar
+                        </button>
+                        <button
+                            class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-semibold px-3 py-1.5 rounded-lg border border-red-200 transition shadow-sm"
+                            (click)="confirmarEliminar(noti.id || noti._id || '')">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="notificacionAEliminar === (noti.id || noti._id)"
+                    class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+                    <span class="text-xs font-medium text-red-800">¿Estás seguro de eliminar esta notificación?</span>
+                    <div class="space-x-2">
+                        <button
+                            class="text-xs bg-white hover:bg-gray-100 text-gray-700 font-semibold px-3 py-1.5 rounded border border-gray-300 transition shadow-sm"
+                            (click)="cancelarEliminar()">
+                            Cancelar
+                        </button>
+                        <button
+                            class="text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded transition shadow-sm"
+                            (click)="ejecutarEliminar()">
+                            Sí, eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
 
         </div>
-    </main>
-
-</body>
-</html>
+    </div>
+</div>
