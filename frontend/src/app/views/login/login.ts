@@ -43,6 +43,12 @@ export class Login {
     this.authService.login(credentials).subscribe({
       next: (user) => {
         this.isLoading.set(false);
+
+        if (user.debe_cambiar_password) {
+          this.router.navigate(['/cambiar-password']);
+          return;
+        }
+        
      switch (user.rolId) {
       case UserRole.ADMIN: 
         this.router.navigate(['/dashboard-admin']);

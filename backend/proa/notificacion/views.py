@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from bson.objectid import ObjectId
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from .mongo import notificaciones_collection
 
@@ -53,7 +55,24 @@ class NotificacionListCreateView(APIView):
             }
             
             result = notificaciones_collection.insert_one(nueva_noti)
-            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "notificaciones_globales",
+                {
+                    "type": "enviar_notificacion",
+                    "notificacion": {
+                        "id": str(result.inserted_id),
+                        "titulo": nueva_noti["titulo"],
+                        "mensaje": nueva_noti["mensaje"],
+                        "tipo_notificacion_codigo": nueva_noti["tipo_notificacion_codigo"],
+                        "alcance": nueva_noti["alcance"],
+                        "fecha_desde": str(nueva_noti.get("fecha_desde", "")),
+                        "fecha_hasta": str(nueva_noti.get("fecha_hasta", "")),
+                        "materia_id": nueva_noti.get("materia_id"),
+                        "leida": False
+                    }
+                }
+            )
             return Response({
                 "id": str(result.inserted_id),
                 "mensaje": "Notificación creada con éxito."

@@ -4,10 +4,11 @@ import { Router } from '@angular/router';
 
 import { AuthResponse, User } from './auth.model';
 
-import { catchError, Observable, switchMap, tap, throwError } from 'rxjs';
+import { catchError, Observable, switchMap, tap, throwError, map} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Persona } from '../../model/Persona.model';
+
 
 export interface LoginCredentials {
   dni: string;
@@ -24,6 +25,9 @@ export class AuthService {
   private readonly loginUrl = `${environment.apiUrl}auth/login/`;
 
   private readonly perfilUrl = `${environment.apiUrl}auth/me/`;
+  private readonly cambiarPasswordUrl = `${environment.apiUrl}auth/cambiar-password-primer-ingreso/`;
+  private readonly solicitarRecuperacionUrl = `${environment.apiUrl}auth/solicitar-recuperacion/`;
+  private readonly confirmarRecuperacionUrl = `${environment.apiUrl}auth/confirmar-recuperacion/`;
 
   token = signal<string | null>(localStorage.getItem('access_token'));
 
@@ -53,9 +57,12 @@ export class AuthService {
           Authorization: `Bearer ${res.access}`,
         });
 
-        return this.http.get<User>(this.perfilUrl, { headers });
+        return this.http.get<User>(this.perfilUrl, { headers }).pipe(map((userData: User) => ({
+            ...userData,
+            debe_cambiar_password: res.debe_cambiar_password,
+          }))
+        );
       }),
-
       tap((userData: User) => {
 
         localStorage.setItem('current_user', JSON.stringify(userData));
@@ -66,6 +73,21 @@ export class AuthService {
         console.log('Rol recibido:', userData.rolId);
       }),
     );
+  }
+
+  cambiarPasswordPrimerIngreso(data: { password_actual: string; password_nuevo: string }): Observable<any> {
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${this.token()}`,
+    });
+    return this.http.post(this.cambiarPasswordUrl, data, { headers });
+  }
+
+  solicitarRecuperacion(email: string): Observable<any> {
+    return this.http.post(this.solicitarRecuperacionUrl, { email });
+  }
+
+  confirmarRecuperacion(data: { uid: string; token: string; password_nuevo: string }): Observable<any> {
+    return this.http.post(this.confirmarRecuperacionUrl, data);
   }
 
   rol(): number | undefined {

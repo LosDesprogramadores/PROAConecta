@@ -54,12 +54,13 @@ INSTALLED_APPS = [
     'academico',
     'usuario',
     'foro',
-    'notificacion',
     'aula_virtual',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist', 
     'corsheaders',   
+    'channels',
+    'notificacion',
 ]
 
 MIDDLEWARE = [
@@ -217,6 +218,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+ASGI_APPLICATION = 'proa.asgi.application'
 # --- CONFIGURACIÓN DE CORREO ELECTRÓNICO ---
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
@@ -229,3 +231,9 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f"PROA Conecta <{EMAIL_HOST
 
 # URL base del cliente frontend 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:4200')
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
