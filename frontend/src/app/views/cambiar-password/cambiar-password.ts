@@ -1,13 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
-
 @Component({
   selector: 'app-cambiar-password',
-  imports: [ReactiveFormsModule],
+  imports: [RouterModule, ReactiveFormsModule],
   templateUrl: './cambiar-password.html',
   styleUrl: './cambiar-password.css',
 })
@@ -18,7 +17,10 @@ export class CambiarPassword {
 
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
-  showPassword = signal<boolean>(false);
+
+  showActual = signal<boolean>(false);
+  showNuevo = signal<boolean>(false);
+  showConfirm = signal<boolean>(false);
 
   form = this.fb.nonNullable.group({
     password_actual: ['', [Validators.required]],
@@ -26,8 +28,16 @@ export class CambiarPassword {
     confirmar_password: ['', [Validators.required]],
   });
 
-  toggleShowPassword(): void {
-    this.showPassword.update((prev) => !prev);
+  toggleShowActual(): void {
+    this.showActual.update((prev) => !prev);
+  }
+
+  toggleShowNuevo(): void {
+    this.showNuevo.update((prev) => !prev);
+  }
+
+  toggleShowConfirm(): void {
+    this.showConfirm.update((prev) => !prev);
   }
 
   onSubmit(): void {
@@ -62,5 +72,9 @@ export class CambiarPassword {
         this.errorMessage.set(err.error?.error || 'Ocurrió un error al actualizar la contraseña.');
       },
     });
+  }
+
+  volverAlLogin(): void {
+    this.authService.logout();
   }
 }

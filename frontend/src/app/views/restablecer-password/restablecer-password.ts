@@ -67,7 +67,7 @@ export class RestablecerPassword implements OnInit {
     }).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.mensajeExito.set('¡Contraseña restablecida exitosamente! Redirigiendo al login...');
+        this.mensajeExito.set('¡Contraseña restablecida exitosamente! Redirigiendo a Inicio de Sesión...');
         setTimeout(() => this.router.navigate(['/login']), 2500);
       },
       error: (err) => {

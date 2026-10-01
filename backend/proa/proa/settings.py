@@ -165,6 +165,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+PASSWORD_RESET_TIMEOUT = 900
 
 ALLOWED_HOSTS = [
    '127.0.0.1',
@@ -239,3 +240,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+
+
+
