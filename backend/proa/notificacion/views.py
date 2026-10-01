@@ -18,13 +18,12 @@ class NotificacionListCreateView(APIView):
             
         cursor = notificaciones_collection.find().sort('fecha_creacion', -1)
         
-        # Sincronizamos las propiedades exactamente con lo que espera INotificacion de Angular
         data = [{
             "id": str(n["_id"]),
             "titulo": n.get('titulo', 'Aviso'),
             "mensaje": n.get('mensaje'),
-            "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'), # <-- Añadido
-            "alcance": n.get('alcance', 'AMBOS'), # <-- Usamos 'alcance' directo
+            "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'), 
+            "alcance": n.get('alcance', 'AMBOS'), 
             "fecha_desde": n.get('fecha_desde'),
             "fecha_hasta": n.get('fecha_hasta'),
             "leida": n.get('leida', False)
