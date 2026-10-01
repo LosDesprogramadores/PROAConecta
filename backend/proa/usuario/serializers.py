@@ -3,6 +3,9 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import Rol, Persona, Usuario
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import secrets
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -71,6 +74,7 @@ class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
         return {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
+            'debe_cambiar_password': usuario.debe_cambiar_password
         }
 
 class RolSerializer(serializers.ModelSerializer):
@@ -85,16 +89,44 @@ class  PersonaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        password = validated_data.get('dni')
+        email = validated_data.get('email')
         dni = validated_data.get('dni')
+        nombre = validated_data.get('nombre')
+        clave_temporal = secrets.token_urlsafe(8)
+        
         with transaction.atomic():
             persona = Persona.objects.create(**validated_data)
 
-            usuario = Usuario.objects.create_user(
+            Usuario.objects.create_user(
                 username=dni,
-                password=password,
+                password=clave_temporal,
                 persona=persona,
+                debe_cambiar_password=True
             )
+
+        asunto = "Bienvenido a PROA Conecta - Credenciales de acceso"
+        cuerpo = f"""Hola {nombre},
+
+            Has sido registrado en la plataforma educativa PROA Conecta.
+
+            Tus datos de acceso para iniciar sesión son:
+            - DNI (Usuario): {dni}
+            - Contraseña provisoria: {clave_temporal}
+
+            Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
+            {getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
+
+            Saludos cordiales,
+            Equipo Directivo PROA Conecta.
+            """
+        send_mail(
+            subject=asunto,
+            message=cuerpo,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False
+        )
+
         return persona
 
     

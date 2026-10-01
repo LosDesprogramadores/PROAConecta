@@ -84,6 +84,10 @@ class Usuario(AbstractUser):
         default=True
     )
 
+    debe_cambiar_password = models.BooleanField(
+        default=True
+    )
+
     fecha_creacion = models.DateTimeField(
         auto_now_add=True
     )
