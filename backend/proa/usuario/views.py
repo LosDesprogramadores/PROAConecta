@@ -168,6 +168,7 @@ class SolicitarRecuperacionPasswordView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         email = request.data.get('email', '').strip().lower()
@@ -210,6 +211,7 @@ class SolicitarRecuperacionPasswordView(APIView):
 class ConfirmarRecuperacionPasswordView(APIView):
     """Valida el token de un solo uso recibido por email y actualiza la contraseña."""
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         uidb64 = request.data.get('uid')
