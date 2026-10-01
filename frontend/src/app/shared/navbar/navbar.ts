@@ -1,9 +1,14 @@
-import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 import { Toast } from '../toast/toast';
 import { ToastService } from '../../services/toast.service';
+import { NotificacionSocketService } from '../../services/notificacion-socket.service';
+import { INotificacion } from '../../model/notificacion.model';
+import { Subscription } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { NotificacionService } from '../../services/notificaciones.service';
 
 interface NavLink {
   label: string;
@@ -24,14 +29,19 @@ interface NotificationItem {
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterModule, Toast],
+  standalone: true,
+  imports: [RouterModule, Toast, CommonModule],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-export class Navbar {
+export class Navbar implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  private notiSocketService = inject(NotificacionSocketService);
   private router = inject(Router);
+  private notiService = inject(NotificacionService);
+
+  private socketSub$!: Subscription;
 
   currentUser = this.authService.currentUser;
 
@@ -39,40 +49,22 @@ export class Navbar {
   isProfileMenuOpen = signal<boolean>(false);
   isProfileModalOpen = signal<boolean>(false);
 
-  // Estados para los nuevos menús desplegables
   isMessagesOpen = signal<boolean>(false);
   isNotificationsOpen = signal<boolean>(false);
 
-  unreadCount = signal<number>(4);
+  unreadCount = signal<number>(0);
 
-  // Propiedades añadidas para evitar errores de compilación en el template
   messages = signal<Message[]>([
     { sender: 'Profesor Gomez', text: 'Hola, te escribo por la tarea...', time: 'Hace 10 min' },
     { sender: 'Maria Perez', text: '¿Nos juntamos a estudiar?', time: 'Hace 1 hora' }
   ]);
 
-  notifications = signal<NotificationItem[]>([
-    { title: 'Nueva nota', description: 'Se subió la calificación del parcial.', time: 'Hace 30 min' },
-    { title: 'Recordatorio', description: 'Entrega de trabajo práctico pendiente.', time: 'Hace 2 horas' }
-  ]);
+   notifications = signal<INotificacion[]>([]);
 
-  /**
-   * Rutas administrativas.
-   * Se muestran únicamente dentro del toggler en pantallas menores a lg.
-   */
   navLinksAdmi: NavLink[] = [];
 
-  /**
-   * Rutas del dashboard según el rol.
-   * Se muestran únicamente dentro del toggler en pantallas menores a lg.
-   */
   navLinks: NavLink[] = [];
 
-  /**
-   * Rutas específicas de una materia.
-   * Se muestran únicamente dentro del toggler cuando estamos
-   * dentro de /view-materia/:id.
-   */
   navLinksMateria: NavLink[] = [];
 
   userAvatar = signal<string>(
@@ -89,9 +81,6 @@ export class Navbar {
     return `${persona.nombre} ${persona.apellido}`;
   });
 
-  /**
-   * Indica si actualmente estamos dentro del dashboard de una materia.
-   */
   isMateriaRoute = computed(() => {
     return this.router.url.startsWith('/view-materia/');
   });
@@ -100,7 +89,6 @@ export class Navbar {
     effect(() => {
       const user = this.currentUser();
 
-      // Limpiamos todas las rutas si no hay usuario autenticado.
       if (!user) {
         this.navLinksAdmi = [];
         this.navLinks = [];
@@ -108,18 +96,13 @@ export class Navbar {
         return;
       }
 
-      // Si estamos dentro de una materia, solamente cargamos
-      // las rutas propias de la materia.
       if (this.isMateriaRoute()) {
         this.navLinksAdmi = [];
         this.navLinks = [];
-
         this.navLinksMateria = this.obtenerLinksMateria();
-
         return;
       }
 
-      // Si estamos fuera de una materia, limpiamos sus rutas.
       this.navLinksMateria = [];
 
       switch (user.rolId) {
@@ -127,19 +110,19 @@ export class Navbar {
           this.navLinksAdmi = [
             {
               label: 'Profesores',
-              path: '/admin/profesores',
+              path: '/dashboard-admin/profesores',
             },
             {
               label: 'Estudiantes',
-              path: '/admin/estudiantes',
+              path: '/dashboard-admin/estudiantes',
             },
             {
               label: 'Materias',
-              path: '/admin/materias',
+              path: '/dashboard-admin/materias',
             },
             {
               label: 'Notificaciones',
-              path: '/admin/notificaciones',
+              path: '/dashboard-admin/notificaciones',
             },
           ];
 
@@ -148,38 +131,12 @@ export class Navbar {
 
         case UserRole.DOCENTE:
           this.navLinksAdmi = [];
-
-          this.navLinks = [
-            {
-              label: 'Mis Clases',
-              path: '/docente/materias',
-            },
-            {
-              label: 'Calificaciones',
-              path: '/docente/calificaciones',
-            },
-          ];
-
+          this.navLinks = []; // Limpiamos para que no aparezcan links sueltos arriba
           break;
 
         case UserRole.ESTUDIANTE:
           this.navLinksAdmi = [];
-
-          this.navLinks = [
-            {
-              label: 'Anuncios',
-              path: '/dashboard/estudiante/anuncios',
-            },
-            {
-              label: 'Materias',
-              path: '/dashboard/estudiante/materias',
-            },
-            {
-              label: 'Contacto',
-              path: '/dashboard/estudiante/contacto',
-            },
-          ];
-
+          this.navLinks = []; // Limpiamos para que no aparezcan links sueltos arriba
           break;
 
         default:
@@ -190,6 +147,63 @@ export class Navbar {
           break;
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.cargarHistorialNotificaciones();
+
+   this.socketSub$ = this.notiSocketService.escucharNotificaciones().subscribe({
+      next: (nuevaNoti: INotificacion) => {
+        const user = this.currentUser();
+        if (!user) return;
+
+        const rolUsuario = user.rolId;
+
+        console.log('--- LLEGÓ NOTIFICACIÓN ---');
+        console.log('Título:', nuevaNoti.titulo);
+        console.log('Alcance crudo desde BD/WS:', JSON.stringify(nuevaNoti.alcance));
+        console.log('Mi rol actual:', rolUsuario);
+        console.log('Mi rol en el websocket:', nuevaNoti.alcance);
+        const alcance = (nuevaNoti.alcance || '').toLowerCase().trim();
+        let esParaMi = false;
+
+         if (rolUsuario === UserRole.ADMIN) {
+          esParaMi = true;
+        } 
+       else if (nuevaNoti.alcance === 'TODOS' || nuevaNoti.alcance === 'AMBOS') {
+          esParaMi = true;
+        } 
+        else if (rolUsuario === UserRole.ESTUDIANTE && nuevaNoti.alcance === 'ESTUDIANTE') {
+           if (!nuevaNoti.materia_id) {
+            esParaMi = true; 
+          } else {
+        
+            esParaMi = true; 
+          }
+        } 
+     
+         else if (rolUsuario === UserRole.DOCENTE && nuevaNoti.alcance === 'PROFESOR') {
+          esParaMi = true;
+        }
+
+        if (!esParaMi) {
+          return;
+        }
+
+        this.notifications.update(lista => [nuevaNoti, ...lista]);
+        this.unreadCount.update(count => count + 1);
+        this.toastService.info(`🔔 ${nuevaNoti.titulo}`);
+      },
+      error: (err) => {
+        console.error('Error en el socket del navbar:', err);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.socketSub$) {
+      this.socketSub$.unsubscribe();
+    }
   }
 
   private obtenerLinksMateria(): NavLink[] {
@@ -242,6 +256,10 @@ export class Navbar {
     this.isNotificationsOpen.update((value) => !value);
     this.isMessagesOpen.set(false);
     this.isProfileMenuOpen.set(false);
+
+    if (this.isNotificationsOpen()) {
+      this.unreadCount.set(0);
+    }
   }
 
   closeMenus(): void {
@@ -293,5 +311,17 @@ export class Navbar {
     } else {
       this.toastService.info('Configuración: en desarrollo');
     }
+  }
+
+  cargarHistorialNotificaciones(): void {
+    this.notiService.obtenerNotificaciones().subscribe({
+      next: (data: INotificacion[]) => {
+        this.notifications.set(data);
+        this.unreadCount.set(0); 
+      },
+      error: (err) => {
+        console.error('Error al cargar historial de notificaciones:', err);
+      }
+    });
   }
 }
