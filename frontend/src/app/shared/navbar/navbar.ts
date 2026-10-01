@@ -131,38 +131,12 @@ export class Navbar implements OnInit, OnDestroy {
 
         case UserRole.DOCENTE:
           this.navLinksAdmi = [];
-
-          this.navLinks = [
-            {
-              label: 'Mis Clases',
-              path: '/docente/materias',
-            },
-            {
-              label: 'Calificaciones',
-              path: '/docente/calificaciones',
-            },
-          ];
-
+          this.navLinks = []; // Limpiamos para que no aparezcan links sueltos arriba
           break;
 
         case UserRole.ESTUDIANTE:
           this.navLinksAdmi = [];
-
-          this.navLinks = [
-            {
-              label: 'Anuncios',
-              path: '/dashboard/estudiante/anuncios',
-            },
-            {
-              label: 'Materias',
-              path: '/dashboard/estudiante/materias',
-            },
-            {
-              label: 'Contacto',
-              path: '/dashboard/estudiante/contacto',
-            },
-          ];
-
+          this.navLinks = []; // Limpiamos para que no aparezcan links sueltos arriba
           break;
 
         default:
@@ -343,14 +317,7 @@ export class Navbar implements OnInit, OnDestroy {
     this.notiService.obtenerNotificaciones().subscribe({
       next: (data: INotificacion[]) => {
         this.notifications.set(data);
-        
-        // OPCIÓN: Si no quieres que las viejas inflen el número al recargar, 
-        // puedes dejar el contador en 0 al iniciar, y que solo suba con los WebSockets en tiempo real:
         this.unreadCount.set(0); 
-        
-        // O si prefieres contar las no leídas reales de la BD pero solo la primera vez:
-        // const noLeidas = data.filter(n => !n.leida).length;
-        // this.unreadCount.set(noLeidas);
       },
       error: (err) => {
         console.error('Error al cargar historial de notificaciones:', err);
