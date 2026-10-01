@@ -68,9 +68,6 @@ export class AuthService {
         localStorage.setItem('current_user', JSON.stringify(userData));
         this.currentUser.set(userData);
 
-        console.log('Datos de la persona asociada:', userData);
-
-        console.log('Rol recibido:', userData.rolId);
       }),
     );
   }

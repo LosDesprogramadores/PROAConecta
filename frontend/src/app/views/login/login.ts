@@ -19,11 +19,52 @@ export class Login {
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
   showPassword = signal<boolean>(false);
+  showModalRecuperar = signal<boolean>(false);
+  emailRecuperacion = signal<string>('');
+  isRecuperando = signal<boolean>(false);
+  mensajeRecuperacion = signal<string | null>(null);
+  errorRecuperacion = signal<string | null>(null);
 
   loginForm = this.formbuilder .nonNullable.group({
     dni: ['', [Validators.required]],
     password: ['', [Validators.required]]
   });
+
+  abrirModalRecuperar(): void {
+  this.mensajeRecuperacion.set(null);
+  this.errorRecuperacion.set(null);
+  this.emailRecuperacion.set('');
+  this.showModalRecuperar.set(true);
+  }
+
+  cerrarModalRecuperar(): void {
+    this.showModalRecuperar.set(false);
+  }
+
+  enviarSolicitudRecuperacion(): void {
+    const email = this.emailRecuperacion().trim();
+    if (!email) {
+      this.errorRecuperacion.set('Ingresá tu correo electrónico.');
+      return;
+    }
+
+    this.isRecuperando.set(true);
+    this.errorRecuperacion.set(null);
+    this.mensajeRecuperacion.set(null);
+
+    this.authService.solicitarRecuperacion(email).subscribe({
+      next: (res) => {
+        this.isRecuperando.set(false);
+        this.mensajeRecuperacion.set(
+          res.mensaje || 'Si el correo se encuentra registrado, recibirás un enlace a la brevedad.'
+        );
+      },
+      error: (err) => {
+        this.isRecuperando.set(false);
+        this.errorRecuperacion.set(err.error?.error || 'No se pudo procesar la solicitud.');
+      },
+    });
+  }
 
   toggleShowPassword(): void {
     this.showPassword.update(prev => !prev);

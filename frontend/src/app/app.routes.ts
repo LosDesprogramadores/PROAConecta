@@ -31,6 +31,8 @@ import { ActividadDetalleComponent } from './views/dashboard-components/activida
 import { ActividadEntregasComponent } from './views/dashboard-components/actividad-entregas/actividad-entregas';
 import { MensajesComponent } from './views/mensajes/mensajes';
 import { NotificacionesComponent } from './views/notificaciones/notificaciones';
+import { CambiarPassword } from './views/cambiar-password/cambiar-password';
+import { RestablecerPassword } from './views/restablecer-password/restablecer-password';
 
 export const routes: Routes = [
   {
@@ -44,6 +46,15 @@ export const routes: Routes = [
   {
     path: 'login',
     component: Login,
+  },
+  {
+    path: 'cambiar-password',
+    canActivate: [authGuard], 
+    component: CambiarPassword,
+  },
+  {
+    path: 'restablecer-password',
+    component: RestablecerPassword, 
   },
   {
     path: 'dashboard',
