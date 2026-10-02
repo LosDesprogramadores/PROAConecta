@@ -23,8 +23,10 @@
 
             <!-- CABECERA DE UNIDAD -->
             <div (click)="toggleUnidad(unidad.id!)"
-                class="p-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition">
-                <div>
+                class="p-4 cursor-pointer flex items-center justify-between gap-4 hover:bg-slate-50 transition">
+
+                <!-- Texto de la unidad -->
+                <div class="min-w-0 flex-1">
                     <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">
                         Unidad {{ unidad.orden }}
                     </span>
@@ -34,35 +36,70 @@
                     }
                 </div>
 
-                <div class="flex items-center gap-3">
+                <!-- COLUMNA VERTICAL DE ACCIONES -->
+                <div class="flex flex-col gap-2 shrink-0 w-9 sm:w-28" (click)="$event.stopPropagation()">
+
                     @if (esDocente()) {
-                    <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
-                        <!-- Editar -->
-                        <button type="button" (click)="prepararEditarUnidad(unidad, $event)"
-                            class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-md transition"
-                            title="Editar unidad">
-                            ✏️
-                        </button>
 
-                        <!-- Visibilidad -->
-                        <button type="button" (click)="cambiarVisibilidad(unidad.id!, $event)"
-                            class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition"
-                            [title]="unidad.visible ? 'Ocultar a alumnos' : 'Mostrar a alumnos'">
-                            {{ unidad.visible ? '👁️' : '🙈' }}
-                        </button>
+                    <!-- Editar -->
+                    <button type="button" (click)="prepararEditarUnidad(unidad, $event)"
+                        class="w-full h-9 inline-flex items-center justify-center sm:justify-start gap-2 sm:px-3 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition"
+                        title="Editar unidad" aria-label="Editar unidad">
+                        <svg class="w-4 h-4 text-orange-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                        <span class="hidden sm:inline">Editar</span>
+                    </button>
 
-                        <!-- Eliminar -->
-                        <button type="button" (click)="eliminarUnidad(unidad.id!, $event)"
-                            class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-                            title="Eliminar unidad">
-                            🗑️
-                        </button>
-                    </div>
+                    <!-- Visibilidad (muestra el estado actual) -->
+                    <button type="button" (click)="cambiarVisibilidad(unidad.id!, $event)"
+                        class="w-full h-9 inline-flex items-center justify-center sm:justify-start gap-2 sm:px-3 text-xs font-semibold rounded-lg border transition"
+                        [class]="unidad.visible
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'"
+                        [title]="unidad.visible ? 'Visible para alumnos. Clic para ocultar' : 'Oculta para alumnos. Clic para mostrar'"
+                        [attr.aria-label]="unidad.visible ? 'Ocultar unidad a alumnos' : 'Mostrar unidad a alumnos'">
+                        @if (unidad.visible) {
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span class="hidden sm:inline">Visible</span>
+                        } @else {
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                        <span class="hidden sm:inline">Oculta</span>
+                        }
+                    </button>
+
+                    <!-- Eliminar (en rojo) -->
+                    <button type="button" (click)="eliminarUnidad(unidad.id!, $event)"
+                        class="w-full h-9 inline-flex items-center justify-center sm:justify-start gap-2 sm:px-3 text-xs font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition"
+                        title="Eliminar unidad" aria-label="Eliminar unidad">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                        <span class="hidden sm:inline">Eliminar</span>
+                    </button>
                     }
 
-                    <span class="text-slate-400 text-xs font-bold">
-                        {{ unidadExpandida() === unidad.id ? '▲' : '▼' }}
-                    </span>
+                    <!-- Expandir / Contraer (clic en el botón o en cualquier parte de la cabecera) -->
+                    <button type="button" (click)="toggleUnidad(unidad.id!)"
+                        class="w-full h-9 inline-flex items-center justify-center sm:justify-start gap-2 sm:px-3 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition"
+                        [title]="unidadExpandida() === unidad.id ? 'Contraer unidad' : 'Ver materiales de la unidad'"
+                        [attr.aria-label]="unidadExpandida() === unidad.id ? 'Contraer unidad' : 'Expandir unidad'">
+                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200"
+                            [class.rotate-180]="unidadExpandida() === unidad.id"
+                            fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                        <span class="hidden sm:inline">{{ unidadExpandida() === unidad.id ? 'Contraer' : 'Materiales' }}</span>
+                    </button>
                 </div>
             </div>
 
@@ -105,23 +142,46 @@
                         <div class="flex items-center gap-1">
                             <!-- Editar Recurso -->
                             <button type="button" (click)="prepararEditarRecurso(m, $event)"
-                                class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-md transition"
-                                title="Editar recurso">
-                                ✏️
+                                class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition"
+                                title="Editar recurso" aria-label="Editar recurso">
+                                <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                </svg>
                             </button>
 
                             <!-- Alternar Visibilidad -->
                             <button type="button" (click)="alternarVisibilidadMaterial(m)"
-                                class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition"
-                                [title]="m.visible ? 'Ocultar material' : 'Mostrar material'">
-                                {{ m.visible ? '👁️' : '🙈' }}
+                                class="w-8 h-8 inline-flex items-center justify-center rounded-lg transition"
+                                [class]="m.visible
+                                    ? 'text-emerald-600 hover:bg-emerald-50'
+                                    : 'text-amber-600 hover:bg-amber-50'"
+                                [title]="m.visible ? 'Visible. Clic para ocultar' : 'Oculto. Clic para mostrar'"
+                                [attr.aria-label]="m.visible ? 'Ocultar material' : 'Mostrar material'">
+                                @if (m.visible) {
+                                <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                } @else {
+                                <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                </svg>
+                                }
                             </button>
+
+                            <span class="w-px h-5 bg-slate-200 mx-1"></span>
 
                             <!-- Eliminar -->
                             <button type="button" (click)="eliminarMaterial(m.id!, unidad)"
-                                class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-                                title="Eliminar material">
-                                🗑️
+                                class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition"
+                                title="Eliminar material" aria-label="Eliminar material">
+                                <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
                             </button>
                         </div>
                         }
