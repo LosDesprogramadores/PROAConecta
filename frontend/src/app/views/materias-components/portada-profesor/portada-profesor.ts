@@ -9,6 +9,7 @@ import {
 } from '../../../model/unidad-contenido.model';
 import { IMateria } from '../../../model/materia.model';
 import { UnidadesMaterial } from '../portada/unidades-material/unidades-material';
+import { ProximasEntregas } from '../../dashboard-components/estudiante-dashboard/proximas-entregas/proximas-entregas';
 import { MateriaService } from '../../../services/materia.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/auth/auth.model';
@@ -16,7 +17,7 @@ import { UserRole } from '../../../core/auth/auth.model';
 @Component({
   selector: 'app-portada-profesor',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial], // 👈 Ya no incluye RecursosClaseComponent
+  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, ProximasEntregas],
   templateUrl: './portada-profesor.html',
   styleUrls: ['./portada-profesor.css'],
 })
