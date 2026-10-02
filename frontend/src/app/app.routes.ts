@@ -9,14 +9,12 @@ import { Contacto } from './views/dashboard-components/contacto/contacto';
 import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { PortadaProfesor } from './views/materias-components/portada-profesor/portada-profesor';
-import { ForoComponent } from './views/materias-components/foro/foro';
-import { ForoDetalleComponent } from './views/materias-components/foro/foro-detalle/foro-detalle';
 import { authGuard } from './guards/auth.guard';
 import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
 import { Estudiante } from './views/admin/estudiante/estudiante';
 import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
 import { Material } from './views/materias-components/material/material';
-import { Calificaciones } from './views/materias-components/calificaciones/calificaciones';
+import { Calificaciones } from './views/materias-components/materias-estudiante/calificaciones/calificaciones';
 import { CalificacionesProfesor } from './views/materias-components/calificaciones-profesor/calificaciones-profesor';
 import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
@@ -34,6 +32,9 @@ import { MensajesComponent } from './views/mensajes/mensajes';
 import { NotificacionesComponent } from './views/notificaciones/notificaciones';
 import { CambiarPassword } from './views/cambiar-password/cambiar-password';
 import { RestablecerPassword } from './views/restablecer-password/restablecer-password';
+import { rolRedirectGuard } from './guards/portada-redirect-guard';
+import { PortadaEstudiante } from './views/materias-components/materias-estudiante/portada-estudiante/portada-estudiante';
+import { MaterialEstudiante } from './views/materias-components/materias-estudiante/material-estudiante/material-estudiante';
 
 export const routes: Routes = [
   {
@@ -95,22 +96,29 @@ export const routes: Routes = [
     component: MateriasLayout,
     canActivate: [authGuard],
     children: [
+
       // =========================
       // GENERAL
       // =========================
       { path: 'portada', component: Portada },
       { path: 'anuncios', component: AnunciosMateriaComponent },
       { path: 'material', component: Material },
-      { path: 'foro', component: ForoComponent },
-      { path: 'foro/:id', component: ForoDetalleComponent },
 
       // =========================
       // ESTUDIANTE
       // =========================
-      { path: 'actividades', component: Actividades },
-      { path: 'actividades/:id/detalle', component: ActividadDetalleComponent },
-      { path: 'actividades/:id/entregar', component: ActividadForm },
-      { path: 'calificaciones', component: Calificaciones },
+      {
+        path: 'estudiante',
+        children: [
+          { path: '', redirectTo: 'portada', pathMatch: 'full' },
+          { path: 'portada', component: PortadaEstudiante },
+          { path: 'calificaciones', component: Calificaciones },
+          { path: 'material', component: MaterialEstudiante },
+          { path: 'actividades', component: Actividades },
+          { path: 'actividades/:id/detalle', component: ActividadDetalleComponent },
+          { path: 'actividades/:id/entregar', component: ActividadForm },
+        ]
+      },
 
       // =========================
       // PROFESOR
@@ -121,10 +129,12 @@ export const routes: Routes = [
       { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
       { path: 'calificaciones-profesor', component: CalificacionesProfesor },
 
-      // =========================
-      // DEFAULT
-      // =========================
-      { path: '', redirectTo: 'portada', pathMatch: 'full' },
+      {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [rolRedirectGuard],
+        children: []
+      },
     ],
   },
   {

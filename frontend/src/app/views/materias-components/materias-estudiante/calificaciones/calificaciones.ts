@@ -1,17 +1,9 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-
 import { ActivatedRoute } from '@angular/router';
-
-import { AuthService } from '../../../core/auth/auth.service';
-
-import { UserRole } from '../../../core/auth/auth.model';
-
-import {
-  CalificacionesService,
-  RendimientoEstudiante,
-} from '../../../services/calificaciones.service';
-
-import { ToastService } from '../../../services/toast.service';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { UserRole } from '../../../../core/auth/auth.model';
+import {CalificacionesService, RendimientoEstudiante,} from '../../../../services/calificaciones.service';
+import { ToastService } from '../../../../services/toast.service';
 
 interface CalificacionEstudiante {
   id: number;
