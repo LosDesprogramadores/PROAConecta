@@ -80,8 +80,10 @@ export const routes: Routes = [
 
       { path: 'welcome', component: WelcomeProfesor },
       { path: 'actividades', component: ActividadesDashboard },
+      { path: 'actividades/:id', component: ActividadDetalleComponent },
       { path: 'actividades/nueva', component: ActividadForm },
       { path: 'actividades/editar/:id', component: ActividadForm },
+      { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },
@@ -125,6 +127,7 @@ export const routes: Routes = [
       // =========================
       { path: 'portada-profesor', component: PortadaProfesor },
       { path: 'actividades', component: Actividades },
+      { path: 'actividades/:id/detalle', component: ActividadDetalleComponent },
       { path: 'actividades/nueva', component: ActividadForm },
       { path: 'actividades/:id/editar', component: ActividadForm },
       { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
