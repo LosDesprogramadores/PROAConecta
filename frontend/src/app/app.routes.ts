@@ -17,6 +17,7 @@ import { Estudiante } from './views/admin/estudiante/estudiante';
 import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
 import { Material } from './views/materias-components/material/material';
 import { Calificaciones } from './views/materias-components/calificaciones/calificaciones';
+import { CalificacionesProfesor } from './views/materias-components/calificaciones-profesor/calificaciones-profesor';
 import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
 import { TablaGenerica } from './views/admin/tabla-generica/tabla-generica';
@@ -49,12 +50,12 @@ export const routes: Routes = [
   },
   {
     path: 'cambiar-password',
-    canActivate: [authGuard], 
+    canActivate: [authGuard],
     component: CambiarPassword,
   },
   {
     path: 'restablecer-password',
-    component: RestablecerPassword, 
+    component: RestablecerPassword,
   },
   {
     path: 'dashboard',
@@ -64,7 +65,7 @@ export const routes: Routes = [
       {
         path: 'ingreso',
         canActivate: [welcomeRedirectGuard],
-        children: []
+        children: [],
       },
       {
         path: 'estudiante',
@@ -73,7 +74,7 @@ export const routes: Routes = [
           { path: 'anuncios', component: Anuncios },
           { path: 'materias', component: Materias },
           { path: 'contacto', component: Contacto },
-        ]
+        ],
       },
 
       { path: 'welcome', component: WelcomeProfesor },
@@ -94,19 +95,35 @@ export const routes: Routes = [
     component: MateriasLayout,
     canActivate: [authGuard],
     children: [
+      // =========================
+      // GENERAL
+      // =========================
       { path: 'portada', component: Portada },
-      { path: 'portada-profesor', component: PortadaProfesor },
       { path: 'anuncios', component: AnunciosMateriaComponent },
       { path: 'material', component: Material },
-      { path: 'actividades', component: Actividades },
-      { path: 'actividades/nueva', component: ActividadForm },
-      { path: 'actividades/:id/detalle', component: ActividadDetalleComponent }, // 👈 Vista de sólo lectura ("Ver")
-      { path: 'actividades/:id/editar', component: ActividadForm },             // 👈 Formulario editable ("Editar")
-      { path: 'actividades/:id/entregar', component: ActividadForm },           // 👈 Vista de entrega alumno
-      { path: 'actividades/:id/entregas', component: ActividadEntregasComponent }, // 👈 Panel de entregas profesor
       { path: 'foro', component: ForoComponent },
       { path: 'foro/:id', component: ForoDetalleComponent },
+
+      // =========================
+      // ESTUDIANTE
+      // =========================
+      { path: 'actividades', component: Actividades },
+      { path: 'actividades/:id/detalle', component: ActividadDetalleComponent },
+      { path: 'actividades/:id/entregar', component: ActividadForm },
       { path: 'calificaciones', component: Calificaciones },
+
+      // =========================
+      // PROFESOR
+      // =========================
+      { path: 'portada-profesor', component: PortadaProfesor },
+      { path: 'actividades/nueva', component: ActividadForm },
+      { path: 'actividades/:id/editar', component: ActividadForm },
+      { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
+      { path: 'calificaciones-profesor', component: CalificacionesProfesor },
+
+      // =========================
+      // DEFAULT
+      // =========================
       { path: '', redirectTo: 'portada', pathMatch: 'full' },
     ],
   },
@@ -118,7 +135,7 @@ export const routes: Routes = [
       { path: 'estudiantes', component: Estudiante },
       { path: 'profesores', component: Profesor },
       { path: 'materias', component: Materia },
-      { path: 'notificaciones', component: Notificacion }
-    ]
-  }
+      { path: 'notificaciones', component: Notificacion },
+    ],
+  },
 ];

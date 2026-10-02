@@ -30,15 +30,7 @@ export class SidebarMaterias implements OnInit {
       null;
 
     this.configurarRutaAreaPersonal();
-
-    if (this.materiaId) {
-      this.links = [
-        { label: 'Anuncios', path: `/view-materia/${this.materiaId}/anuncios` },
-        { label: 'Material', path: `/view-materia/${this.materiaId}/material` },
-        { label: 'Actividades', path: `/view-materia/${this.materiaId}/actividades` },
-        { label: 'Calificaciones', path: `/view-materia/${this.materiaId}/calificaciones` },
-      ];
-    }
+    this.configurarLinks();
   }
 
   private configurarRutaAreaPersonal(): void {
@@ -53,6 +45,53 @@ export class SidebarMaterias implements OnInit {
 
       default:
         this.areaPersonalPath = '/dashboard/welcome';
+        break;
+    }
+  }
+
+  private configurarLinks(): void {
+    if (!this.materiaId) {
+      return;
+    }
+
+    const linksGenerales = [
+      {
+        label: 'Anuncios',
+        path: `/view-materia/${this.materiaId}/anuncios`,
+      },
+      {
+        label: 'Material',
+        path: `/view-materia/${this.materiaId}/material`,
+      },
+      {
+        label: 'Actividades',
+        path: `/view-materia/${this.materiaId}/actividades`,
+      },
+    ];
+
+    switch (this.authService.rol()) {
+      case UserRole.ESTUDIANTE:
+        this.links = [
+          ...linksGenerales,
+          {
+            label: 'Calificaciones',
+            path: `/view-materia/${this.materiaId}/calificaciones`,
+          },
+        ];
+        break;
+
+      case UserRole.DOCENTE:
+        this.links = [
+          ...linksGenerales,
+          {
+            label: 'Calificaciones',
+            path: `/view-materia/${this.materiaId}/calificaciones-profesor`,
+          },
+        ];
+        break;
+
+      default:
+        this.links = linksGenerales;
         break;
     }
   }
