@@ -20,13 +20,6 @@ interface CalificacionEstudiante {
   devolucion: string | null;
 }
 
-interface AlumnoCalificaciones {
-  id: number;
-  nombre: string;
-  apellido: string;
-  notas: number[];
-}
-
 @Component({
   selector: 'app-calificaciones',
   standalone: true,
@@ -42,29 +35,28 @@ export class Calificaciones implements OnInit {
 
   private currentUser = this.authService.currentUser;
 
-  // *=========================*
-  // *ROLES*
-  // *=========================*
-
-  esDocente = computed(() => this.currentUser()?.rolId === UserRole.DOCENTE);
+  // =========================
+  // ESTUDIANTE
+  // =========================
 
   esEstudiante = computed(() => this.currentUser()?.rolId === UserRole.ESTUDIANTE);
 
-  // *=========================*
-  // *ESTUDIANTE*
-  // *=========================*
-
   misCalificaciones = signal<CalificacionEstudiante[]>([]);
+
   promedio = signal<string | number | null>(null);
 
   materiaTitulo = signal('');
+
   curso = signal('');
+
   anio = signal<number | null>(null);
+
   nombreEstudiante = signal('');
 
   totalEvaluaciones = signal(0);
 
   cargando = signal(false);
+
   error = signal('');
 
   ngOnInit(): void {
@@ -79,7 +71,6 @@ export class Calificaciones implements OnInit {
      *
      * Por eso el parámetro "id" está en la ruta padre.
      */
-
     const materiaId = Number(this.route.parent?.snapshot.paramMap.get('id'));
 
     if (!materiaId) {
@@ -97,7 +88,9 @@ export class Calificaciones implements OnInit {
     this.calificacionesService.obtenerMiRendimiento(materiaId).subscribe({
       next: (data: RendimientoEstudiante) => {
         this.materiaTitulo.set(data.materia_titulo);
+
         this.curso.set(data.curso);
+
         this.anio.set(data.anio);
 
         this.nombreEstudiante.set(data.estudiante?.nombre_completo ?? '');
@@ -130,55 +123,5 @@ export class Calificaciones implements OnInit {
 
   exportarPDF(): void {
     this.toastService.info('La exportación a PDF estará disponible próximamente.');
-  }
-
-  // *=========================*
-  // *DOCENTE*
-  // *=========================*
-
-  actividades = signal(['TP N°1', 'TP N°2', 'Parcial']);
-
-  alumnos = signal<AlumnoCalificaciones[]>([
-    {
-      id: 1,
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      notas: [8, 9, 7],
-    },
-    {
-      id: 2,
-      nombre: 'María',
-      apellido: 'Gómez',
-      notas: [9, 8, 10],
-    },
-    {
-      id: 3,
-      nombre: 'Pedro',
-      apellido: 'López',
-      notas: [6, 7, 8],
-    },
-    {
-      id: 4,
-      nombre: 'Lucía',
-      apellido: 'Fernández',
-      notas: [10, 9, 9],
-    },
-  ]);
-
-  actualizarNota(alumno: AlumnoCalificaciones, indice: number, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const valor = Number(input.value);
-
-    if (Number.isNaN(valor)) {
-      return;
-    }
-
-    alumno.notas[indice] = valor;
-
-    this.alumnos.update((lista) => [...lista]);
-  }
-
-  guardarCalificaciones(): void {
-    console.log('Calificaciones a guardar:', this.alumnos());
   }
 }
