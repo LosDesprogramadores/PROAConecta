@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, inject } from '@angular/core';
+import { Component, Input, signal, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CalendarModule, CalendarView, CalendarEvent } from 'angular-calendar';
 import { isSameDay } from 'date-fns';
@@ -15,18 +15,29 @@ import { Actividad } from '../../../../model/actividad-model';
 export class ProximasEntregas implements OnInit {
   private actividadesService = inject(ActividadesService);
 
+  // Opcional: si se pasa, solo muestra las entregas de esa materia.
+  // Si no se pasa (como en el welcome del estudiante), muestra todas.
+  private materiaIdSignal = signal<number | null>(null);
+  @Input() set materiaId(value: number | null | undefined) {
+    this.materiaIdSignal.set(value ?? null);
+  }
+
   isSameDay = isSameDay;
   view: CalendarView = CalendarView.Month;
   viewDate: Date = new Date();
-  
+
   // Día seleccionado (por defecto hoy)
   selectedDate = signal<Date>(new Date());
 
   actividades = signal<Actividad[]>([]);
 
   events = computed<CalendarEvent[]>(() => {
+    const materiaId = this.materiaIdSignal();
+
     return this.actividades()
       .filter(actividad => !!actividad.fecha_limite)
+      // Ajustá "materia" si en tu modelo el campo se llama distinto (ej: materia_id)
+      .filter(actividad => materiaId === null || actividad.materia === materiaId)
       .map(actividad => {
         const fechaLimiteIso = actividad.fecha_limite.replace(' ', 'T');
         const fecha = new Date(fechaLimiteIso);
