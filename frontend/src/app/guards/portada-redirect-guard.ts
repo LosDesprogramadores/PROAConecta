@@ -8,11 +8,15 @@ export const rolRedirectGuard: CanActivateFn = (route, state) => {
     const router = inject(Router);
 
     const userRole = authService.currentUser()?.rolId;
-    const materiaId = route.paramMap.get('id');
+    const materiaId = route.parent?.paramMap.get('id');
 
-    if (userRole === UserRole.DOCENTE) {
-        return router.createUrlTree(['/view-materia', materiaId]);
+    if (!materiaId) {
+        return router.createUrlTree(['/dashboard']);
     }
 
-    return router.createUrlTree(['/view-materia', materiaId, 'estudiante']);
+    if (userRole === UserRole.DOCENTE) {
+        return router.createUrlTree(['/view-materia', materiaId, 'portada-profesor']);
+    }
+
+    return router.createUrlTree(['/view-materia', materiaId, 'estudiante', 'portada']);
 };

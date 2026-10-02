@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -49,6 +49,13 @@ export class RecursosClaseComponent implements OnInit {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
 
     if (this.materiaId !== null && this.materiaId !== '') {
+      this.cargarRecursos();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['materiaId'] && changes['materiaId'].currentValue) {
+      this.materiaId = changes['materiaId'].currentValue;
       this.cargarRecursos();
     }
   }

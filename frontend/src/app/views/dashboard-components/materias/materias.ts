@@ -40,7 +40,7 @@ export class Materias implements OnInit {
         const anioInscripcion = new Date(materia.fecha_inscripcion).getFullYear();
         if (anioInscripcion === this.anioActual) return true;
       }
-      
+
       // Si tiene año lectivo explícito
       if (materia.anio_lectivo === this.anioActual) {
         return true;
@@ -64,7 +64,7 @@ export class Materias implements OnInit {
   constructor(
     private readonly inscripcionesService: InscripcionesService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargarMaterias();
@@ -125,6 +125,6 @@ export class Materias implements OnInit {
       return ['/dashboard/materias'];
     }
 
-    return ['/view-materia', materia.id.toString(), 'portada'];
+    return ['/view-materia', materia.id.toString()];
   }
 }

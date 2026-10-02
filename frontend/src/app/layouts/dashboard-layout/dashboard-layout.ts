@@ -2,13 +2,12 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Navbar } from '../../shared/navbar/navbar';
 import { Footer } from '../../shared/footer/footer';
-import { Sidebar } from '../../shared/sidebar/sidebar';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
 @Component({
   selector: 'app-dashboard-layout',
-  imports: [RouterOutlet, Navbar, Sidebar, Footer],
+  imports: [RouterOutlet, Navbar, Footer],
   templateUrl: './dashboard-layout.html',
   styleUrl: './dashboard-layout.css',
 })

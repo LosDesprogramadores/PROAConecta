@@ -63,7 +63,15 @@ export class Calificaciones implements OnInit {
      *
      * Por eso el parámetro "id" está en la ruta padre.
      */
-    const materiaId = Number(this.route.parent?.snapshot.paramMap.get('id'));
+    let materiaIdParam: string | null = null;
+  for (const route of this.route.pathFromRoot) {
+    if (route.snapshot.paramMap.has('id')) {
+      materiaIdParam = route.snapshot.paramMap.get('id');
+      break;
+    }
+  }
+
+  const materiaId = Number(materiaIdParam);
 
     if (!materiaId) {
       this.error.set('No se pudo identificar la materia.');

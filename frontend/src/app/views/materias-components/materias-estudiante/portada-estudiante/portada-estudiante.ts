@@ -51,41 +51,53 @@ export class PortadaEstudiante implements OnInit {
   }
 
   ngOnInit(): void {
-
     this.cargarMateriaDesdeRuta();
   }
 
+  /**
+   * Recorre el árbol de rutas hacia arriba hasta encontrar el parámetro 'id'
+   */
+  private obtenerMateriaIdDesdeArbol(): string | null {
+    let currentRoute: ActivatedRoute | null = this.route;
+    while (currentRoute) {
+      const id = currentRoute.snapshot.paramMap.get('id');
+      if (id) {
+        return id;
+      }
+      currentRoute = currentRoute.parent;
+    }
+    return null;
+  }
+
   private cargarMateriaDesdeRuta(): void {
-    this.route.parent?.paramMap.subscribe((params) => {
-      const idParam = params.get('id');
+    const idParam = this.obtenerMateriaIdDesdeArbol();
 
-      if (!idParam) {
-        this.error.set('No se encontró el identificador de la materia.');
-        return;
-      }
+    if (!idParam) {
+      this.error.set('No se encontró el identificador de la materia.');
+      return;
+    }
 
-      const id = Number(idParam);
+    const id = Number(idParam);
 
-      if (Number.isNaN(id)) {
-        this.error.set('El identificador de la materia no es válido.');
-        return;
-      }
+    if (Number.isNaN(id)) {
+      this.error.set('El identificador de la materia no es válido.');
+      return;
+    }
 
-      this.materiaId = id;
-      this.cargando.set(true);
-      this.error.set(null);
+    this.materiaId = id;
+    this.cargando.set(true);
+    this.error.set(null);
 
-      this.materiaService.obtenerMateriaPorId(id).subscribe({
-        next: (materiaResponse) => {
-          this.materia = this.convertirMateriaPortada(materiaResponse);
-          this.cargando.set(false);
-        },
-        error: (err) => {
-          console.error('Error cargando la materia:', err);
-          this.error.set('No se pudo cargar la materia.');
-          this.cargando.set(false);
-        },
-      });
+    this.materiaService.obtenerMateriaPorId(id).subscribe({
+      next: (materiaResponse) => {
+        this.materia = this.convertirMateriaPortada(materiaResponse);
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error cargando la materia:', err);
+        this.error.set('No se pudo cargar la materia.');
+        this.cargando.set(false);
+      },
     });
   }
 

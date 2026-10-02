@@ -124,10 +124,12 @@ export const routes: Routes = [
       // PROFESOR
       // =========================
       { path: 'portada-profesor', component: PortadaProfesor },
+      { path: 'actividades', component: Actividades },
       { path: 'actividades/nueva', component: ActividadForm },
       { path: 'actividades/:id/editar', component: ActividadForm },
       { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
       { path: 'calificaciones-profesor', component: CalificacionesProfesor },
+          { path: 'calificaciones', component: CalificacionesProfesor },
 
       {
         path: '',

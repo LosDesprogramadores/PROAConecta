@@ -98,7 +98,7 @@ export class SidebarMaterias implements OnInit {
 
   onVolver(): void {
     const currentUrl = this.router.url;
-    const portadaUrl = `/view-materia/${this.materiaId}/portada`;
+    const portadaUrl = `/view-materia/${this.materiaId}`;
 
     if (this.materiaId && !currentUrl.includes('/portada')) {
       this.router.navigate([portadaUrl]);

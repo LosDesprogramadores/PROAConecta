@@ -48,9 +48,15 @@ export class UnidadesMaterial implements OnInit {
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
 
-    this.materiaId = this.route.snapshot.paramMap.get('id')
-      ?? this.route.parent?.snapshot.paramMap.get('id')
-      ?? '';
+    let materiaIdParam: string | null = null;
+    for (const route of this.route.pathFromRoot) {
+      if (route.snapshot.paramMap.has('id')) {
+        materiaIdParam = route.snapshot.paramMap.get('id');
+        break;
+      }
+    }
+
+    this.materiaId = Number(materiaIdParam);
 
     if (this.materiaId) {
       this.cargarUnidades();
@@ -234,8 +240,8 @@ export class UnidadesMaterial implements OnInit {
     if (this.recursoEditandoId) {
       // ✏️ ACTUALIZAR RECURSO
       this.materialesService.actualizarMaterial(
-        this.recursoEditandoId, 
-        payload, 
+        this.recursoEditandoId,
+        payload,
         this.archivoSeleccionado || undefined
       ).subscribe({
         next: () => {
@@ -248,7 +254,7 @@ export class UnidadesMaterial implements OnInit {
     } else {
       // ➕ CREAR RECURSO
       this.materialesService.crearMaterial(
-        payload as Material, 
+        payload as Material,
         this.archivoSeleccionado || undefined
       ).subscribe({
         next: () => {

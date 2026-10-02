@@ -215,6 +215,30 @@ export class Navbar implements OnInit, OnDestroy {
     if (!materiaId) {
       return [];
     }
+    const user = this.currentUser();
+    const esEstudiante = user?.rolId === UserRole.ESTUDIANTE;
+
+    if (esEstudiante) {
+      // Rutas específicas del Estudiante
+      return [
+        {
+          label: 'Anuncios',
+          path: `/view-materia/${materiaId}/anuncios`,
+        },
+        {
+          label: 'Material',
+          path: `/view-materia/${materiaId}/estudiante/material`,
+        },
+        {
+          label: 'Actividades',
+          path: `/view-materia/${materiaId}/estudiante/actividades`,
+        },
+        {
+          label: 'Calificaciones',
+          path: `/view-materia/${materiaId}/estudiante/calificaciones`,
+        },
+      ];
+    }
 
     return [
       {
