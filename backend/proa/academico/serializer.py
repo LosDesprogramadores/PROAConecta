@@ -30,7 +30,7 @@ class MateriaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'titulo', 'descripcion', 'criterios_evaluacion',
             'anio', 'curso', 'profesor', 'profesor_detalle',
-            'total_estudiantes', 'activo', 'fecha_creacion', 'fecha_actualizacion'
+            'total_estudiantes', 'activo', 'fecha_creacion', 'fecha_actualizacion','discord_webhook_url'
         ]
 
     def validate_profesor(self, value):
