@@ -23,7 +23,7 @@ import { Materia } from './views/admin/materia/materia';
 import { TablaGenerica } from './views/admin/tabla-generica/tabla-generica';
 import { Notificacion } from './views/admin/notificacion/notificacion';
 import { welcomeRedirectGuard } from './guards/welcome-redirect-guard';
-import { Welcome } from './views/dashboard-components/estudiante-inicio/welcome/welcome';
+import { Welcome } from './views/dashboard-components/estudiante-dashboard/welcome/welcome';
 import { WelcomeProfesor } from './views/dashboard-components/welcome-profesor/welcome-profesor';
 import { Actividades } from './views/materias-components/actividades/actividades';
 import { ActividadesDashboard } from './views/dashboard-components/actividades-dashboard/actividades-dashboard';

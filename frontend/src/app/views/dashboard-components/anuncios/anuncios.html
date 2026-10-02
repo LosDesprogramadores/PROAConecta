@@ -91,25 +91,23 @@
 
           <!-- Ícono Ilustrativo Grande a la IZQUIERDA -->
           <div
-            class="shrink-0 p-3 rounded-xl bg-slate-50 border border-slate-100 group-hover:scale-105 group-hover:bg-blue-50/50 transition-all duration-200 ml-1">
+            class="shrink-0 p-3 rounded-xl bg-slate-50 border border-slate-200/60 group-hover:bg-[#dce4f0] transition-all duration-200 ml-1">
             @if (esAcademico(anuncio.tipo_notificacion_codigo)) {
-            <!-- Sombrero (Académico) -->
-            <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.8"
-              viewBox="0 0 24 24">
+            <svg class="w-7 h-7 text-purple-600 transition-transform group-hover:animate-bounce" fill="none"
+              stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
             </svg>
             } @else if (esUrgente(anuncio.tipo_notificacion_codigo)) {
-            <!-- Signo de Exclamación (Urgente) -->
             <svg class="w-7 h-7 text-red-600 animate-bounce" fill="none" stroke="currentColor" stroke-width="1.8"
               viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
             } @else {
-            <!-- Campana (General) -->
-            <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <svg class="w-7 h-7 text-blue-600 transition-transform group-hover:animate-bounce" fill="none"
+              stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-0.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
             </svg>

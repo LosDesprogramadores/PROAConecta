@@ -11,12 +11,8 @@
       <label for="filtro-anio" class="text-xs font-medium text-slate-500 whitespace-nowrap">
         Mostrar:
       </label>
-      <select
-        id="filtro-anio"
-        (change)="cambiarFiltro($event)"
-        [value]="filtroAnio()"
-        class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:ring-primary focus:border-primary outline-none transition"
-      >
+      <select id="filtro-anio" (change)="cambiarFiltro($event)" [value]="filtroAnio()"
+        class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 pr-6 focus:ring-primary focus:border-primary outline-none transition">
         <option value="actual">Este año ({{ anioActual }})</option>
         <option value="todas">Todas las materias</option>
       </select>
@@ -25,57 +21,54 @@
 
   <!-- Estado de Carga -->
   @if (cargando()) {
-    <div class="flex justify-center py-10">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  } 
+  <div class="flex justify-center py-10">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+  }
   <!-- Mensaje de Error -->
   @else if (error()) {
-    <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-      ⚠️ {{ error() }}
-    </div>
-  } 
+  <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+    ⚠️ {{ error() }}
+  </div>
+  }
   <!-- Estado Vacío -->
   @else if (materiasFiltradas().length === 0) {
-    <div class="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-      <p class="text-slate-500 text-sm">
-        @if (filtroAnio() === 'actual') {
-          No tienes materias inscriptas para el ciclo lectivo {{ anioActual }}.
-        } @else {
-          No hay materias para mostrar.
-        }
-      </p>
-    </div>
-  } 
+  <div class="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+    <p class="text-slate-500 text-sm">
+      @if (filtroAnio() === 'actual') {
+      No tienes materias inscriptas para el ciclo lectivo {{ anioActual }}.
+      } @else {
+      No hay materias para mostrar.
+      }
+    </p>
+  </div>
+  }
   <!-- Grilla de Materias (Máximo 2 columnas) -->
   @else {
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-      @for (materia of materiasFiltradas(); track materia.id; let i = $index) {
+    @for (materia of materiasFiltradas(); track materia.id; let i = $index) {
 
-        <a
-          [routerLink]="obtenerPath(materia)"
-          class="rounded-xl p-5 text-center transition hover:shadow-md cursor-pointer border border-slate-100 flex flex-col items-center justify-center group"
-          [ngClass]="obtenerColor(i)"
-        >
-          <div
-            class="w-14 h-14 mb-3 rounded-full bg-white/70 flex items-center justify-center font-bold text-slate-800 text-lg shadow-sm group-hover:scale-105 transition"
-          >
-            {{ materia.titulo.charAt(0) }}
-          </div>
+    <a [routerLink]="obtenerPath(materia)"
+      class="rounded-xl p-5 text-center transition hover:shadow-md cursor-pointer border border-slate-100 flex flex-col items-center justify-center group"
+      [ngClass]="obtenerColor(i)">
+      <div
+        class="w-14 h-14 mb-3 rounded-full bg-white/70 flex items-center justify-center font-bold text-slate-800 text-lg shadow-sm group-hover:scale-105 transition">
+        {{ materia.titulo.charAt(0) }}
+      </div>
 
-          <h3 class="text-base font-semibold text-slate-800 leading-tight">
-            {{ materia.titulo }}
-          </h3>
+      <h3 class="text-base font-semibold text-slate-800 leading-tight">
+        {{ materia.titulo }}
+      </h3>
 
-          <p class="text-xs text-slate-600 mt-1 font-medium">
-            {{ materia.curso }} · {{ materia.anio }}° año
-          </p>
-        </a>
+      <p class="text-xs text-slate-600 mt-1 font-medium">
+        {{ materia.curso }} · {{ materia.anio }}° año
+      </p>
+    </a>
 
-      }
+    }
 
-    </div>
+  </div>
   }
 
 </section>
