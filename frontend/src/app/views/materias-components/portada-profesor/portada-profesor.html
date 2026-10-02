@@ -86,9 +86,9 @@
     <!-- COLUMNA DERECHA -->
     <aside class="space-y-6">
 
-      <!-- PRÓXIMAS ENTREGAS (calendario real, filtrado por la materia actual) -->
+      <!-- CALENDARIO DE ENTREGAS (real, filtrado por la materia actual, sin título) -->
       @if (materiaId !== null) {
-        <app-proximas-entregas [materiaId]="materiaId"></app-proximas-entregas>
+        <app-proximas-entregas [materiaId]="materiaId" titulo=""></app-proximas-entregas>
       }
 
     </aside>
