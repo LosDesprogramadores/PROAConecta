@@ -2,11 +2,12 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Anuncio } from '../../../model/anuncio.model';
 import { AnunciosService } from '../../../services/anuncios.service';
+import { SidebarMaterias } from '../../../shared/sidebar-materias/sidebar-materias';
 
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SidebarMaterias],
   templateUrl: './anuncios.html',
   styleUrls: ['./anuncios.css']
 })

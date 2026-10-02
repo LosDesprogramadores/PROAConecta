@@ -1,10 +1,8 @@
-<aside
-    class="w-58 m-5 rounded-2xl bg-gradient-to-b from-slate-200/90 to-slate-300/80 backdrop-blur-md shadow-md border border-white/40 transition-all duration-300">
-
-    <!-- Botón volver dinámico -->
-    <div class="p-6 text-xl font-bold text-primary">
+<aside class="mt-10 ml-10 w-auto">
+    <!-- Botón volver sin tarjeta/sidebar alrededor -->
+    <div class="text-xl font-bold text-primary">
         <button (click)="onVolver()"
-            class="flex items-center gap-2 transition-colors rounded-lg hover:text-sky-700 hover:bg-light transition cursor-pointer border-none bg-transparent w-full text-left p-0">
+            class="flex items-center gap-2 transition-colors rounded-lg hover:text-sky-700 hover:bg-light transition cursor-pointer border-none bg-transparent text-left p-0">
             <!-- Flecha hacia atrás -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 class="w-6 h-6">
@@ -13,13 +11,4 @@
             <span>Volver</span>
         </button>
     </div>
-
-    <nav class="flex-1 px-4 space-y-2">
-        @for (link of links; track link.path) {
-        <a [routerLink]="link.path" routerLinkActive="bg-primary text-white font-semibold"
-            class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-light transition">
-            {{ link.label }}
-        </a>
-        }
-    </nav>
 </aside>
