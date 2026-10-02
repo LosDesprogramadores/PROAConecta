@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Anuncio } from '../../../model/anuncio.model';
 import { AnunciosService } from '../../../services/anuncios.service';
@@ -16,6 +16,13 @@ export class Anuncios implements OnInit {
   anuncios = signal<Anuncio[]>([]);
   anuncioSeleccionado = signal<Anuncio | null>(null);
   cargando = signal<boolean>(true);
+  error = signal<boolean>(false);
+
+  readonly anunciosState = computed(() => ({
+    data: this.anuncios(),
+    cargando: this.cargando(),
+    error: this.error()
+  }));
 
   ngOnInit(): void {
     this.cargarAnuncios();
@@ -23,12 +30,14 @@ export class Anuncios implements OnInit {
 
   cargarAnuncios(): void {
     this.cargando.set(true);
+    this.error.set(false);
 
     this.anunciosService.getAnuncios().subscribe({
       next: (data) => {
         const filtrados = data.filter((a) => {
-          if (!a.dirigido_a) return true;
-          const alcance = a.dirigido_a.toUpperCase();
+          if (!a.alcance) return true;
+
+          const alcance = a.alcance.toUpperCase();
           return (
             alcance === 'AMBOS' ||
             alcance === 'ESTUDIANTE' ||
@@ -42,6 +51,7 @@ export class Anuncios implements OnInit {
       },
       error: (err) => {
         console.error('Error al cargar la lista de anuncios:', err);
+        this.error.set(true);
         this.cargando.set(false);
       }
     });
@@ -55,17 +65,27 @@ export class Anuncios implements OnInit {
     this.anuncioSeleccionado.set(null);
   }
 
-  getCategoryBadgeClass(alcance?: string): string {
-    const base = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border';
-    switch (alcance?.toUpperCase()) {
-      case 'ESTUDIANTE':
-      case 'ALUMNOS':
-        return `${base} bg-blue-50 text-blue-700 border-blue-200`;
-      case 'AMBOS':
-      case 'TODOS':
+  esAcademico(tipo?: string): boolean {
+    const t = tipo?.toUpperCase();
+    return t === 'ACADEMICO' || t === 'ACADÉMICO';
+  }
+
+  esUrgente(tipo?: string): boolean {
+    return tipo?.toUpperCase() === 'URGENTE';
+  }
+
+  getTipoNotificacionBadgeClass(tipo?: string): string {
+    const base = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border';
+    
+    switch (tipo?.toUpperCase()) {
+      case 'ACADEMICO':
+      case 'ACADÉMICO':
         return `${base} bg-purple-50 text-purple-700 border-purple-200`;
+      case 'URGENTE':
+        return `${base} bg-red-50 text-red-700 border-red-200 animate-pulse`;
+      case 'GENERAL':
       default:
-        return `${base} bg-slate-50 text-slate-700 border-slate-200`;
+        return `${base} bg-blue-50 text-blue-700 border-blue-200`;
     }
   }
 }

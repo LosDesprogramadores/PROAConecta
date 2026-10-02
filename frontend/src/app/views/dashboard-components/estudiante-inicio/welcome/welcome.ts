@@ -5,7 +5,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { Informacion } from '../informacion/informacion';
 import { Materias } from '../../materias/materias';
 import { ProximasEntregas } from '../proximas-entregas/proximas-entregas';
-import { Anuncios } from '../anuncios/anuncios';
+import { AnunciosResumen } from '../anuncios-resumen/anuncios-resumen';
 
 interface Noticia {
   fecha: string;
@@ -18,7 +18,7 @@ interface Noticia {
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, Materias, Informacion, ProximasEntregas, Anuncios],
+  imports: [CommonModule, Materias, Informacion, ProximasEntregas, AnunciosResumen],
   templateUrl: './welcome.html',
   styleUrls: ['./welcome.css'],
 })
