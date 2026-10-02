@@ -8,6 +8,7 @@ class Materia(models.Model):
     criterios_evaluacion = models.TextField(null=True, blank=True)
     anio = models.PositiveSmallIntegerField(help_text='Año de la materia (por ejemplo, 2026)')
     curso = models.CharField(max_length=20, help_text='Curso de la materia (por ejemplo, 1ro A, 2do C, 3ro A, etc.)')
+    discord_webhook_url = models.URLField(max_length=500, blank=True, null=True)
 
     # profesor titular
     profesor = models.ForeignKey(

@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from bson.objectid import ObjectId
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from .mongo import notificaciones_collection
 
@@ -16,13 +18,12 @@ class NotificacionListCreateView(APIView):
             
         cursor = notificaciones_collection.find().sort('fecha_creacion', -1)
         
-        # Sincronizamos las propiedades exactamente con lo que espera INotificacion de Angular
         data = [{
             "id": str(n["_id"]),
             "titulo": n.get('titulo', 'Aviso'),
             "mensaje": n.get('mensaje'),
-            "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'), # <-- Añadido
-            "alcance": n.get('alcance', 'AMBOS'), # <-- Usamos 'alcance' directo
+            "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'), 
+            "alcance": n.get('alcance', 'AMBOS'), 
             "fecha_desde": n.get('fecha_desde'),
             "fecha_hasta": n.get('fecha_hasta'),
             "leida": n.get('leida', False)
@@ -48,11 +49,29 @@ class NotificacionListCreateView(APIView):
                 "fecha_hasta": data.get('fecha_hasta'),
                 "referencia_tipo": None,
                 "referencia_id": None,
-                "alcance": data.get('alcance', 'AMBOS') # <-- Leemos 'alcance' del request
+                "alcance": data.get('alcance', 'AMBOS'), 
+                "materia_id": data.get('materia_id')
             }
             
             result = notificaciones_collection.insert_one(nueva_noti)
-            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "notificaciones_globales",
+                {
+                    "type": "enviar_notificacion",
+                    "notificacion": {
+                        "id": str(result.inserted_id),
+                        "titulo": nueva_noti["titulo"],
+                        "mensaje": nueva_noti["mensaje"],
+                        "tipo_notificacion_codigo": nueva_noti["tipo_notificacion_codigo"],
+                        "alcance": nueva_noti["alcance"],
+                        "fecha_desde": str(nueva_noti.get("fecha_desde", "")),
+                        "fecha_hasta": str(nueva_noti.get("fecha_hasta", "")),
+                        "materia_id": nueva_noti.get("materia_id"),
+                        "leida": False
+                    }
+                }
+            )
             return Response({
                 "id": str(result.inserted_id),
                 "mensaje": "Notificación creada con éxito."
@@ -73,7 +92,6 @@ class NotificacionDetailView(APIView):
             obj_id = ObjectId(pk)
             data = request.data
             
-            # Actualizamos todos los campos necesarios al editar
             update_data = {
                 "$set": {
                     "titulo": data.get('titulo'),
@@ -81,7 +99,8 @@ class NotificacionDetailView(APIView):
                     "tipo_notificacion_codigo": data.get('tipo_notificacion_codigo', 'GENERAL'),
                     "alcance": data.get('alcance'),
                     "fecha_desde": data.get('fecha_desde'),
-                    "fecha_hasta": data.get('fecha_hasta')
+                    "fecha_hasta": data.get('fecha_hasta'),
+                    "materia_id": data.get('materia_id')
                 }
             }
             
