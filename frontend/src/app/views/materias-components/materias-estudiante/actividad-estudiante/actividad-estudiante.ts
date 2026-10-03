@@ -1,0 +1,327 @@
+import { CommonModule } from '@angular/common';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { ActividadesService, Entrega } from '../../../../services/actividades.service';
+import { Actividad } from '../../../../model/actividad-model';
+import { ToastService } from '../../../../services/toast.service';
+import { Toast } from '../../../../shared/toast/toast'; 
+
+export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
+
+@Component({
+  selector: 'app-actividad-estudiante',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, Toast],
+  templateUrl: './actividad-estudiante.html',
+  styleUrl: './actividad-estudiante.css',
+})
+export class ActividadEstudiante implements OnInit {
+  private authService = inject(AuthService);
+  private actividadesService = inject(ActividadesService);
+  private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute);
+
+  currentUser = this.authService.currentUser;
+
+  // Estado general
+  materiaId = signal<number | null>(null);
+  materiaTitulo = signal<string>('');
+  actividades = signal<Actividad[]>([]);
+  cargando = signal(false);
+  error = signal<string | null>(null);
+
+  // Filtros
+  filtro = signal<FiltroEstudiante>('TODAS');
+
+  // Modal Consigna / Detalle
+  actividadSeleccionada = signal<Actividad | null>(null);
+  modalConsignaAbierto = signal<boolean>(false);
+
+  // Modal Entrega del Estudiante
+  modalEntregaAbierto = signal<boolean>(false);
+  miEntregaActual = signal<Entrega | null>(null);
+  cargandoMiEntrega = signal<boolean>(false);
+
+  // Formulario de Entrega
+  contenidoTexto = signal<string>('');
+  enlaceUrl = signal<string>('');
+  archivoSeleccionado: File | null = null;
+  eliminarArchivoPrevio = signal<boolean>(false);
+  enviandoEntrega = signal<boolean>(false);
+  errorFormulario = signal<string | null>(null);
+  modoEdicion = signal<boolean>(false);
+
+  // Map local para saber rápido si una actividad ya tiene entrega
+  entregasMap = signal<Record<number, Entrega>>({});
+
+  ngOnInit(): void {
+    this.route.parent?.params.subscribe(params => {
+      const id = params['id'] || this.route.snapshot.queryParams['materiaId'];
+      if (id) {
+        this.materiaId.set(Number(id));
+        this.cargarActividades(Number(id));
+      } else {
+        this.cargarTodasLasActividades();
+      }
+    });
+  }
+
+  private cargarActividades(materiaId: number): void {
+    this.cargando.set(true);
+    this.error.set(null);
+
+    this.actividadesService.getActividadesPorMateria(materiaId).subscribe({
+      next: (data: Actividad[]) => {
+        this.actividades.set(data);
+        if (data.length > 0 && data[0].materia_titulo) {
+          this.materiaTitulo.set(data[0].materia_titulo);
+        }
+        this.cargando.set(false);
+        this.precargarEstadoEntregas();
+      },
+      error: (err: any) => {
+        console.error('Error al cargar actividades:', err);
+        this.error.set('No se pudieron cargar las actividades de la materia.');
+        this.cargando.set(false);
+      },
+    });
+  }
+
+  private cargarTodasLasActividades(): void {
+    this.cargando.set(true);
+    this.error.set(null);
+
+    this.actividadesService.getActividades().subscribe({
+      next: (data: Actividad[]) => {
+        this.actividades.set(data);
+        this.cargando.set(false);
+        this.precargarEstadoEntregas();
+      },
+      error: (err: any) => {
+        console.error('Error al cargar actividades:', err);
+        this.error.set('No se pudieron cargar las actividades.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  private precargarEstadoEntregas(): void {
+    this.actividadesService.getMisEntregas().subscribe({
+      next: (misEntregas: Entrega[]) => {
+        const mapa: Record<number, Entrega> = {};
+
+        if (Array.isArray(misEntregas)) {
+          misEntregas.forEach(entrega => {
+            const actId = typeof entrega.actividad === 'object'
+              ? (entrega.actividad as any).id
+              : entrega.actividad;
+
+            if (actId) {
+              mapa[actId] = entrega;
+            }
+          });
+        }
+
+        this.entregasMap.set(mapa);
+      },
+      error: (err) => {
+        console.error('Error al obtener mis entregas:', err);
+      }
+    });
+  }
+
+  // --- FILTROS COMPUTADOS ---
+  actividadesFiltradas = computed(() => {
+    const lista = this.actividades();
+    const mapa = this.entregasMap();
+
+    switch (this.filtro()) {
+      case 'PENDIENTES':
+        return lista.filter(a => !mapa[a.id]);
+      case 'ENTREGADAS':
+        return lista.filter(a => !!mapa[a.id]);
+      case 'TODAS':
+      default:
+        return lista;
+    }
+  });
+
+  // --- MODAL DETALLE / CONSIGNA ---
+  verConsigna(actividad: Actividad): void {
+    this.actividadSeleccionada.set(actividad);
+    this.modalConsignaAbierto.set(true);
+  }
+
+  cerrarModalConsigna(): void {
+    this.modalConsignaAbierto.set(false);
+    this.actividadSeleccionada.set(null);
+  }
+
+  // --- MODAL REALIZAR / EDITAR ENTREGA ---
+  abrirModalEntrega(actividad: Actividad): void {
+    this.actividadSeleccionada.set(actividad);
+    this.modalEntregaAbierto.set(true);
+    this.limpiarFormulario();
+
+    const miEntrega = this.entregasMap()[actividad.id] || null;
+
+    if (miEntrega) {
+      this.miEntregaActual.set(miEntrega);
+      this.contenidoTexto.set(miEntrega.contenido_texto || '');
+      this.enlaceUrl.set(miEntrega.enlace || '');
+      this.modoEdicion.set(false);
+    } else {
+      this.miEntregaActual.set(null);
+      this.modoEdicion.set(true);
+    }
+  }
+
+  cerrarModalEntrega(): void {
+    this.modalEntregaAbierto.set(false);
+    this.actividadSeleccionada.set(null);
+    this.miEntregaActual.set(null);
+    this.limpiarFormulario();
+  }
+
+  limpiarFormulario(): void {
+    this.contenidoTexto.set('');
+    this.enlaceUrl.set('');
+    this.archivoSeleccionado = null;
+    this.eliminarArchivoPrevio.set(false);
+    this.errorFormulario.set(null);
+    this.modoEdicion.set(false);
+  }
+
+  habilitarEdicion(): void {
+    this.modoEdicion.set(true);
+  }
+
+  onArchivoSeleccionado(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      this.archivoSeleccionado = file;
+    }
+  }
+
+  // Método para quitar el archivo actualmente guardado
+quitarArchivoPrevio(): void {
+  this.eliminarArchivoPrevio.set(true);
+}
+
+// Método para restaurar el archivo si cambió de opinión
+restaurarArchivoPrevio(): void {
+  this.eliminarArchivoPrevio.set(false);
+}
+
+guardarEntrega(): void {
+  const act = this.actividadSeleccionada();
+  if (!act) return;
+
+  const tieneTexto = !!this.contenidoTexto().trim();
+  const tieneEnlace = !!this.enlaceUrl().trim();
+  const tieneNuevoArchivo = !!this.archivoSeleccionado;
+  const conservaArchivoPrevio = !!this.miEntregaActual()?.archivo && !this.eliminarArchivoPrevio();
+
+  if (!tieneTexto && !tieneEnlace && !tieneNuevoArchivo && !conservaArchivoPrevio) {
+    const msg = 'Por favor incluye al menos un archivo, enlace o respuesta en texto.';
+    this.errorFormulario.set(msg);
+    this.toastService.warning('Datos incompletos', msg);
+    return;
+  }
+
+  this.enviandoEntrega.set(true);
+  this.errorFormulario.set(null);
+
+  const formData = new FormData();
+  formData.append('actividad', String(act.id));
+
+  if (tieneTexto) {
+    formData.append('contenido_texto', this.contenidoTexto().trim());
+  } else {
+    formData.append('contenido_texto', '');
+  }
+
+  if (tieneEnlace) {
+    formData.append('enlace', this.enlaceUrl().trim());
+  } else {
+    formData.append('enlace', '');
+  }
+
+  // MANEJO DE ARCHIVOS
+  if (tieneNuevoArchivo) {
+    formData.append('archivo', this.archivoSeleccionado!);
+  } else if (this.eliminarArchivoPrevio()) {
+    formData.append('archivo', '');
+    formData.append('eliminar_archivo', 'true');
+  }
+
+  const entregaExistente = this.miEntregaActual();
+
+  const operacion$ = entregaExistente
+    ? this.actividadesService.actualizarEntrega(entregaExistente.id, formData)
+    : this.actividadesService.crearEntrega(formData);
+
+  operacion$.subscribe({
+    next: (entregaGuardada: Entrega) => {
+      this.miEntregaActual.set(entregaGuardada);
+      this.entregasMap.update(m => ({ ...m, [act.id]: entregaGuardada }));
+      this.enviandoEntrega.set(false);
+      this.modoEdicion.set(false);
+      this.eliminarArchivoPrevio.set(false);
+      this.archivoSeleccionado = null;
+
+      const mensajeExito = entregaExistente ? 'Entrega actualizada correctamente.' : 'Entrega enviada con éxito.';
+      this.toastService.success('¡Operación exitosa!', mensajeExito);
+    },
+    error: (err: any) => {
+      console.error('Detalle del error del Backend:', err.error);
+      this.enviandoEntrega.set(false);
+
+      let msjError = 'Ocurrió un error al enviar tu entrega. Revisa los datos e intenta nuevamente.';
+      if (err.error && typeof err.error === 'object') {
+        const detalles = Object.entries(err.error)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join(' | ');
+        msjError = `Error de validación: ${detalles}`;
+      }
+
+      this.errorFormulario.set(msjError);
+      this.toastService.error('Error al enviar', msjError);
+    }
+  });
+}
+
+  // Auxiliares de estado y fechas
+  estaVencida(actividad: Actividad): boolean {
+    if (!actividad.fecha_limite) return false;
+    return new Date(actividad.fecha_limite) < new Date();
+  }
+
+  puedeEntregarOEditar(actividad: Actividad): boolean {
+    const entrega = this.entregasMap()[actividad.id] || this.miEntregaActual();
+
+    if (entrega?.nota) {
+      return false;
+    }
+
+    return !this.estaVencida(actividad) || actividad.permitir_entrega_tardia;
+  }
+
+  formatearFecha(fechaStr?: string): string {
+    if (!fechaStr) return 'Sin fecha';
+    const fecha = new Date(fechaStr);
+    if (isNaN(fecha.getTime())) {
+      return fechaStr.replace('T', ' ').slice(0, 16);
+    }
+    return fecha.toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
+}

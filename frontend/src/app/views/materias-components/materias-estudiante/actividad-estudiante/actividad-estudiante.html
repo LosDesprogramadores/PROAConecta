@@ -1,0 +1,405 @@
+<!-- Componente global de Toasts -->
+<app-toast></app-toast>
+
+<section class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- HEADER -->
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">Mis Actividades</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Revisá consignas y enviá tus trabajos prácticos.
+            </p>
+        </div>
+    </header>
+
+    <!-- ALERTA ERROR -->
+    @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 font-medium text-sm">
+        ⚠️ {{ error() }}
+    </div>
+    }
+
+    <!-- FILTROS Y ESTADÍSTICAS -->
+    <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 p-3 rounded-2xl shadow-sm">
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
+            <button type="button" (click)="filtro.set('TODAS')" [class]="'px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition shrink-0 ' + 
+                 (filtro() === 'TODAS' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-900')">
+                Todas ({{ actividades().length }})
+            </button>
+
+            <button type="button" (click)="filtro.set('PENDIENTES')"
+                [class]="'px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition shrink-0 ' + 
+                 (filtro() === 'PENDIENTES' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900')">
+                Pendientes
+            </button>
+
+            <button type="button" (click)="filtro.set('ENTREGADAS')"
+                [class]="'px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition shrink-0 ' + 
+                 (filtro() === 'ENTREGADAS' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900')">
+                Entregadas
+            </button>
+        </div>
+
+        <span class="text-xs text-slate-400 px-2 hidden sm:inline">
+            Mostrando {{ actividadesFiltradas().length }} actividad(es)
+        </span>
+    </div>
+
+    <!-- TARJETAS DE ACTIVIDADES -->
+    <div class="space-y-4">
+        @if (cargando()) {
+        <div class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        } @else if (actividadesFiltradas().length === 0) {
+        <div class="bg-white border border-slate-200 rounded-2xl p-10 text-center">
+            <div class="text-4xl mb-3">📋</div>
+            <h3 class="font-semibold text-slate-700">Sin actividades registradas</h3>
+            <p class="text-sm text-slate-400 mt-1">No tenés tareas pendientes o publicadas en esta sección.</p>
+        </div>
+        } @else {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            @for (actividad of actividadesFiltradas(); track actividad.id) {
+            <article
+                class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+
+                <div>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            @if (actividad.materia_titulo) {
+                            <span
+                                class="inline-block text-xs font-semibold text-primary bg-blue-50 px-2.5 py-1 rounded-full mb-2">
+                                {{ actividad.materia_titulo }}
+                            </span>
+                            }
+                            <h3 class="text-base sm:text-lg font-bold text-slate-800">
+                                {{ actividad.titulo }}
+                            </h3>
+                        </div>
+
+                        <!-- BADGE DE ESTADO DE MI ENTREGA / VENCIMIENTO -->
+                        @if (entregasMap()[actividad.id]) {
+                        <span
+                            class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            ✓ Entregado
+                        </span>
+                        } @else if (estaVencida(actividad)) {
+                        <span
+                            class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">
+                            Vencida
+                        </span>
+                        } @else {
+                        <span
+                            class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            Pendiente
+                        </span>
+                        }
+                    </div>
+
+                    <p class="text-sm text-slate-600 leading-relaxed mt-3 line-clamp-2">
+                        {{ actividad.descripcion || 'Sin consigna cargada.' }}
+                    </p>
+                </div>
+
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-slate-100">
+                    <div class="text-xs text-slate-500">
+                        <span class="font-medium text-slate-600">Fecha límite:</span>
+                        {{ formatearFecha(actividad.fecha_limite) }}
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="button" (click)="verConsigna(actividad)"
+                            class="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                            Ver consigna
+                        </button>
+
+                        <button type="button" (click)="abrirModalEntrega(actividad)"
+                            class="px-3.5 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition">
+                            {{ entregasMap()[actividad.id] ? 'Ver mi entrega' : 'Realizar entrega' }}
+                        </button>
+                    </div>
+                </div>
+
+            </article>
+            }
+        </div>
+        }
+    </div>
+
+</section>
+
+<!-- MODAL CONSIGNA -->
+@if (modalConsignaAbierto() && actividadSeleccionada()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+    <div
+        class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div>
+                <p class="text-xs text-slate-500 uppercase font-semibold tracking-wider">Consigna de Actividad</p>
+                <h2 class="text-xl font-bold text-slate-800 mt-0.5">
+                    {{ actividadSeleccionada()?.titulo }}
+                </h2>
+            </div>
+            <button type="button" (click)="cerrarModalConsigna()"
+                class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition">
+                ✕
+            </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-5">
+            <div
+                class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600 flex justify-between items-center">
+                <span>📅 <strong>Fecha límite de entrega:</strong> {{
+                    formatearFecha(actividadSeleccionada()?.fecha_limite) }}</span>
+                @if (actividadSeleccionada()?.permitir_entrega_tardia) {
+                <span class="text-emerald-700 font-semibold">✓ Permite entrega tardía</span>
+                }
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Descripción</h3>
+                <div
+                    class="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    {{ actividadSeleccionada()?.descripcion || 'Sin consigna detallada.' }}
+                </div>
+            </div>
+
+            @if (actividadSeleccionada()?.enlace) {
+            <div class="space-y-2">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Recurso complementario</h3>
+                <a [href]="actividadSeleccionada()?.enlace" target="_blank"
+                    class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium break-all">
+                    🔗 {{ actividadSeleccionada()?.enlace }}
+                </a>
+            </div>
+            }
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+            <button type="button" (click)="cerrarModalConsigna()"
+                class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-100 transition">
+                Cerrar
+            </button>
+        </div>
+
+    </div>
+</div>
+}
+
+<!-- MODAL MI ENTREGA -->
+@if (modalEntregaAbierto() && actividadSeleccionada()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+    <div
+        class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+
+        <!-- HEADER MODAL -->
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div>
+                <p class="text-xs text-slate-500 uppercase font-semibold tracking-wider">Mi Entrega</p>
+                <h2 class="text-xl font-bold text-slate-800 mt-0.5">
+                    {{ actividadSeleccionada()?.titulo }}
+                </h2>
+            </div>
+            <button type="button" (click)="cerrarModalEntrega()"
+                class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition">
+                ✕
+            </button>
+        </div>
+
+        <!-- BODY MODAL -->
+        <div class="p-6 overflow-y-auto space-y-5">
+            @if (cargandoMiEntrega()) {
+            <div class="flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+            } @else {
+
+            <!-- CALIFICACIÓN DEL DOCENTE -->
+            @if (miEntregaActual()?.nota) {
+            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Devolución del
+                        Docente</span>
+                    <span
+                        class="text-lg font-black text-emerald-700 px-3 py-1 bg-white rounded-xl shadow-sm border border-emerald-200">
+                        Nota: {{ miEntregaActual()?.nota?.calificacion }}
+                    </span>
+                </div>
+                @if (miEntregaActual()?.nota?.descripcion) {
+                <p class="text-sm text-emerald-900 leading-relaxed pt-1">
+                    "{{ miEntregaActual()?.nota?.descripcion }}"
+                </p>
+                }
+            </div>
+            }
+
+            <!-- MODO VISTA LECTURA -->
+            @if (miEntregaActual() && !modoEdicion()) {
+            <div class="space-y-4">
+                <div
+                    class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500">
+                    <span>Fecha de envío: <strong>{{ formatearFecha(miEntregaActual()?.fecha_entrega) }}</strong></span>
+                    @if (miEntregaActual()?.fuera_de_termino) {
+                    <span class="text-red-600 font-semibold">⚠️ Fuera de término</span>
+                    }
+                </div>
+
+                @if (miEntregaActual()?.contenido_texto) {
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Texto entregado:</span>
+                    <div
+                        class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-700 whitespace-pre-line">
+                        {{ miEntregaActual()?.contenido_texto }}
+                    </div>
+                </div>
+                }
+
+                @if (miEntregaActual()?.enlace) {
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Enlace enviado:</span>
+                    <div>
+                        <a [href]="miEntregaActual()?.enlace" target="_blank"
+                            class="text-sm text-primary font-medium hover:underline break-all">
+                            🔗 {{ miEntregaActual()?.enlace }}
+                        </a>
+                    </div>
+                </div>
+                }
+
+                @if (miEntregaActual()?.archivo) {
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Archivo adjunto:</span>
+                    <div>
+                        <a [href]="miEntregaActual()?.archivo" target="_blank"
+                            class="inline-flex items-center gap-2 text-sm text-primary font-semibold bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition">
+                            📄 Descargar archivo subido
+                        </a>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- MODO FORMULARIO EDICIÓN / CREACIÓN -->
+            @if (modoEdicion()) {
+            <form class="space-y-4">
+
+                @if (errorFormulario()) {
+                <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                    {{ errorFormulario() }}
+                </div>
+                }
+
+                <!-- CAMPO TEXTO -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Respuesta o comentario en texto
+                    </label>
+                    <textarea rows="4" [ngModel]="contenidoTexto()" (ngModelChange)="contenidoTexto.set($event)"
+                        name="contenidoTexto" placeholder="Escribí aquí tu respuesta o detalles sobre el trabajo..."
+                        class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                        </textarea>
+                </div>
+
+                <!-- CAMPO ENLACE -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Enlace externo (Google Drive, GitHub, Figma, etc.)
+                    </label>
+                    <input type="url" [ngModel]="enlaceUrl()" (ngModelChange)="enlaceUrl.set($event)" name="enlaceUrl"
+                        placeholder="https://..."
+                        class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
+                </div>
+
+                <!-- CAMPO ARCHIVO -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase">
+                        Adjuntar Archivo
+                    </label>
+
+                    <!-- VISUALIZACIÓN DEL ARCHIVO ANTERIOR GUARDADO -->
+                    @if (miEntregaActual()?.archivo && !eliminarArchivoPrevio()) {
+                    <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-base">📄</span>
+                            <span class="text-xs font-medium text-slate-700 truncate">Archivo adjuntado
+                                previamente</span>
+                            <a [href]="miEntregaActual()?.archivo" target="_blank"
+                                class="text-xs text-primary underline font-medium hover:text-primary/80 shrink-0">
+                                Ver
+                            </a>
+                        </div>
+                        <button type="button" (click)="quitarArchivoPrevio()"
+                            class="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-xs font-semibold transition shrink-0">
+                            🗑️ Quitar
+                        </button>
+                    </div>
+                    }
+
+                    <!-- MENSAJE SI EL ARCHIVO GUARDADO FUE MARCADO PARA ELIMINAR -->
+                    @if (eliminarArchivoPrevio()) {
+                    <div
+                        class="flex items-center justify-between p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                        <span>El archivo previo será eliminado al guardar.</span>
+                        <button type="button" (click)="restaurarArchivoPrevio()"
+                            class="text-xs font-bold text-amber-900 underline hover:no-underline">
+                            Deshacer
+                        </button>
+                    </div>
+                    }
+
+                    <!-- INPUT DE SUBIDA CON RESTRICCIÓN DE EXTENSIONES (accept) -->
+                    <div>
+                        <input type="file" (change)="onArchivoSeleccionado($event)"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg" class="flex items-center w-full text-xs text-slate-500 border border-slate-200 rounded-xl p-1.5 px-3
+                                file:mr-4 file:my-auto file:py-1.5 file:px-3.5 file:rounded-lg file:border-0 
+                                file:text-xs file:font-semibold file:bg-primary/10 file:text-primary 
+                                hover:file:bg-primary/20 cursor-pointer focus:outline-none" />
+                        <p class="text-[11px] text-slate-400 mt-1">
+                            Formatos permitidos: PDF, Word, Excel, PowerPoint, ZIP, RAR e imágenes (PNG, JPG).
+                        </p>
+                    </div>
+                </div>
+
+            </form>
+            }
+
+            }
+        </div>
+
+        <!-- FOOTER MODAL CON ACCIONES -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+
+            <!-- BOTÓN EDITAR SI YA TIENE ENTREGA PERO SE PUEDE MODIFICAR -->
+            @if (miEntregaActual() && !modoEdicion() && puedeEntregarOEditar(actividadSeleccionada()!)) {
+            <button type="button" (click)="habilitarEdicion()"
+                class="px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-semibold hover:bg-amber-100 transition">
+                ✏️ Editar / Reenviar entrega
+            </button>
+            } @else {
+            <div></div>
+            }
+
+            <div class="flex gap-2">
+                <button type="button" (click)="cerrarModalEntrega()"
+                    class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-100 transition">
+                    Cerrar
+                </button>
+
+                @if (modoEdicion()) {
+                <button type="button" (click)="guardarEntrega()" [disabled]="enviandoEntrega()"
+                    class="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-50">
+                    {{ enviandoEntrega() ? 'Enviando...' : (miEntregaActual() ? 'Guardar Cambios' : 'Confirmar Entrega')
+                    }}
+                </button>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+}

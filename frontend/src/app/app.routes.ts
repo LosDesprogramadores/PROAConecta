@@ -35,6 +35,7 @@ import { RestablecerPassword } from './views/restablecer-password/restablecer-pa
 import { rolRedirectGuard } from './guards/portada-redirect-guard';
 import { PortadaEstudiante } from './views/materias-components/materias-estudiante/portada-estudiante/portada-estudiante';
 import { MaterialEstudiante } from './views/materias-components/materias-estudiante/material-estudiante/material-estudiante';
+import { ActividadEstudiante } from './views/materias-components/materias-estudiante/actividad-estudiante/actividad-estudiante';
 
 export const routes: Routes = [
   {
@@ -99,16 +100,10 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
 
-      // =========================
-      // GENERAL
-      // =========================
       { path: 'portada', component: Portada },
       { path: 'anuncios', component: AnunciosMateriaComponent },
       { path: 'material', component: Material },
 
-      // =========================
-      // ESTUDIANTE
-      // =========================
       {
         path: 'estudiante',
         children: [
@@ -116,9 +111,7 @@ export const routes: Routes = [
           { path: 'portada', component: PortadaEstudiante },
           { path: 'calificaciones', component: Calificaciones },
           { path: 'material', component: MaterialEstudiante },
-          { path: 'actividades', component: Actividades },
-          { path: 'actividades/:id/detalle', component: ActividadDetalleComponent },
-          { path: 'actividades/:id/entregar', component: ActividadForm },
+          { path: 'actividades', component: ActividadEstudiante },
         ]
       },
 

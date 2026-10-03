@@ -2,14 +2,21 @@
     <!-- Navbar arriba -->
     <app-navbar></app-navbar>
 
-    <!-- Contenedor principal: sidebar + contenido -->
+    <!-- Contenedor central (Sidebar + Contenido) -->
     <div class="flex flex-1 overflow-hidden">
 
-        <!-- Main content -->
+        <!-- Sidebar condicional (Solo se renderiza si mostrarSidebar() es true) -->
+        @if (mostrarSidebar()) {
+        <app-sidebar-materias class="hidden lg:block shrink-0"></app-sidebar-materias>
+        }
+
+        <!-- Ámbito con scroll propio para las vistas -->
         <main class="flex-1 overflow-y-auto p-6">
             <router-outlet></router-outlet>
         </main>
 
-        <app-footer></app-footer>
     </div>
+
+    <!-- Footer abajo -->
+    <app-footer></app-footer>
 </div>
