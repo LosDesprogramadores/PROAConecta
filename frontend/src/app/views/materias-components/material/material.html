@@ -4,16 +4,12 @@
   <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
     <div>
-      <p class="text-xs font-semibold text-primary uppercase tracking-wider">
-        Materia
-      </p>
-
-      <h1 class="text-2xl font-bold text-slate-800 mt-1">
+      <h1 class="text-2xl font-bold text-slate-800">
         Material de estudio
       </h1>
 
       <p class="text-sm text-slate-500 mt-1">
-        Recursos y materiales disponibles para acompañar la cursada.
+        Publicado por el equipo docente para acompañar la cursada.
       </p>
     </div>
 
@@ -24,7 +20,7 @@
         class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition">
 
         <span class="text-lg">+</span>
-        Subir material
+        Agregar
 
       </button>
     }
@@ -32,28 +28,14 @@
   </header>
 
 
-  <!-- Información -->
-  <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
-
-    <div class="text-xl shrink-0">
-      📚
-    </div>
-
-    <div>
-      <h2 class="text-sm font-semibold text-slate-800">
-        Recursos de la materia
-      </h2>
-
-      <p class="text-xs text-slate-600 mt-1">
-        Aquí encontrarás los materiales publicados por el equipo docente.
-      </p>
-    </div>
-
-  </div>
-
-
   <!-- Lista -->
-  @if (materiales().length === 0) {
+  @if (cargando()) {
+
+    <div class="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-500">
+      Cargando...
+    </div>
+
+  } @else if (materiales().length === 0) {
 
     <div class="bg-white border border-slate-200 rounded-xl p-8 text-center">
 
@@ -62,11 +44,15 @@
       </div>
 
       <h3 class="font-semibold text-slate-700">
-        No hay materiales disponibles
+        Todavía no hay nada publicado
       </h3>
 
       <p class="text-sm text-slate-500 mt-1">
-        Todavía no se publicaron recursos para esta materia.
+        @if (esDocente()) {
+          Usá el botón Agregar para publicar el primero.
+        } @else {
+          Cuando el equipo docente publique algo, lo vas a ver acá.
+        }
       </p>
 
     </div>
@@ -78,7 +64,8 @@
       @for (material of materiales(); track material.id) {
 
         <article
-          class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition">
+          class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition"
+          [class.opacity-60]="material.visible === false">
 
           <!-- Parte superior -->
           <div class="flex items-start justify-between gap-3">
@@ -93,7 +80,15 @@
                     📄
                   }
 
+                  @case ('DOCUMENTO') {
+                    📄
+                  }
+
                   @case ('LINK') {
+                    🔗
+                  }
+
+                  @case ('ENLACE') {
                     🔗
                   }
 
@@ -126,47 +121,88 @@
 
 
           <!-- Descripción -->
-          <p class="text-sm text-slate-600 leading-relaxed mt-4">
-            {{ material.descripcion }}
-          </p>
+          @if (material.descripcion) {
+            <p class="text-sm text-slate-600 leading-relaxed mt-4">
+              {{ material.descripcion }}
+            </p>
+          }
 
 
           <!-- Footer -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-slate-100">
 
             <span class="text-xs text-slate-400">
-              Publicado {{ material.fecha }}
+              @if (material.fecha_publicacion) {
+                {{ material.fecha_publicacion | date: 'dd/MM/yyyy' }}
+              }
             </span>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
 
-              <button
-                type="button"
-                (click)="abrirMaterial(material)"
-                class="px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-blue-50 hover:bg-blue-100 transition">
+              @if (urlDe(material); as url) {
+                <a
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-blue-50 hover:bg-blue-100 transition">
 
-                Ver material
+                  Abrir
 
-              </button>
+                </a>
+              }
 
               @if (esDocente()) {
 
+                <!-- Editar -->
                 <button
                   type="button"
                   (click)="editarMaterial(material)"
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
-
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition"
+                  title="Editar" aria-label="Editar">
+                  <svg class="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                  </svg>
                   Editar
-
                 </button>
 
+                <!-- Visibilidad (muestra el estado actual) -->
+                <button
+                  type="button"
+                  (click)="alternarVisibilidad(material)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition"
+                  [class]="material.visible !== false
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'"
+                  [title]="material.visible !== false ? 'Visible para alumnos. Clic para ocultar' : 'Oculto para alumnos. Clic para mostrar'"
+                  [attr.aria-label]="material.visible !== false ? 'Ocultar' : 'Mostrar'">
+                  @if (material.visible !== false) {
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Visible
+                  } @else {
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>
+                    Oculto
+                  }
+                </button>
+
+                <!-- Eliminar -->
                 <button
                   type="button"
                   (click)="eliminarMaterial(material)"
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition">
-
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition"
+                  title="Eliminar" aria-label="Eliminar">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                  </svg>
                   Eliminar
-
                 </button>
 
               }
@@ -181,6 +217,76 @@
 
     </div>
 
+  }
+
+
+  <!-- MODAL: AGREGAR / EDITAR -->
+  @if (mostrarFormulario()) {
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-white p-6 rounded-xl max-w-md w-full shadow-2xl space-y-4">
+        <h3 class="text-lg font-bold text-slate-800">
+          {{ materialEditandoId ? '✏️ Editar' : '➕ Agregar' }}
+        </h3>
+
+        <form (ngSubmit)="guardarMaterial()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo</label>
+            <select [(ngModel)]="nuevoTipo" name="tipo"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="DOCUMENTO">📄 Documento</option>
+              <option value="VIDEO">🎥 Video</option>
+              <option value="ENLACE">🔗 Enlace</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Título *</label>
+            <input type="text" [(ngModel)]="nuevoTitulo" name="titulo"
+              placeholder="Ej: Programa de la cursada"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required autofocus />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción (opcional)</label>
+            <textarea [(ngModel)]="nuevaDescripcion" name="descripcion" rows="3"
+              placeholder="De qué trata..."
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">URL</label>
+            <input type="url" [(ngModel)]="nuevoUrl" name="url" placeholder="https://..."
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">O un archivo</label>
+            <input type="file" (change)="onArchivoSeleccionado($event)"
+              class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+          </div>
+
+          <div>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" [(ngModel)]="nuevoVisible" name="visible"
+                class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+              <span class="text-sm text-slate-700">Visible para los alumnos</span>
+            </label>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <button type="button" (click)="cancelarFormulario()"
+              class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+              Cancelar
+            </button>
+            <button type="submit"
+              class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-sm transition">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   }
 
 </section>
