@@ -134,4 +134,8 @@ export class CalificacionesProfesor implements OnInit {
   irACalificar(actividadId: number): void {
     this.router.navigate(['/view-materia', this.materiaId, 'actividades', actividadId, 'entregas']);
   }
+
+  exportarPDF(): void {
+    window.print();
+  }
 }
