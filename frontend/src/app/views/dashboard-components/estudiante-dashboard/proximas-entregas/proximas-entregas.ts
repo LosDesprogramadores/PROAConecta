@@ -39,7 +39,6 @@ export class ProximasEntregas implements OnInit {
 
     return this.actividades()
       .filter(actividad => !!actividad.fecha_limite)
-      // Ajustá "materia" si en tu modelo el campo se llama distinto (ej: materia_id)
       .filter(actividad => materiaId === null || actividad.materia === materiaId)
       .map(actividad => {
         const fechaLimiteIso = actividad.fecha_limite.replace(' ', 'T');
