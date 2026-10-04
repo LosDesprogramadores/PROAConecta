@@ -1,57 +1,87 @@
 <div class="grid grid-cols-1 gap-4">
 
-    <!-- 1. MATERIAS ACTIVAS (OCULTO/COMENTADO)
-  <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
-    <div class="w-12 h-12 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold text-lg shrink-0">
-      📚
-    </div>
-    <div>
-      <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Materias</span>
-
-      @if (cargando()) {
-        <div class="flex items-center gap-2 mt-1">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          <span class="text-xs text-slate-400">Cargando...</span>
-        </div>
-      } @else {
-        <p class="text-xl font-bold text-slate-800">{{ materias() }} Activas</p>
-      }
-    </div>
-  </div>
-  -->
-
-    <!-- 2. AVISOS / ANUNCIOS (OCULTO/COMENTADO)
-  <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
-    <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg shrink-0">
-      🔔
-    </div>
-    <div>
-      <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Avisos</span>
-      <p class="text-xl font-bold text-slate-800">2 Recientes</p>
-    </div>
-  </div>
-  -->
-
-    <!-- 3. ACTIVIDADES PENDIENTES (ÚNICO VISIBLE) -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
-        <div
-            class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg shrink-0">
-            📝
-        </div>
-        <div>
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Actividades</span>
-
-            @if (cargando()) {
-            <div class="flex items-center gap-2 mt-1">
-                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
-                <span class="text-xs text-slate-400">Cargando...</span>
+    <!-- TARJETA CLICKEABLE DE ACTIVIDADES PENDIENTES -->
+    <div (click)="abrirModal()"
+        [class.cursor-pointer]="actividadesPendientes() > 0"
+        class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between gap-4 hover:border-amber-300 hover:shadow-md transition group">
+        
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
+                📝
             </div>
-            } @else {
-            <p class="text-xl font-bold text-slate-800">
-                {{ actividades() }} {{ actividades() === 1 ? 'Pendiente' : 'Pendientes' }}
-            </p>
-            }
+            <div>
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Actividades</span>
+
+                @if (cargando()) {
+                <div class="flex items-center gap-2 mt-1">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+                    <span class="text-xs text-slate-400">Cargando...</span>
+                </div>
+                } @else {
+                <p class="text-xl font-bold text-slate-800">
+                    {{ actividadesPendientes() }} {{ actividadesPendientes() === 1 ? 'Pendiente' : 'Pendientes' }}
+                </p>
+                }
+            </div>
         </div>
+
+        @if (!cargando() && actividadesPendientes() > 0) {
+        <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full group-hover:bg-amber-100 transition">
+            Ver desglose ↗
+        </span>
+        }
     </div>
 
 </div>
+
+<!-- MODAL DE ACTIVIDADES PENDIENTES POR MATERIA -->
+@if (mostrarModal()) {
+<div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+
+        <!-- CABECERA DE MODAL -->
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl">📝</span>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Actividades Pendientes</h3>
+                </div>
+            </div>
+            <button type="button" (click)="cerrarModal()"
+                class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 rounded-lg hover:bg-slate-200/50 transition">
+                ✕
+            </button>
+        </div>
+
+        <!-- CUERPO DE LISTADO -->
+        <div class="p-5 overflow-y-auto space-y-3">
+            @for (item of materiasPendientes(); track item.materiaId) {
+            <div class="p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-200 transition flex items-center justify-between gap-3">
+                <div class="space-y-0.5">
+                    <h4 class="text-sm font-bold text-slate-800">{{ item.nombreMateria }}</h4>
+                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                        <span>•</span>
+                        <span>{{ item.cantidad }} {{ item.cantidad === 1 ? 'tarea pendiente' : 'tareas pendientes' }}</span>
+                    </span>
+                </div>
+
+                <button type="button" (click)="irAActividadesMateria(item.materiaId)"
+                    class="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm shrink-0 flex items-center gap-1">
+                    <span>Ir a la materia</span>
+                    <span>↗</span>
+                </button>
+            </div>
+            }
+        </div>
+
+        <!-- PIE DE MODAL -->
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button type="button" (click)="cerrarModal()"
+                class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-lg transition">
+                Cerrar
+            </button>
+        </div>
+
+    </div>
+</div>
+}

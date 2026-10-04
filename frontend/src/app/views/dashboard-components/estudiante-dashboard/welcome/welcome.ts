@@ -7,14 +7,6 @@ import { Materias } from '../../materias/materias';
 import { ProximasEntregas } from '../proximas-entregas/proximas-entregas';
 import { AnunciosResumen } from '../anuncios-resumen/anuncios-resumen';
 
-interface Noticia {
-  fecha: string;
-  hora: string;
-  titulo: string;
-  autor: string;
-  contenido: string;
-}
-
 @Component({
   selector: 'app-welcome',
   standalone: true,
@@ -23,7 +15,6 @@ interface Noticia {
   styleUrls: ['./welcome.css'],
 })
 export class Welcome implements OnInit {
-  noticias = signal<Noticia[]>([]);
 
   constructor(private readonly authService: AuthService) {}
 
@@ -33,18 +24,6 @@ export class Welcome implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadNoticias();
   }
 
-  private loadNoticias(): void {
-    this.noticias.set([
-      {
-        fecha: '20/08/2026',
-        hora: '08:00',
-        titulo: 'Inicio del ciclo lectivo',
-        autor: 'Dirección',
-        contenido: 'El ciclo lectivo comienza oficialmente el lunes 24 de agosto.',
-      },
-    ]);
-  }
 }

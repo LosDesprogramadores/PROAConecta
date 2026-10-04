@@ -1,8 +1,14 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { InscripcionesService } from '../../../../services/inscripciones.service';
-import { ActividadesService } from '../../../../services/actividades.service'; // Ajusta la ruta a tu servicio
+import { ActividadesService } from '../../../../services/actividades.service';
 import { AuthService } from '../../../../core/auth/auth.service';
+
+export interface MateriaPendienteResumen {
+  materiaId: number | string;
+  nombreMateria: string;
+  cantidad: number;
+}
 
 @Component({
   selector: 'app-informacion',
@@ -12,13 +18,15 @@ import { AuthService } from '../../../../core/auth/auth.service';
   styleUrl: './informacion.css',
 })
 export class Informacion implements OnInit {
-  private readonly inscripcionServices = inject(InscripcionesService);
   private readonly actividadesService = inject(ActividadesService);
   private readonly authServices = inject(AuthService);
+  private readonly router = inject(Router);
 
-  materias = signal<number>(0);
-  actividades = signal<number>(0);
+  actividadesPendientes = signal<number>(0);
   cargando = signal<boolean>(true);
+
+  mostrarModal = signal<boolean>(false);
+  materiasPendientes = signal<MateriaPendienteResumen[]>([]);
 
   ngOnInit(): void {
     this.cargarInformacion();
@@ -34,20 +42,68 @@ export class Informacion implements OnInit {
 
     this.cargando.set(true);
 
-    // Consultamos en paralelo materias y actividades
     forkJoin({
-      materias: this.inscripcionServices.obtenerInscripcionesPorEstudiante(usuarioId),
-      actividades: this.actividadesService.getActividades()
+      actividades: this.actividadesService.getActividades(),
+      entregas: this.actividadesService.getMisEntregas(),
     }).subscribe({
-      next: (res) => {
-        this.materias.set(res.materias.length);
-        this.actividades.set(res.actividades.length);
+      next: ({ actividades, entregas }) => {
+
+        const idsActividadesEntregadas = new Set(
+          entregas.map((e: any) => e.actividad?.id || e.actividadId || e.id)
+        );
+
+        const pendientes = actividades.filter(
+          (actividad: any) => !idsActividadesEntregadas.has(actividad.id)
+        );
+
+        this.actividadesPendientes.set(pendientes.length);
+        this.agruparPendientesPorMateria(pendientes);
         this.cargando.set(false);
       },
       error: (err) => {
-        console.error('Error al cargar la información del dashboard:', err);
+        console.error('Error al calcular actividades pendientes:', err);
         this.cargando.set(false);
-      }
+      },
     });
+  }
+
+  private agruparPendientesPorMateria(actividades: any[]): void {
+    const resumenMap = new Map<string | number, MateriaPendienteResumen>();
+
+    for (const act of actividades) {
+      const materiaId = act.materia;
+      const nombreMateria = act.materia_titulo;
+
+      if (!materiaId) continue;
+
+      if (resumenMap.has(materiaId)) {
+        resumenMap.get(materiaId)!.cantidad += 1;
+      } else {
+        resumenMap.set(materiaId, {
+          materiaId,
+          nombreMateria,
+          cantidad: 1,
+        });
+      }
+    }
+
+    this.materiasPendientes.set(Array.from(resumenMap.values()));
+  }
+
+  // --- MÉTODOS DEL MODAL Y NAVEGACIÓN ---
+
+  abrirModal(): void {
+    if (this.actividadesPendientes() > 0) {
+      this.mostrarModal.set(true);
+    }
+  }
+
+  cerrarModal(): void {
+    this.mostrarModal.set(false);
+  }
+
+  irAActividadesMateria(materiaId: string | number): void {
+    this.cerrarModal();
+    this.router.navigate([`/view-materia/${materiaId}/estudiante/actividades`]);
   }
 }

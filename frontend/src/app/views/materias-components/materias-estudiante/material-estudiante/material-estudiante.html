@@ -1,1 +1,267 @@
-<p>material-estudiante works!</p>
+<div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-10">
+
+    <!-- ENCABEZADO DE PÁGINA -->
+    <div class="border-b border-slate-200 pb-4">
+        <h1 class="text-2xl font-bold text-slate-800">Recursos de Estudio</h1>
+        <p class="text-sm text-slate-500 mt-1">
+            Materiales de lectura, enlaces útiles y recursos audiovisuales de la asignatura.
+        </p>
+    </div>
+
+    <!-- SECCIÓN 1: RECURSOS GENERALES -->
+    <section class="space-y-4">
+        <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+            <span>📌</span>
+            <span>Generales</span>
+        </h2>
+
+        <!-- ESTADO: CARGANDO -->
+        @if (cargando()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (i of [1, 2, 3]; track i) {
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-pulse space-y-3">
+                <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div class="h-6 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-12 bg-slate-100 rounded"></div>
+            </div>
+            }
+        </div>
+        }
+
+        <!-- LISTADO O ESTADO VACÍO -->
+        @if (!cargando()) {
+        @if (recursos().length === 0) {
+        <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            <span class="text-3xl block mb-2">📂</span>
+            <h3 class="text-sm font-semibold text-slate-700">No hay recursos generales</h3>
+            <p class="text-xs text-slate-500 mt-1">No se han publicado recursos globales para esta materia.</p>
+        </div>
+        } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (recurso of recursos(); track recurso.id) {
+            <div
+                class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between overflow-hidden">
+
+                <!-- CABECERA Y CONTENIDO DE TARJETA -->
+                <div class="p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                            <span>{{ iconoTipo(recurso.tipo) }}</span>
+                            <span>{{ tipoLabel(recurso.tipo) }}</span>
+                        </span>
+                    </div>
+
+                    <h3 class="text-base font-bold text-slate-800 leading-snug">
+                        {{ recurso.titulo }}
+                    </h3>
+
+                    @if (recurso.descripcion) {
+                    <div class="text-sm text-slate-600">
+                        @if (estaExpandido(recurso.id)) {
+                        <p class="whitespace-pre-line">{{ recurso.descripcion }}</p>
+                        } @else {
+                        <p class="line-clamp-2">{{ recurso.descripcion }}</p>
+                        }
+                    </div>
+                    }
+                </div>
+
+                <!-- PIE DE TARJETA -->
+                <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <a [href]="obtenerUrl(recurso)" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                            <span>Abrir recurso</span>
+                            <span>↗</span>
+                        </a>
+
+                        <button type="button" (click)="abrirModal(recurso)"
+                            class="text-xs font-medium text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-200/60 transition">
+                            Detalles
+                        </button>
+                    </div>
+
+                    @if (recurso.descripcion && recurso.descripcion.length > 80) {
+                    <button type="button" (click)="toggleExpandir(recurso.id)"
+                        class="text-xs text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1">
+                        <span>{{ estaExpandido(recurso.id) ? 'Menos' : 'Más' }}</span>
+                        <span class="text-[10px] transform transition-transform"
+                            [class.rotate-180]="estaExpandido(recurso.id)">▼</span>
+                    </button>
+                    }
+                </div>
+
+            </div>
+            }
+        </div>
+        }
+        }
+    </section>
+
+    <hr class="border-slate-200" />
+
+    <!-- SECCIÓN 2: UNIDADES TEMÁTICAS -->
+    <section class="space-y-4">
+        <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+            <span>📚</span>
+            <span>Unidades del Programa</span>
+        </h2>
+
+        @if (unidades().length === 0) {
+        <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            <span class="text-3xl block mb-2">📖</span>
+            <h3 class="text-sm font-semibold text-slate-700">Sin unidades registradas</h3>
+            <p class="text-xs text-slate-500 mt-1">El programa de la materia aún no contiene unidades disponibles.</p>
+        </div>
+        } @else {
+        <div class="space-y-4">
+            @for (unidad of unidades(); track unidad.id; let i = $index) {
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+
+                <!-- CABECERA DE UNIDAD (ACORDEÓN) -->
+                <button type="button" (click)="toggleUnidad(unidad.id)"
+                    class="w-full text-left p-5 flex items-center justify-between hover:bg-slate-50/80 transition">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">
+                                Unidad {{ unidad.orden || (i + 1) }}
+                            </span>
+                            <h3 class="text-base font-bold text-slate-800">{{ unidad.titulo }}</h3>
+                        </div>
+                    </div>
+
+                    <span class="text-slate-400 text-sm transform transition-transform duration-200 ml-4"
+                        [class.rotate-180]="unidadExpandida() === unidad.id">
+                        ▼
+                    </span>
+                </button>
+
+                <!-- CONTENIDO DESPLEGABLE DE LA UNIDAD -->
+                @if (unidadExpandida() === unidad.id) {
+                <div class="p-5 border-t border-slate-100 bg-slate-50/50 space-y-4">
+
+                    @if (unidad.descripcion) {
+                    <div class="bg-white p-4 rounded-lg border border-slate-100 text-sm text-slate-600">
+                        <strong class="block text-xs uppercase text-slate-400 font-semibold mb-1">Resumen de la
+                            Unidad</strong>
+                        <p class="whitespace-pre-line leading-relaxed">{{ unidad.descripcion }}</p>
+                    </div>
+                    }
+
+                    <h4 class="text-xs font-semibold uppercase text-slate-400 tracking-wider">
+                        Contenidos y Materiales
+                    </h4>
+
+                    <!-- CARGANDO RECURSOS DE UNIDAD -->
+                    @if (cargandoMaterialesUnidad().has(unidad.id!)) {
+                    <div class="py-6 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                        <span class="animate-spin text-base">🌀</span>
+                        <span>Cargando materiales...</span>
+                    </div>
+                    } @else if (!unidad.contenidos || unidad.contenidos.length === 0) {
+                    <div
+                        class="text-center py-6 bg-white rounded-lg border border-dashed border-slate-200 text-xs text-slate-400">
+                        No hay materiales subidos para esta unidad.
+                    </div>
+                    } @else {
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @for (mat of unidad.contenidos; track mat.id) {
+                        <div
+                            class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow transition flex flex-col justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1">
+                                    <span>{{ iconoTipo(mat.tipo) }}</span>
+                                    <span>{{ tipoLabel(mat.tipo) }}</span>
+                                </div>
+                                <h5 class="text-sm font-semibold text-slate-800 leading-snug">
+                                    {{ mat.titulo }}
+                                </h5>
+                                @if (mat.descripcion) {
+                                <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ mat.descripcion }}</p>
+                                }
+                            </div>
+
+                            <div class="flex items-center justify-between border-t border-slate-100 pt-2.5">
+                                <a [href]="obtenerUrl(mat)" target="_blank" rel="noopener noreferrer"
+                                    class="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1">
+                                    <span>Ver material</span>
+                                    <span>↗</span>
+                                </a>
+                                <button type="button" (click)="abrirModal(mat)"
+                                    class="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 rounded hover:bg-slate-100">
+                                    Detalles
+                                </button>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                    }
+
+                </div>
+                }
+
+            </div>
+            }
+        </div>
+        }
+    </section>
+
+    <!-- MODAL DE DETALLES Y VISTA PREVIA -->
+    @if (recursoSeleccionadoModal(); as modalRecurso) {
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+            <div class="p-5 border-b border-slate-100 flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">{{ iconoTipo(modalRecurso.tipo) }}</span>
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                            {{ tipoLabel(modalRecurso.tipo) }}
+                        </span>
+                        <h3 class="text-lg font-bold text-slate-800">
+                            {{ modalRecurso.titulo }}
+                        </h3>
+                    </div>
+                </div>
+                <button type="button" (click)="cerrarModal()"
+                    class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 rounded-lg hover:bg-slate-100 transition">
+                    ✕
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 text-slate-700 text-sm">
+                @if (modalRecurso.descripcion) {
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase mb-1">Descripción</h4>
+                    <p class="whitespace-pre-line leading-relaxed text-slate-600">{{ modalRecurso.descripcion }}</p>
+                </div>
+                }
+
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase mb-1">Ubicación del recurso</h4>
+                    <a [href]="obtenerUrl(modalRecurso)" target="_blank" rel="noopener noreferrer"
+                        class="inline-flex items-center gap-2 text-blue-600 hover:underline break-all font-medium">
+                        <span>{{ obtenerUrl(modalRecurso) }}</span>
+                        <span>↗</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                <button type="button" (click)="cerrarModal()"
+                    class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200/60 rounded-lg transition">
+                    Cerrar
+                </button>
+                <a [href]="obtenerUrl(modalRecurso)" target="_blank" rel="noopener noreferrer"
+                    class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition shadow-sm">
+                    Ir al enlace
+                </a>
+            </div>
+
+        </div>
+    </div>
+    }
+
+</div>

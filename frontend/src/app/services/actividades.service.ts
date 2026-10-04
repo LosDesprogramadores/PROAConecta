@@ -89,4 +89,20 @@ export class ActividadesService {
       datos
     );
   }
+
+  // Agregar dentro de ActividadesService:
+
+  // Crear o enviar entrega
+  crearEntrega(datos: FormData | any): Observable<Entrega> {
+    return this.http.post<Entrega>(`${this.entregasUrl}/`, datos);
+  }
+
+  // Editar entrega existente
+  actualizarEntrega(entregaId: number, datos: FormData | any): Observable<Entrega> {
+    return this.http.put<Entrega>(`${this.entregasUrl}/${entregaId}/`, datos);
+  }
+
+  getMisEntregas(): Observable<Entrega[]> {
+    return this.http.get<Entrega[]>(`${this.entregasUrl}/`);
+  }
 }
