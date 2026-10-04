@@ -36,6 +36,8 @@ export class PortadaEstudiante implements OnInit {
 
   materiaId: number | null = null;
 
+  mostrarTextoCompleto = signal<boolean>(false);
+
   get datosActuales(): MateriaPortada {
     return (
       this.materia || {
@@ -54,9 +56,10 @@ export class PortadaEstudiante implements OnInit {
     this.cargarMateriaDesdeRuta();
   }
 
-  /**
-   * Recorre el árbol de rutas hacia arriba hasta encontrar el parámetro 'id'
-   */
+  toggleMostrarTexto(): void {
+    this.mostrarTextoCompleto.update((v) => !v);
+  }
+
   private obtenerMateriaIdDesdeArbol(): string | null {
     let currentRoute: ActivatedRoute | null = this.route;
     while (currentRoute) {

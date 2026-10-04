@@ -29,14 +29,29 @@
 
         <!-- COLUMNA IZQUIERDA -->
         <main class="lg:col-span-2 space-y-6">
-            <!-- PRESENTACIÓN (Solo lectura) -->
+            <!-- PRESENTACIÓN (Con límite de 2 líneas y botón desplegable) -->
             <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
                 <h3 class="text-lg font-semibold text-slate-800">
                     Sobre la materia
                 </h3>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    {{ datosActuales.presentacion }}
-                </p>
+                
+                <div>
+                    <p class="text-sm text-slate-600 leading-relaxed transition-all duration-300"
+                        [class.line-clamp-2]="!mostrarTextoCompleto()">
+                        {{ datosActuales.presentacion }}
+                    </p>
+
+                    @if (datosActuales.presentacion.length > 120) {
+                    <button type="button" (click)="toggleMostrarTexto()"
+                        class="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800 focus:outline-none flex items-center gap-1 transition-colors">
+                        <span>{{ mostrarTextoCompleto() ? 'Ver menos' : 'Ver más' }}</span>
+                        <span class="text-[10px] transform transition-transform duration-200"
+                            [class.rotate-180]="mostrarTextoCompleto()">
+                            ▼
+                        </span>
+                    </button>
+                    }
+                </div>
             </article>
 
             <!-- PROGRAMA Y UNIDADES -->
