@@ -27,6 +27,9 @@ export class UnidadesMaterial implements OnInit {
   unidadExpandida = signal<string | number | null>(null);
   mostrarFormularioUnidad = signal(false);
 
+  // CONTROL DE DESCRIPCIONES EXPANDIDAS
+  descripcionesExpandidas = signal<Set<string | number>>(new Set());
+
   // ESTADO DE UNIDADES
   unidadEditandoId: string | number | null = null;
   nuevoNombreUnidad = '';
@@ -63,10 +66,29 @@ export class UnidadesMaterial implements OnInit {
     }
   }
 
+  // --- LÓGICA DE DESCRIPCIONES EXPANDIBLES ---
+
+  descripcionExpandida(id: string | number): boolean {
+    return this.descripcionesExpandidas().has(id);
+  }
+
+  toggleDescripcion(id: string | number, event: Event): void {
+    event.stopPropagation();
+    this.descripcionesExpandidas.update((set) => {
+      const nuevoSet = new Set(set);
+      if (nuevoSet.has(id)) {
+        nuevoSet.delete(id);
+      } else {
+        nuevoSet.add(id);
+      }
+      return nuevoSet;
+    });
+  }
+
   cargarUnidades() {
     this.unidadesService.obtenerUnidadesPorMateria(this.materiaId).subscribe({
       next: (data) => this.unidades.set(data),
-      error: () => this.toastService.error('Error al cargar las unidades')
+      error: () => this.toastService.error('Error al cargar las unidades'),
     });
   }
 
@@ -83,11 +105,11 @@ export class UnidadesMaterial implements OnInit {
   cargarMaterialesDeUnidad(unidadId: string | number) {
     this.materialesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
       next: (materiales) => {
-        this.unidades.update(lista =>
-          lista.map(u => u.id === unidadId ? { ...u, contenidos: materiales } : u)
+        this.unidades.update((lista) =>
+          lista.map((u) => (u.id === unidadId ? { ...u, contenidos: materiales } : u)),
         );
       },
-      error: () => this.toastService.error('Error al cargar materiales de la unidad')
+      error: () => this.toastService.error('Error al cargar materiales de la unidad'),
     });
   }
 
@@ -129,7 +151,7 @@ export class UnidadesMaterial implements OnInit {
       titulo: this.nuevoNombreUnidad,
       descripcion: this.nuevoDescripcionUnidad,
       orden: Number(this.nuevoOrdenUnidad) || 1,
-      visible: this.visible
+      visible: this.visible,
     };
 
     if (this.unidadEditandoId) {
@@ -139,7 +161,7 @@ export class UnidadesMaterial implements OnInit {
           this.cargarUnidades();
           this.cancelarFormularioUnidad();
         },
-        error: () => this.toastService.error('Error al actualizar la unidad')
+        error: () => this.toastService.error('Error al actualizar la unidad'),
       });
     } else {
       this.unidadesService.crearUnidad(payload).subscribe({
@@ -148,7 +170,7 @@ export class UnidadesMaterial implements OnInit {
           this.cargarUnidades();
           this.cancelarFormularioUnidad();
         },
-        error: () => this.toastService.error('Error al crear la unidad')
+        error: () => this.toastService.error('Error al crear la unidad'),
       });
     }
   }
@@ -161,7 +183,7 @@ export class UnidadesMaterial implements OnInit {
         this.toastService.success(res.mensaje);
         this.cargarUnidades();
       },
-      error: () => this.toastService.error('Error al cambiar la visibilidad')
+      error: () => this.toastService.error('Error al cambiar la visibilidad'),
     });
   }
 
@@ -174,7 +196,7 @@ export class UnidadesMaterial implements OnInit {
           this.toastService.success('Unidad enviada a la papelera');
           this.cargarUnidades();
         },
-        error: () => this.toastService.error('Error al eliminar la unidad')
+        error: () => this.toastService.error('Error al eliminar la unidad'),
       });
     }
   }
@@ -234,36 +256,31 @@ export class UnidadesMaterial implements OnInit {
       tipo: this.nuevoTipoRecurso.toUpperCase(),
       titulo: this.nuevoTituloRecurso,
       enlace: urlFormateada || undefined,
-      visible: this.nuevoMaterialVisible
+      visible: this.nuevoMaterialVisible,
     };
 
     if (this.recursoEditandoId) {
-      // ✏️ ACTUALIZAR RECURSO
-      this.materialesService.actualizarMaterial(
-        this.recursoEditandoId,
-        payload,
-        this.archivoSeleccionado || undefined
-      ).subscribe({
-        next: () => {
-          this.toastService.success('Recurso actualizado correctamente');
-          if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
-          this.cancelarFormularioRecurso();
-        },
-        error: () => this.toastService.error('Error al actualizar el recurso')
-      });
+      this.materialesService
+        .actualizarMaterial(this.recursoEditandoId, payload, this.archivoSeleccionado || undefined)
+        .subscribe({
+          next: () => {
+            this.toastService.success('Recurso actualizado correctamente');
+            if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
+            this.cancelarFormularioRecurso();
+          },
+          error: () => this.toastService.error('Error al actualizar el recurso'),
+        });
     } else {
-      // ➕ CREAR RECURSO
-      this.materialesService.crearMaterial(
-        payload as Material,
-        this.archivoSeleccionado || undefined
-      ).subscribe({
-        next: () => {
-          this.toastService.success('Recurso agregado correctamente');
-          if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
-          this.cancelarFormularioRecurso();
-        },
-        error: () => this.toastService.error('Error al guardar el recurso')
-      });
+      this.materialesService
+        .crearMaterial(payload as Material, this.archivoSeleccionado || undefined)
+        .subscribe({
+          next: () => {
+            this.toastService.success('Recurso agregado correctamente');
+            if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
+            this.cancelarFormularioRecurso();
+          },
+          error: () => this.toastService.error('Error al guardar el recurso'),
+        });
     }
   }
 
@@ -279,7 +296,7 @@ export class UnidadesMaterial implements OnInit {
       error: (err) => {
         material.visible = estadoAnterior;
         console.error('Error al cambiar la visibilidad del material', err);
-      }
+      },
     });
   }
 
@@ -291,9 +308,9 @@ export class UnidadesMaterial implements OnInit {
         if (unidad.contenidos) {
           unidad.contenidos = unidad.contenidos.filter((m: Material) => m.id !== materialId);
         }
-        this.toastService.success('Material eliminado');
+        this.toastService.success('Material eliminado correctamente');
       },
-      error: (err) => console.error('Error al eliminar el material', err)
+      error: () => this.toastService.error('Error al eliminar el material'),
     });
   }
 }
