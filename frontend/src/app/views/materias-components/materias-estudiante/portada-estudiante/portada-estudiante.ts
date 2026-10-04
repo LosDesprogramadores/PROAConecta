@@ -21,7 +21,6 @@ export class PortadaEstudiante implements OnInit {
   @Input() materia?: MateriaPortada;
 
   private authService = inject(AuthService);
-  private router = inject(Router);
   private materiaService = inject(MateriaService);
   private route = inject(ActivatedRoute);
 

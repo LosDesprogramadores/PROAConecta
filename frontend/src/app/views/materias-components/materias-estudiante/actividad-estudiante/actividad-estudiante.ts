@@ -57,55 +57,54 @@ export class ActividadEstudiante implements OnInit {
   entregasMap = signal<Record<number, Entrega>>({});
 
   ngOnInit(): void {
-    this.route.parent?.params.subscribe(params => {
-      const id = params['id'] || this.route.snapshot.queryParams['materiaId'];
-      if (id) {
-        this.materiaId.set(Number(id));
-        this.cargarActividades(Number(id));
-      } else {
-        this.cargarTodasLasActividades();
-      }
-    });
+
+    const idEncontrado =
+      this.obtenerParametroDeRuta('id') || this.obtenerParametroDeRuta('materiaId');
+    console.log(idEncontrado);
+    if (idEncontrado) {
+      const idNum = Number(idEncontrado);
+      this.materiaId.set(idNum);
+      this.cargarTodasLasActividades();
+    } else {
+      console.error('❌ [MaterialEstudiante] No se pudo encontrar ningún ID en la URL.');
+    }
   }
 
-  private cargarActividades(materiaId: number): void {
-    this.cargando.set(true);
-    this.error.set(null);
+  private obtenerParametroDeRuta(paramName: string): string | null {
+    let currentRoute: ActivatedRoute | null = this.route;
 
-    this.actividadesService.getActividadesPorMateria(materiaId).subscribe({
-      next: (data: Actividad[]) => {
-        this.actividades.set(data);
-        if (data.length > 0 && data[0].materia_titulo) {
-          this.materiaTitulo.set(data[0].materia_titulo);
-        }
-        this.cargando.set(false);
-        this.precargarEstadoEntregas();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar actividades:', err);
-        this.error.set('No se pudieron cargar las actividades de la materia.');
-        this.cargando.set(false);
-      },
-    });
+    while (currentRoute) {
+      const val = currentRoute.snapshot.params[paramName];
+      if (val) return val;
+      currentRoute = currentRoute.parent;
+    }
+    return this.route.snapshot.queryParams[paramName] || null;
   }
 
   private cargarTodasLasActividades(): void {
-    this.cargando.set(true);
-    this.error.set(null);
+  this.cargando.set(true);
+  this.error.set(null);
 
-    this.actividadesService.getActividades().subscribe({
-      next: (data: Actividad[]) => {
-        this.actividades.set(data);
-        this.cargando.set(false);
-        this.precargarEstadoEntregas();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar actividades:', err);
-        this.error.set('No se pudieron cargar las actividades.');
-        this.cargando.set(false);
-      }
-    });
-  }
+  this.actividadesService.getActividades().subscribe({
+    next: (data: Actividad[]) => {
+      const idActual = this.materiaId();
+
+      const actividadesFiltradas = idActual !== null
+        ? data.filter(actividad => Number(actividad.materia) === idActual)
+        : data;
+
+      this.actividades.set(actividadesFiltradas);
+
+      this.cargando.set(false);
+      this.precargarEstadoEntregas();
+    },
+    error: (err: any) => {
+      console.error('Error al cargar actividades:', err);
+      this.error.set('No se pudieron cargar las actividades.');
+      this.cargando.set(false);
+    }
+  });
+}
 
   private precargarEstadoEntregas(): void {
     this.actividadesService.getMisEntregas().subscribe({
