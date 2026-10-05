@@ -1,27 +1,17 @@
-import importlib
 import os
-import sys
 
 import mongomock
 import pymongo
 import pytest
 from rest_framework.test import APIClient
 
-# MongoDB: proa/__init__.py importa mongo_client, que crea un MongoClient y hace ping al
-# importarse. pytest-django importa la configuración (y con ella el paquete proa) ANTES de
-# cargar este archivo, así que mongo_client ya se importó, sin URI y con db = None.
-# Se reemplaza el cliente por mongomock, se fuerza la URI (un .env real nunca debe apuntar
-# a Atlas) y se recarga mongo_client para que quede con una base en memoria.
-# Esto no toca mongo_client.py. El parche debe correr antes que cualquier otro import de la app
+# MongoDB: notificacion/mongo.py crea el cliente de forma perezosa con pymongo.MongoClient.
+# Se reemplaza por mongomock y se fuerza la URI para que un .env real nunca apunte a Atlas
+# (ya no hay conexión ni ping al importar, pero cualquier test que llegue a obtener_db()
+# quedaría con una base en memoria).
 os.environ['DATABASE_URL_MONGODB'] = 'mongodb://localhost:27017'
 os.environ['MONGO_DB_NAME'] = 'proa_test'
 pymongo.MongoClient = mongomock.MongoClient
-if 'mongo_client' in sys.modules:
-    importlib.reload(sys.modules['mongo_client'])
-import mongo_client  # noqa: E402
-
-# Si el parche llegara tarde, falla acá y no usa un cliente real sin avisar
-assert isinstance(mongo_client.db, mongomock.Database), 'mongo_client no quedó con mongomock'
 
 from academico.tests.factories import InscripcionFactory, MateriaFactory  # noqa: E402
 from usuario.tests.factories import RolFactory, UsuarioFactory  # noqa: E402

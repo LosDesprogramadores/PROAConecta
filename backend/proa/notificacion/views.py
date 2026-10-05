@@ -4,37 +4,35 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from bson.objectid import ObjectId
+from pymongo.errors import PyMongoError
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from .mongo import notificaciones_collection
+from .mongo import COLECCION_NOTIFICACION, obtener_coleccion
 
 class NotificacionListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if notificaciones_collection is None:
-            return Response({"error": "Base de datos no conectada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-        cursor = notificaciones_collection.find().sort('fecha_creacion', -1)
-        
-        data = [{
-            "id": str(n["_id"]),
-            "titulo": n.get('titulo', 'Aviso'),
-            "mensaje": n.get('mensaje'),
-            "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'), 
-            "alcance": n.get('alcance', 'AMBOS'), 
-            "fecha_desde": n.get('fecha_desde'),
-            "fecha_hasta": n.get('fecha_hasta'),
-            "leida": n.get('leida', False)
-        } for n in cursor]
-        
+        try:
+            cursor = obtener_coleccion(COLECCION_NOTIFICACION).find().sort('fecha_creacion', -1)
+            data = [{
+                "id": str(n["_id"]),
+                "titulo": n.get('titulo', 'Aviso'),
+                "mensaje": n.get('mensaje'),
+                "tipo_notificacion_codigo": n.get('tipo_notificacion_codigo', 'GENERAL'),
+                "alcance": n.get('alcance', 'AMBOS'),
+                "fecha_desde": n.get('fecha_desde'),
+                "fecha_hasta": n.get('fecha_hasta'),
+                "leida": n.get('leida', False)
+            } for n in cursor]
+        except PyMongoError:
+            return Response({"detail": "Servicio de notificaciones no disponible"},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        if notificaciones_collection is None:
-            return Response({"error": "Base de datos no conectada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
         data = request.data
         try:
             nueva_noti = {
@@ -53,7 +51,7 @@ class NotificacionListCreateView(APIView):
                 "materia_id": data.get('materia_id')
             }
             
-            result = notificaciones_collection.insert_one(nueva_noti)
+            result = obtener_coleccion(COLECCION_NOTIFICACION).insert_one(nueva_noti)
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "notificaciones_globales",
@@ -85,9 +83,6 @@ class NotificacionDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        if notificaciones_collection is None:
-            return Response({"error": "Base de datos no conectada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
         try:
             obj_id = ObjectId(pk)
             data = request.data
@@ -104,7 +99,7 @@ class NotificacionDetailView(APIView):
                 }
             }
             
-            result = notificaciones_collection.update_one({"_id": obj_id}, update_data)
+            result = obtener_coleccion(COLECCION_NOTIFICACION).update_one({"_id": obj_id}, update_data)
             
             if result.matched_count == 0:
                 return Response({"error": "Notificación no encontrada."}, status=status.HTTP_404_NOT_FOUND)
@@ -114,12 +109,9 @@ class NotificacionDetailView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        if notificaciones_collection is None:
-            return Response({"error": "Base de datos no conectada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
         try:
             obj_id = ObjectId(pk)
-            result = notificaciones_collection.delete_one({"_id": obj_id})
+            result = obtener_coleccion(COLECCION_NOTIFICACION).delete_one({"_id": obj_id})
             
             if result.deleted_count == 0:
                 return Response({"error": "Notificación no encontrada."}, status=status.HTTP_404_NOT_FOUND)
