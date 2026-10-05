@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from .notificaciones import avisar_nueva_actividad
 from django.db.models import Q
 from rest_framework import viewsets, filters, status
@@ -92,7 +92,12 @@ class UnidadViewSet(viewsets.ModelViewSet):
             )
 
         verificar_profesor_materia(request.user, unidad.materia)
-        unidad.restore()
+        try:
+            with transaction.atomic():
+                unidad.restore()
+        except IntegrityError:
+            # Ya hay otra unidad activa con el mismo título en la materia
+            raise ValidationError({'detail': 'No se puede restaurar la unidad: ya existe otra unidad activa con el mismo título en esta materia.'})
         return Response(
             {'mensaje': f'Unidad "{unidad.titulo}" restaurada correctamente.'},
             status=status.HTTP_200_OK
