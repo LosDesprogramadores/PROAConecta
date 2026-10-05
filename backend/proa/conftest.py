@@ -33,7 +33,7 @@ def api_as():
     return _api_as
 
 
-# Los ids replican el orden en que se cargan los roles iniciales: aula_virtual/helpers.py
+# Los roles ya existen por la migración usuario/0003_roles_iniciales (get_or_create por nombre, ids 1/2/3): aula_virtual/helpers.py
 # todavía compara rol_id == 1 para detectar al administrador
 @pytest.fixture
 def rol_administrador(db):

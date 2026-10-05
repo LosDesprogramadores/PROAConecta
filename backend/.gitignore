@@ -12,8 +12,9 @@ migrations/__pycache__/
 .idea/
 
 
-#Migraciones
-migrations/
+# Migraciones: se versionan (reproducibilidad del esquema, spec 007/T005).
+# Solo se ignora la caché de Python que genera Django dentro de migrations/.
+migrations/__pycache__/
 
 #db
 /db.sqlite3
