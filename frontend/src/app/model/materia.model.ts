@@ -1,9 +1,9 @@
 import { IPersonaResumen } from "./Persona.model";
 
 export interface Materia {
-    nombre: string;
-    color: string;
-    path: string;
+  nombre: string;
+  color: string;
+  path: string;
 }
 
 export interface IMateria {
@@ -17,6 +17,7 @@ export interface IMateria {
   profesor?: number | null;
   profesor_detalle?: IPersonaResumen | null;
   total_estudiantes?: number;
+  discord_webhook_url?: string | null;
 }
 
 export interface IMateriaAsignacion {
