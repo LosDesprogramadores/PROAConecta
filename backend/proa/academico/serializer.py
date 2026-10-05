@@ -15,6 +15,20 @@ class PersonaResumenSerializer(serializers.ModelSerializer):
         return f"{obj.apellido}, {obj.nombre}"
 
 
+# Alumno de una materia para el profesor: sin dni, teléfono, fecha de nacimiento ni domicilio
+class AlumnoMateriaSerializer(serializers.ModelSerializer):
+    inscripcion_id = serializers.IntegerField(source='id', read_only=True)
+    persona_id = serializers.IntegerField(source='estudiante_id', read_only=True)
+    apellido = serializers.CharField(source='estudiante.apellido', read_only=True)
+    nombre = serializers.CharField(source='estudiante.nombre', read_only=True)
+    email = serializers.EmailField(source='estudiante.email', read_only=True)
+
+    class Meta:
+        model = Inscripcion
+        fields = ['inscripcion_id', 'persona_id', 'apellido', 'nombre', 'email', 'estado', 'fecha_inscripcion']
+        read_only_fields = fields
+
+
 # CRUD de Materia
 class MateriaSerializer(serializers.ModelSerializer):
     profesor_detalle = PersonaResumenSerializer(source='profesor', read_only=True)
