@@ -273,9 +273,9 @@
                         class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
                         Cancelar
                     </button>
-                    <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
-                        {{ unidadEditandoId ? 'Guardar Cambios' : 'Crear Unidad' }}
+                    <button type="submit" [disabled]="guardando()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed">
+                        {{ guardando() ? 'Guardando...' : (unidadEditandoId ? 'Guardar Cambios' : 'Crear Unidad') }}
                     </button>
                 </div>
             </form>
@@ -336,9 +336,9 @@
                         class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
                         Cancelar
                     </button>
-                    <button type="submit"
-                        class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-sm transition">
-                        {{ recursoEditandoId ? 'Guardar Cambios' : 'Guardar Recurso' }}
+                    <button type="submit" [disabled]="guardando()"
+                        class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed">
+                        {{ guardando() ? 'Guardando...' : (recursoEditandoId ? 'Guardar Cambios' : 'Guardar Recurso') }}
                     </button>
                 </div>
             </form>
