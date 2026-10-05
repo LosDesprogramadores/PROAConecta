@@ -1,29 +1,85 @@
 services:
+  # PostgreSQL local (datos relacionales)
+  db:
+    image: postgres:17-alpine
+    container_name: proa_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proa
+      POSTGRES_USER: proa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-proa}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proa -d proa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # MongoDB local (notificaciones, mensajes, bitácora)
+  mongo:
+    image: mongo:7
+    container_name: proa_mongo
+    restart: unless-stopped
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # Redis (capa de canales de WebSocket)
+  redis:
+    image: redis:7-alpine
+    container_name: proa_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: django_backend
-    restart: unless-stopped
+    # Sin restart: si falla migrate el backend queda detenido y el error se ve en los logs
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
+    # Si backend/.env no existe el stack igual levanta (ver backend/.env.example)
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
+    # Lo definido acá pisa lo de backend/.env: apunta a los contenedores locales
     environment:
-      - DEBUG=1
+      - DJANGO_DEBUG=True
       - PYTHONUNBUFFERED=1
-    command: uvicorn proa.asgi:application --host 0.0.0.0 --port 8000 --reload
+      - DATABASE_URL=postgres://proa:${POSTGRES_PASSWORD:-proa}@db:5432/proa
+      - DB_SSL=False
+      - DATABASE_URL_MONGODB=mongodb://mongo:27017
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "python manage.py migrate --noinput && uvicorn proa.asgi:application --host 0.0.0.0 --port 8000"
     develop:
       watch:
-        - action: sync
+        # Requiere Docker Compose >= 2.23 para sync+restart; el hot reload se reemplazó por un reinicio en cada cambio
+        - action: sync+restart
           path: ./backend
           target: /app
           ignore:
             - "**/__pycache__/**"
             - "**/*.pyc"
-            
+
         - action: rebuild
           path: ./backend/requirements.txt
 
@@ -39,9 +95,13 @@ services:
     restart: unless-stopped
     develop:
       watch:
-        
+
         - action: rebuild
           path: ./frontend/src
-        
+
         - action: rebuild
           path: ./frontend/package.json
+
+volumes:
+  pgdata:
+  mongodata:
