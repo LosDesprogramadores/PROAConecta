@@ -1,0 +1,29 @@
+from .settings import *  # noqa: F401,F403
+
+# Solo para tests: nunca usar estos valores fuera de la suite
+SECRET_KEY = 'clave-solo-para-tests-no-usar-en-produccion-0123456789'
+DEBUG = False
+
+# Base en memoria, sin Postgres
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+}
+
+# Hasher rápido para que crear usuarios no frene la suite
+PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+# Sin Redis: el tiempo real se prueba sobre memoria
+CHANNEL_LAYERS = {
+    'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
+}
+
+# Los correos quedan en django.core.mail.outbox
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+# Ninguna integración externa se llama desde los tests
+DISCORD_WEBHOOK_URL = None
+MONGO_URI = 'mongodb://localhost:27017'
+MONGO_DB_NAME = 'proa_test'
