@@ -1,3 +1,4 @@
+import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -21,6 +22,9 @@ export class ActividadForm implements OnInit {
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+
+  // Se calcula una sola vez: el componente se recrea en cada navegación.
+  protected readonly enMateria = estaEnVistaMateria(this.router.url);
 
   form!: FormGroup;
   isEdicion = signal(false);
