@@ -92,6 +92,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Un solo formato de error en toda la API: {'detail': ...} o errores por campo (core/exceptions.py)
+    'EXCEPTION_HANDLER': 'core.exceptions.manejador_de_excepciones',
     # Throttling (core/throttling.py). Con más de un worker de uvicorn el contador debe vivir en Redis
     # (REDIS_URL): con la caché en memoria cada proceso cuenta por separado y el límite se multiplica.
     # Cantidad de proxies de confianza delante de la app (solo nginx): DRF toma la IP que ese proxy agregó

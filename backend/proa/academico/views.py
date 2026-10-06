@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import viewsets, permissions, filters, serializers, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -18,10 +18,14 @@ from .serializer import (
     MateriaSerializer,
 )
 from aula_virtual.helpers import es_admin, verificar_profesor_materia
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from core.exceptions import ErrorSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
 
+
+
+MENSAJE_LOTE = inline_serializer('MensajeLote', {'mensaje': serializers.CharField()})
 
 
 def _entero_o_400(valor, campo):
@@ -97,6 +101,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
             return queryset.none()
         return queryset
 
+    @extend_schema(request=AsignarProfesorSerializer, responses={200: MENSAJE_LOTE, 400: ErrorSerializer})
     @action(detail=False, methods=['post'], url_path='asignar-profesor')
     def asignar_profesor(self, request):
         entrada = AsignarProfesorSerializer(data=request.data)
@@ -268,6 +273,7 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(request=InscribirLoteSerializer, responses={201: MENSAJE_LOTE, 400: ErrorSerializer})
     @action(detail=False, methods=['post'], url_path='inscribir')
     def inscribir_lote(self, request):
         entrada = InscribirLoteSerializer(data=request.data)
@@ -297,6 +303,7 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             'cantidad': len(inscripciones_creadas)
         }, status=status.HTTP_201_CREATED)
 
+    @extend_schema(request=DesinscribirSerializer, responses={200: MENSAJE_LOTE, 400: ErrorSerializer, 404: ErrorSerializer})
     @action(detail=False, methods=['post'], url_path='desinscribir')
     def desinscribir_estudiante(self, request):
         entrada = DesinscribirSerializer(data=request.data)
@@ -324,6 +331,6 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             # La baja conserva la fila: el historial y las notas no se pierden
             inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
             inscripcion.save(update_fields=['estado'])
-            return Response({"message": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
+            return Response({"mensaje": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
 
         return Response({"detail": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)

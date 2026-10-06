@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, login
-from rest_framework import viewsets, status, generics, permissions
+from rest_framework import viewsets, status, generics, permissions, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Rol, Persona
@@ -7,6 +7,7 @@ from .serializers import RolSerializer, PersonaSerializer, DNITokenObtainPairSer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from academico.models import Materia, Inscripcion
 from django.db import transaction
 from django.utils import timezone
@@ -15,6 +16,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
+from core.exceptions import ErrorSerializer
 from core.permissions import EsAdministrador
 from core.throttling import LimiteDeIntentosMixin
 from .correos import enviar_recuperacion
@@ -22,6 +24,12 @@ from core.roles import ROL_ADMINISTRADOR, ROL_ESTUDIANTE, ROL_PROFESOR, obtener_
 
 
 
+
+
+def _solicitud_invalida(detalle):
+    # `error` es un alias temporal de `detail`: login.ts, restablecer-password.ts y cambiar-password.ts
+    # del frontend todavía leen `error`. Se quita cuando esas tres pantallas lean `detail`
+    return Response({'detail': detalle, 'error': detalle}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsuarioCreateView(generics.CreateAPIView):
@@ -116,16 +124,21 @@ class PersonaViewSet(viewsets.ModelViewSet):
         persona.restore()
         return Response({'detail': 'Persona restaurada correctamente.'}, status=status.HTTP_200_OK)
 
+MENSAJE_OK = inline_serializer('MensajeExito', {'mensaje': serializers.CharField()})
+
+
 class PersonaRolView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[OpenApiParameter('rol', int, description='Id del rol (obligatorio)')],
+        responses={200: PersonaSerializer(many=True), 400: ErrorSerializer},
+    )
     def get(self, request):
         rol_id = request.query_params.get('rol')
         
         if not rol_id:
-            return Response(
-                {"error": "Debe especificar el rol."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'detail': 'Debe especificar el rol.'}, status=status.HTTP_400_BAD_REQUEST)
 
         personas = (
             Persona.objects
@@ -178,22 +191,28 @@ class CambiarPasswordPrimerIngresoView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        request=inline_serializer('CambiarPasswordPrimerIngreso', {
+            'password_actual': serializers.CharField(), 'password_nuevo': serializers.CharField(min_length=8),
+        }),
+        responses={200: MENSAJE_OK, 400: ErrorSerializer},
+    )
     def post(self, request):
         usuario = request.user
         password_actual = request.data.get('password_actual')
         password_nuevo = request.data.get('password_nuevo')
 
         if not password_actual or not password_nuevo:
-            return Response({'error': 'Debe ingresar la contraseña actual y la nueva contrtaseña.'}, status=status.HTTP_400_BAD_REQUEST)
+            return _solicitud_invalida('Debe ingresar la contraseña actual y la nueva contraseña.')
 
         if not usuario.check_password(password_actual):
-            return Response({'error': 'La contraseña actual no es correcta.'}, status=status.HTTP_400_BAD_REQUEST)
+            return _solicitud_invalida('La contraseña actual no es correcta.')
 
         if len(password_nuevo) < 8:
-            return Response({'error': 'La nueva contraseña debe contener al menos 8 caracteres.'},status=status.HTTP_400_BAD_REQUEST)
+            return _solicitud_invalida('La nueva contraseña debe contener al menos 8 caracteres.')
 
         if password_actual == password_nuevo:
-            return Response({'error': 'La nueva contraseña no debe ser igual a la provisoria.'}, status=status.HTTP_400_BAD_REQUEST)
+            return _solicitud_invalida('La nueva contraseña no debe ser igual a la provisoria.')
 
         usuario.set_password(password_nuevo)
         usuario.debe_cambiar_password = False
@@ -212,10 +231,14 @@ class SolicitarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
     throttle_scope = 'recuperacion'
     throttle_identificador = ('email', 'recuperacion_email')
 
+    @extend_schema(
+        request=inline_serializer('SolicitarRecuperacion', {'email': serializers.EmailField()}),
+        responses={200: MENSAJE_OK, 400: ErrorSerializer, 429: ErrorSerializer},
+    )
     def post(self, request):
         email = request.data.get('email', '').strip().lower()
         if not email:
-            return Response({'error': 'Debe ingresar un correo electrónico.'}, status=status.HTTP_400_BAD_REQUEST)
+            return _solicitud_invalida('Debe ingresar un correo electrónico.')
 
         usuario = User.objects.filter(persona__email__iexact=email,activo=True,persona__fecha_baja__isnull=True).select_related('persona').first()
         if usuario:
@@ -238,37 +261,32 @@ class ConfirmarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
     authentication_classes = []
     throttle_scope = 'recuperacion_confirmar'
 
+    @extend_schema(
+        request=inline_serializer('ConfirmarRecuperacion', {
+            'uid': serializers.CharField(), 'token': serializers.CharField(),
+            'password_nuevo': serializers.CharField(min_length=8),
+        }),
+        responses={200: MENSAJE_OK, 400: ErrorSerializer, 429: ErrorSerializer},
+    )
     def post(self, request):
         uidb64 = request.data.get('uid')
         token = request.data.get('token')
         password_nuevo = request.data.get('password_nuevo')
 
         if not all([uidb64, token, password_nuevo]):
-            return Response(
-                {'error': 'Faltan parámetros requeridos (uid, token o nueva contraseña).'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return _solicitud_invalida('Faltan parámetros requeridos (uid, token o nueva contraseña).')
 
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             usuario = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response(
-                {'error': 'El enlace de recuperación es inválido o ha expirado.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return _solicitud_invalida('El enlace de recuperación es inválido o ha expirado.')
 
         if not default_token_generator.check_token(usuario, token):
-            return Response(
-                {'error': 'El enlace ha expirado o ya fue utilizado.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return _solicitud_invalida('El enlace ha expirado o ya fue utilizado.')
 
         if len(password_nuevo) < 8:
-            return Response(
-                {'error': 'La contraseña debe contener al menos 8 caracteres.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return _solicitud_invalida('La contraseña debe contener al menos 8 caracteres.')
 
         usuario.set_password(password_nuevo)
         usuario.debe_cambiar_password = False
