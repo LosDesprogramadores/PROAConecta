@@ -21,6 +21,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
 from core.exceptions import ErrorSerializer
+from core.pagination import PaginacionOpcional
 from core.exportaciones import exportar_tabla, formato_solicitado
 from core.permissions import EsAdministrador
 from core.throttling import LimiteDeIntentosMixin
@@ -71,6 +72,7 @@ def _activo(persona):
 class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.filter(fecha_baja__isnull=True)
     serializer_class = PersonaSerializer
+    pagination_class = PaginacionOpcional
 
     def get_permissions(self):
         # Lectura para cualquier autenticado; altas, cambios, bajas y restauración solo administrador
@@ -211,6 +213,13 @@ class PersonaRolView(APIView):
             .select_related('rol')
             .order_by('apellido', 'nombre')
         )
+        # Con ?page responde el sobre paginado; sin él, el arreglo de siempre
+        paginador = PaginacionOpcional()
+        pagina = paginador.paginate_queryset(personas, request, view=self)
+        if pagina is not None:
+            serializer = PersonaSerializer(pagina, many=True, context={'request': request})
+            return paginador.get_paginated_response(serializer.data)
+
         serializer = PersonaSerializer(personas, many=True, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)

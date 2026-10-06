@@ -4,6 +4,7 @@ from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, viewsets, filters, status
 from core.exceptions import ErrorSerializer
+from core.pagination import PaginacionOpcional
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -212,6 +213,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 class ActividadViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ActividadSerializer
+    pagination_class = PaginacionOpcional
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titulo', 'descripcion']

@@ -19,6 +19,7 @@ from .serializer import (
 )
 from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from core.exceptions import ErrorSerializer
+from core.pagination import PaginacionOpcional
 from core.exportaciones import exportar_tabla, formato_solicitado
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -74,6 +75,7 @@ def _alcance(user):
 class MateriaViewSet(viewsets.ModelViewSet):
     queryset = materias_con_resumen()
     serializer_class = MateriaSerializer
+    pagination_class = PaginacionOpcional
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['titulo', 'anio', 'curso']
     # Las altas, ediciones, bajas y asignaciones son solo del administrador; la lectura se acota en get_queryset
@@ -254,6 +256,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.select_related('materia__profesor', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer
+    pagination_class = PaginacionOpcional
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['fecha_inscripcion', 'estado']
     acciones_de_administrador = {
