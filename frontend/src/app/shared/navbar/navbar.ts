@@ -31,8 +31,6 @@ export class Navbar implements OnInit {
   private mensajesEstado = inject(MensajesEstadoService);
 
   currentUser = this.authService.currentUser;
-  // En escritorio el estudiante navega la materia desde sidebar-materias; en móvil el sidebar no existe.
-  esEstudiante = computed(() => this.currentUser()?.rolId === UserRole.ESTUDIANTE);
 
   isMobileMenuOpen = signal<boolean>(false);
   isProfileMenuOpen = signal<boolean>(false);

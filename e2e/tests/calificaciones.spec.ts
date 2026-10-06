@@ -1,4 +1,4 @@
-import { ESTADO_SESION, expect, irASeccion, test } from '../fixtures';
+import { ESTADO_SESION, expect, test } from '../fixtures';
 
 test.describe('student grades', () => {
   test.use({ storageState: ESTADO_SESION('estudiante') });
@@ -7,7 +7,7 @@ test.describe('student grades', () => {
     await page.goto('/dashboard/estudiante/welcome');
     await page.getByRole('link', { name: /Matemática/ }).click();
     await expect(page).toHaveURL(/\/view-materia\/\d+\//);
-    await irASeccion(page, 'estudiante/calificaciones');
+    await page.getByRole('link', { name: 'Calificaciones' }).click();
 
     // Seed data: Emma got 7.00 in the first activity of Matemática, the second one is not graded yet
     const calificada = page.getByRole('row', { name: /Números y operaciones/ });
