@@ -45,9 +45,12 @@ fi
 # y la app cierra enseguida con 4401. Un origen ajeno debe rechazarse con 403.
 echo "Verificando el WebSocket..."
 ws_codigo() {
+  # Clave de handshake aleatoria (16 bytes en base64), como la genera un cliente real
+  local clave
+  clave=$(head -c 16 /dev/urandom | base64)
   curl -s -o /dev/null -w '%{http_code}' --max-time 3 --http1.1 \
     -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
-    -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+    -H 'Sec-WebSocket-Version: 13' -H "Sec-WebSocket-Key: ${clave}" \
     -H "Origin: $1" "http://localhost:4200/ws/notificaciones/" || true
 }
 
