@@ -154,44 +154,9 @@ export class Navbar implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.cargarHistorialNotificaciones();
 
-   this.socketSub$ = this.notiSocketService.escucharNotificaciones().subscribe({
+    // The server routes events by user and subject group, so no role filtering is needed here.
+    this.socketSub$ = this.notiSocketService.escucharNotificaciones().subscribe({
       next: (nuevaNoti: INotificacion) => {
-        const user = this.currentUser();
-        if (!user) return;
-
-        const rolUsuario = user.rolId;
-
-        console.log('--- LLEGÓ NOTIFICACIÓN ---');
-        console.log('Título:', nuevaNoti.titulo);
-        console.log('Alcance crudo desde BD/WS:', JSON.stringify(nuevaNoti.alcance));
-        console.log('Mi rol actual:', rolUsuario);
-        console.log('Mi rol en el websocket:', nuevaNoti.alcance);
-        const alcance = (nuevaNoti.alcance || '').toLowerCase().trim();
-        let esParaMi = false;
-
-         if (rolUsuario === UserRole.ADMIN) {
-          esParaMi = true;
-        } 
-       else if (nuevaNoti.alcance === 'TODOS' || nuevaNoti.alcance === 'AMBOS') {
-          esParaMi = true;
-        } 
-        else if (rolUsuario === UserRole.ESTUDIANTE && nuevaNoti.alcance === 'ESTUDIANTE') {
-           if (!nuevaNoti.materia_id) {
-            esParaMi = true; 
-          } else {
-        
-            esParaMi = true; 
-          }
-        } 
-     
-         else if (rolUsuario === UserRole.DOCENTE && nuevaNoti.alcance === 'PROFESOR') {
-          esParaMi = true;
-        }
-
-        if (!esParaMi) {
-          return;
-        }
-
         this.notifications.update(lista => [nuevaNoti, ...lista]);
         this.unreadCount.update(count => count + 1);
         this.toastService.info(`🔔 ${nuevaNoti.titulo}`);
@@ -242,7 +207,7 @@ export class Navbar implements OnInit, OnDestroy {
       ];
     }
 
-    return [
+    const links: NavLink[] = [
       {
         label: 'Anuncios',
         path: `/view-materia/${materiaId}/anuncios`,
@@ -260,6 +225,12 @@ export class Navbar implements OnInit, OnDestroy {
         path: `/view-materia/${materiaId}/calificaciones`,
       },
     ];
+
+    if (user?.rolId === UserRole.DOCENTE) {
+      links.push({ label: 'Alumnos', path: `/view-materia/${materiaId}/alumnos` });
+    }
+
+    return links;
   }
 
   toggleMobileMenu(): void {

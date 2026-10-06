@@ -125,7 +125,6 @@
                 <!-- Header de materia -->
                 <div class="mb-4">
                   <h3 class="text-lg font-semibold text-slate-800">{{ materia.titulo }}</h3>
-                  <p class="text-sm text-slate-500">{{ materia.estudiantes }} estudiantes inscritos</p>
                 </div>
 
                 <!-- Estado Badge -->
@@ -137,6 +136,12 @@
 
                 <!-- Info -->
                 <p class="text-sm text-slate-600">{{ materia.proximaEntrega }}</p>
+              </a>
+
+              <!-- Enlace a la lista de alumnos (fuera del enlace de la tarjeta para no anidar <a>) -->
+              <a [routerLink]="['/view-materia', materia.id, 'alumnos']"
+                 class="mt-3 inline-block text-sm text-sky-600 hover:underline">
+                {{ materia.estudiantes }} estudiantes inscritos · Ver alumnos
               </a>
             </div>
           }
