@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-cambiar-password',
@@ -14,6 +15,7 @@ export class CambiarPassword {
   private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
 
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
@@ -69,7 +71,7 @@ export class CambiarPassword {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.error?.error || 'Ocurrió un error al actualizar la contraseña.');
+        this.errorMessage.set(this.toastService.readable_message_extraction(err));
       },
     });
   }
