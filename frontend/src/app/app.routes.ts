@@ -11,6 +11,7 @@ import { Portada } from './views/materias-components/portada/portada';
 import { PortadaProfesor } from './views/materias-components/portada-profesor/portada-profesor';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role-guard';
+import { planillaCalificacionesGuard, rolCoincide } from './guards/calificaciones-guard';
 import { UserRole } from './core/auth/auth.model';
 import { NotFound } from './views/not-found/not-found';
 import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
@@ -134,13 +135,16 @@ export const routes: Routes = [
       { path: 'actividades/nueva', canActivate: [soloProfesor], component: ActividadForm },
       { path: 'actividades/:id/editar', canActivate: [soloProfesor], component: ActividadForm },
       { path: 'actividades/:id/entregas', canActivate: [soloProfesor], component: ActividadEntregasComponent },
-      { path: 'calificaciones-profesor', canActivate: [soloProfesor], component: CalificacionesProfesor },
+      { path: 'calificaciones-profesor', canActivate: [planillaCalificacionesGuard], component: CalificacionesProfesor },
       {
         path: 'alumnos',
         canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ADMIN])],
         loadComponent: () => import('./views/materias-components/alumnos/alumnos').then((m) => m.Alumnos),
       },
-          { path: 'calificaciones', component: CalificacionesProfesor },
+      // One URL, one component per role: the student sees their own grades, the
+      // professor and the admin see the course grade sheet.
+      { path: 'calificaciones', canMatch: [rolCoincide([UserRole.ESTUDIANTE])], component: Calificaciones },
+      { path: 'calificaciones', canMatch: [rolCoincide([UserRole.DOCENTE, UserRole.ADMIN])], component: CalificacionesProfesor },
 
       {
         path: '',
