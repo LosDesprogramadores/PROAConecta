@@ -4,10 +4,11 @@ import { Anuncio } from '../../../model/anuncio.model';
 import { AnunciosService } from '../../../services/anuncios.service';
 import { SidebarMaterias } from '../../../shared/sidebar-materias/sidebar-materias';
 
+import { Modal } from '../../../shared/modal/modal';
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [CommonModule, SidebarMaterias],
+  imports: [Modal, CommonModule, SidebarMaterias],
   templateUrl: './anuncios.html',
   styleUrls: ['./anuncios.css']
 })

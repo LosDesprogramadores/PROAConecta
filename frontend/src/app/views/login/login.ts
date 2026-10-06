@@ -4,9 +4,10 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
+import { Modal } from '../../shared/modal/modal';
 @Component({
   selector: 'app-login',
-  imports: [RouterModule, ReactiveFormsModule],
+  imports: [Modal, RouterModule, ReactiveFormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

@@ -8,12 +8,13 @@ import { Actividad } from '../../../../model/actividad-model';
 import { ToastService } from '../../../../services/toast.service';
 import { Toast } from '../../../../shared/toast/toast'; 
 
+import { Modal } from '../../../../shared/modal/modal';
 export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
 
 @Component({
   selector: 'app-actividad-estudiante',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, Toast],
+  imports: [Modal, CommonModule, RouterModule, FormsModule, Toast],
   templateUrl: './actividad-estudiante.html',
   styleUrl: './actividad-estudiante.css',
 })

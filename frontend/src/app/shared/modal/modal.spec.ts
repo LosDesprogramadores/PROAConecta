@@ -21,6 +21,11 @@ import { Modal } from './modal';
         <div modal-pie><button id="pie" type="button">Pie</button></div>
       </app-modal>
     }
+    @if (propia()) {
+      <app-modal titulo="Perfil" [sinCabecera]="true" (cerrar)="propia.set(false)">
+        <button id="cierre-propio" type="button" (click)="propia.set(false)">Cerrar perfil</button>
+      </app-modal>
+    }
     @if (segundo()) {
       <app-modal titulo="Otro" (cerrar)="segundo.set(false)"><p>otro</p></app-modal>
     }
@@ -29,6 +34,7 @@ import { Modal } from './modal';
 class Host {
   abierto = signal(false);
   segundo = signal(false);
+  propia = signal(false);
   clickFuera = signal(true);
   cierres = 0;
 }
@@ -162,5 +168,16 @@ describe('Modal', () => {
     fixture.detectChanges();
     const ids = dialogos().map((d) => d.getAttribute('aria-labelledby'));
     expect(new Set(ids).size).toBe(2);
+  });
+
+  it('can hide the default header and label the dialog with aria-label instead', () => {
+    host.propia.set(true);
+    fixture.detectChanges();
+    const dialogo = dialogos()[0];
+    expect(dialogo.getAttribute('aria-label')).toBe('Perfil');
+    expect(dialogo.hasAttribute('aria-labelledby')).toBe(false);
+    expect(dialogo.querySelector('h2')).toBeNull();
+    expect(dialogo.querySelector('button[aria-label="Cerrar"]')).toBeNull();
+    expect(dialogo.querySelector('#cierre-propio')).not.toBeNull();
   });
 });

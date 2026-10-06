@@ -39,6 +39,12 @@ export class Modal implements OnDestroy {
   /** Set to false to let the body manage its own padding (full-bleed tables). */
   readonly relleno = input(true);
   readonly cerrarAlClickFuera = input(true);
+  /**
+   * Hides the default header (title + close button) so the body can bring its own,
+   * e.g. a banner. `titulo` then becomes the dialog's `aria-label`; the body must
+   * include its own close button.
+   */
+  readonly sinCabecera = input(false);
   readonly cerrar = output<void>();
 
   protected readonly idTitulo = `modal-titulo-${++Modal.siguienteId}`;

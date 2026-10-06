@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { NotificacionService } from '../../services/notificaciones.service';
 
+import { Modal } from '../modal/modal';
 interface NavLink {
   label: string;
   path: string;
@@ -30,7 +31,7 @@ interface NotificationItem {
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterModule, Toast, CommonModule],
+  imports: [Modal, RouterModule, Toast, CommonModule],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
