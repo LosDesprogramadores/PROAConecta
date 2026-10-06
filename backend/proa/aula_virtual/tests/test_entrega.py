@@ -158,3 +158,50 @@ def test_profesor_borra_una_entrega_sin_corregir_de_su_materia(api_as, profesor,
     respuesta = api_as(profesor).delete(detalle(entrega))
 
     assert respuesta.status_code == 204
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('metodo', ['put', 'patch'])
+@pytest.mark.parametrize('quien', ['profesor', 'admin'])
+def test_profesor_y_administrador_no_pueden_editar_el_contenido_de_una_entrega(
+    api_as, request, quien, metodo, entrega, actividad
+):
+    # Decisión D-1: el profesor solo califica y el administrador solo da de baja o restaura
+    actor = request.getfixturevalue(quien)
+    cuerpo = {'contenido_texto': 'Texto reescrito por otro'}
+    if metodo == 'put':
+        cuerpo['actividad'] = actividad.pk
+
+    respuesta = getattr(api_as(actor), metodo)(detalle(entrega), cuerpo, format='json')
+
+    assert respuesta.status_code == 403
+    entrega.refresh_from_db()
+    assert entrega.contenido_texto == 'Primera versión'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('metodo', ['put', 'patch'])
+@pytest.mark.parametrize('quien', ['profesor', 'admin'])
+def test_profesor_y_administrador_reciben_403_aunque_el_cuerpo_sea_invalido(api_as, request, quien, metodo, entrega):
+    # La denegación va antes que la validación: no se filtra qué campos acepta la entrega
+    actor = request.getfixturevalue(quien)
+
+    respuesta = getattr(api_as(actor), metodo)(detalle(entrega), {'actividad': 'no-es-un-id', 'enlace': 'x'}, format='json')
+
+    assert respuesta.status_code == 403
+    entrega.refresh_from_db()
+    assert entrega.contenido_texto == 'Primera versión'
+def test_administrador_no_puede_crear_una_entrega(api_as, admin, actividad):
+    # Solo un estudiante inscripto entrega (V-26): la entrega no queda a nombre del administrador
+    respuesta = api_as(admin).post(URL, {'actividad': actividad.pk, 'contenido_texto': 'Entrega del admin'}, format='json')
+
+    assert respuesta.status_code == 403
+    assert not Entrega.objects.filter(actividad=actividad).exists()
+
+
+@pytest.mark.django_db
+def test_profesor_titular_no_puede_crear_una_entrega(api_as, profesor, actividad):
+    respuesta = api_as(profesor).post(URL, {'actividad': actividad.pk, 'contenido_texto': 'Entrega del profesor'}, format='json')
+
+    assert respuesta.status_code == 403
+    assert not Entrega.objects.filter(actividad=actividad).exists()

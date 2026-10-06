@@ -7,6 +7,9 @@ from .base import *  # noqa: F401,F403
 
 DEBUG = True
 
+# Swagger, redoc y el esquema OpenAPI quedan abiertos en desarrollo (los usa el equipo y la cátedra)
+DOCS_API_PUBLICAS = True
+
 # Sin DJANGO_SECRET_KEY usa la clave de desarrollo (nunca se acepta fuera de este módulo)
 SECRET_KEY = clave_secreta(DEBUG)
 

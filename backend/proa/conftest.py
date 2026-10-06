@@ -81,6 +81,23 @@ def mongo_mock():
 
 
 @pytest.fixture(autouse=True)
+def mongo_limpio():
+    # Ningún test hereda ni deja documentos en las colecciones de MongoDB (mongomock vive todo el proceso)
+    from notificacion import mongo
+
+    def vaciar():
+        # Sin cliente creado no hay nada que limpiar (y test_mongo.py exige que no se cree uno de más)
+        if mongo._db is None:
+            return
+        for nombre in (mongo.COLECCION_NOTIFICACION, mongo.COLECCION_MENSAJE, mongo.COLECCION_BITACORA):
+            mongo.obtener_coleccion(nombre).delete_many({})
+
+    vaciar()
+    yield
+    vaciar()
+
+
+@pytest.fixture(autouse=True)
 def media_temporal(settings, tmp_path):
     # Los archivos subidos en los tests nunca llegan a backend/proa/media
     settings.MEDIA_ROOT = tmp_path / 'media'
