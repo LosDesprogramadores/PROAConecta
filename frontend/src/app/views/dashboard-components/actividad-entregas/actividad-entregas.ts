@@ -4,17 +4,21 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ActividadesService, Entrega } from '../../../services/actividades.service'; // ajustá la ruta
+import { ToastService } from '../../../services/toast.service';
+import { Modal } from '../../../shared/modal/modal';
+import { NOTA_MAXIMA, NOTA_MINIMA, NOTA_PASO, validarNota } from '../../../shared/utils/notas';
 
 @Component({
   selector: 'app-actividad-entregas',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, Modal],
   templateUrl: './actividad-entregas.html',
 })
 export class ActividadEntregasComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private actividadesService = inject(ActividadesService);
+  private toastService = inject(ToastService);
 
   // Se calcula una sola vez: el componente se recrea en cada navegación.
   protected readonly enMateria = estaEnVistaMateria(this.router.url);
@@ -25,6 +29,10 @@ export class ActividadEntregasComponent implements OnInit {
   entregas = signal<Entrega[]>([]);
   cargando = signal(false);
   errorCarga = signal('');
+
+  protected readonly notaMinima = NOTA_MINIMA;
+  protected readonly notaMaxima = NOTA_MAXIMA;
+  protected readonly notaPaso = NOTA_PASO;
 
   // modal de calificación
   entregaSeleccionada = signal<Entrega | null>(null);
@@ -85,8 +93,9 @@ export class ActividadEntregasComponent implements OnInit {
     const nota = this.nota();
     if (!entrega) return;
 
-    if (nota === null || Number.isNaN(nota) || nota < 0 || nota > 10) {
-      this.errorModal.set('La nota debe estar entre 0 y 10.');
+    const errorNota = validarNota(nota);
+    if (errorNota || nota === null) {
+      this.errorModal.set(errorNota ?? 'Ingrese una nota.');
       return;
     }
 
@@ -107,8 +116,8 @@ export class ActividadEntregasComponent implements OnInit {
           const id = this.actividadId();
           if (id) this.cargarEntregas(id);
         },
-        error: () => {
-          this.errorModal.set('No se pudo guardar la calificación.');
+        error: (err) => {
+          this.errorModal.set(this.toastService.readable_message_extraction(err));
           this.guardando.set(false);
         },
       });

@@ -226,11 +226,8 @@
 
     <!-- MODAL FLOTANTE: CREACIÓN / EDICIÓN DE UNIDAD -->
     @if (mostrarFormularioUnidad()) {
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl max-w-lg w-full shadow-2xl space-y-4">
-            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                {{ unidadEditandoId ? '✏️ Editar Unidad' : '➕ Crear Nueva Unidad' }}
-            </h2>
+    <app-modal [titulo]="unidadEditandoId ? '✏️ Editar Unidad' : '➕ Crear Nueva Unidad'" ancho="md" (cerrar)="cancelarFormularioUnidad()">
+            
 
             <form (ngSubmit)="guardarUnidad()" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -279,17 +276,14 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
+        
+</app-modal>
     }
 
     <!-- MODAL FLOTANTE PARA CREAR / EDITAR RECURSO -->
     @if (mostrarFormularioRecurso()) {
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl max-w-md w-full shadow-2xl space-y-4">
-            <h3 class="text-lg font-bold text-slate-800">
-                {{ recursoEditandoId ? '✏️ Editar Recurso' : '📚 Agregar Recurso' }}
-            </h3>
+    <app-modal [titulo]="recursoEditandoId ? '✏️ Editar Recurso' : '📚 Agregar Recurso'" ancho="sm" (cerrar)="cancelarFormularioRecurso()">
+            
 
             <form (ngSubmit)="guardarRecurso()" class="space-y-4">
                 <div>
@@ -342,8 +336,8 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
+        
+</app-modal>
     }
 
 </div>

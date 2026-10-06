@@ -222,11 +222,8 @@
 
   <!-- MODAL: AGREGAR / EDITAR -->
   @if (mostrarFormulario()) {
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="bg-white p-6 rounded-xl max-w-md w-full shadow-2xl space-y-4">
-        <h3 class="text-lg font-bold text-slate-800">
-          {{ materialEditandoId ? '✏️ Editar' : '➕ Agregar' }}
-        </h3>
+    <app-modal [titulo]="materialEditandoId ? '✏️ Editar' : '➕ Agregar'" ancho="sm" (cerrar)="cancelarFormulario()">
+        
 
         <form (ngSubmit)="guardarMaterial()" class="space-y-4">
           <div>
@@ -285,8 +282,8 @@
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      
+</app-modal>
   }
 
 </section>

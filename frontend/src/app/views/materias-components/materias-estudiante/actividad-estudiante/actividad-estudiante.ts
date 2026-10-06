@@ -8,12 +8,13 @@ import { Actividad } from '../../../../model/actividad-model';
 import { ToastService } from '../../../../services/toast.service';
 import { Toast } from '../../../../shared/toast/toast'; 
 
+import { Modal } from '../../../../shared/modal/modal';
 export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
 
 @Component({
   selector: 'app-actividad-estudiante',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, Toast],
+  imports: [Modal, CommonModule, RouterModule, FormsModule, Toast],
   templateUrl: './actividad-estudiante.html',
   styleUrl: './actividad-estudiante.css',
 })
@@ -278,13 +279,7 @@ guardarEntrega(): void {
       console.error('Detalle del error del Backend:', err.error);
       this.enviandoEntrega.set(false);
 
-      let msjError = 'Ocurrió un error al enviar tu entrega. Revisa los datos e intenta nuevamente.';
-      if (err.error && typeof err.error === 'object') {
-        const detalles = Object.entries(err.error)
-          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-          .join(' | ');
-        msjError = `Error de validación: ${detalles}`;
-      }
+      const msjError = this.toastService.readable_message_extraction(err);
 
       this.errorFormulario.set(msjError);
       this.toastService.error('Error al enviar', msjError);

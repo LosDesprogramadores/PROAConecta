@@ -4,9 +4,11 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
+import { Modal } from '../../shared/modal/modal';
+import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-login',
-  imports: [RouterModule, ReactiveFormsModule],
+  imports: [Modal, RouterModule, ReactiveFormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -15,6 +17,7 @@ export class Login {
   private authService = inject(AuthService);
   private formbuilder = inject(FormBuilder);
   private router = inject(Router);
+  private toastService = inject(ToastService);
  
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
@@ -61,7 +64,7 @@ export class Login {
       },
       error: (err) => {
         this.isRecuperando.set(false);
-        this.errorRecuperacion.set(err.error?.error || 'No se pudo procesar la solicitud.');
+        this.errorRecuperacion.set(this.toastService.readable_message_extraction(err));
       },
     });
   }
@@ -111,7 +114,7 @@ export class Login {
   },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set('Credenciales incorrectas o error en el servidor');
+        this.errorMessage.set(this.toastService.readable_message_extraction(err));
         console.error('Error en el login:', err);
       }
     });

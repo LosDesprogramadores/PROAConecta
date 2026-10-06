@@ -111,13 +111,8 @@
   <!-- ===================================== -->
 
   @if (mostrarFormulario()) {
-    <div
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-    >
-      <div class="bg-white p-6 rounded-xl max-w-md w-full shadow-2xl space-y-4">
-        <h3 class="text-lg font-bold text-slate-800">
-          {{ recursoEditandoId !== null ? '✏️ Editar Recurso' : '📚 Agregar Recurso' }}
-        </h3>
+    <app-modal [titulo]="recursoEditandoId !== null ? '✏️ Editar Recurso' : '📚 Agregar Recurso'" ancho="sm" (cerrar)="cancelarFormularioRecurso()">
+        
 
         <form (ngSubmit)="guardarRecurso()" class="space-y-4">
           <!-- TIPO -->
@@ -226,7 +221,7 @@
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      
+</app-modal>
   }
 </div>

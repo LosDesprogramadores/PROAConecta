@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-restablecer-password',
@@ -14,6 +15,7 @@ export class RestablecerPassword implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   uid = signal<string>('');
   token = signal<string>('');
@@ -72,7 +74,7 @@ export class RestablecerPassword implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.error?.error || 'El enlace de recuperación ha expirado o ya fue utilizado.');
+        this.errorMessage.set(this.toastService.readable_message_extraction(err));
       },
     });
   }

@@ -99,18 +99,7 @@
                 </form>
 
                 @if (showModalRecuperar()) {
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-7 space-y-5">
-
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-xl font-bold text-slate-900">Recuperar contraseña</h2>
-                            <button type="button" (click)="cerrarModalRecuperar()" class="text-slate-400 hover:text-slate-600 transition p-1">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            </button>
-                        </div>
-
+                    <app-modal titulo="Recuperar contraseña" ancho="sm" (cerrar)="cerrarModalRecuperar()">
                         <p class="text-sm text-slate-600">
                             Ingresá el correo electrónico asociado a tu cuenta institucional y te enviaremos un enlace de recuperación.
                         </p>
@@ -168,8 +157,7 @@
                             Cerrar
                             </button>
                         }
-                        </div>
-                    </div>
+                    </app-modal>
                     }
 
 

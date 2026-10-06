@@ -99,8 +99,13 @@ export class CalificacionesProfesor implements OnInit {
           this.cargando.set(false);
         },
 
-        error: () => {
-          this.error.set('No se pudieron cargar las calificaciones.');
+        error: (err) => {
+          const sinAcceso = err?.status === 403 || err?.status === 404;
+          this.error.set(
+            sinAcceso
+              ? 'No tiene acceso a las calificaciones de esta materia.'
+              : 'No se pudieron cargar las calificaciones.',
+          );
           this.cargando.set(false);
         },
       });

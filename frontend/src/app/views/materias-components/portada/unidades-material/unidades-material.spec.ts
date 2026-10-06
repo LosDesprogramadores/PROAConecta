@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
 
 import { UnidadesMaterial } from './unidades-material';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -12,26 +13,31 @@ import { MaterialesService } from '../../../../services/materiales.service';
 describe('UnidadesMaterial', () => {
   let component: UnidadesMaterial;
   let fixture: ComponentFixture<UnidadesMaterial>;
-  let unidadesService: { obtenerUnidadesPorMateria: any; crearUnidad: any; actualizarUnidad: any };
+  let unidadesService: { obtenerUnidadesPorMateria: any; crearUnidad: any; actualizarUnidad: any; eliminarUnidad: any };
   let materialesService: {
     crearMaterial: any;
+    eliminarMaterial: any;
     actualizarMaterial: any;
     obtenerMaterialesPorUnidad: any;
   };
   let toast: { success: any; error: any };
+  let confirmDialog: { confirmar: any };
 
   beforeEach(async () => {
     unidadesService = {
       obtenerUnidadesPorMateria: vi.fn().mockReturnValue(of([])),
       crearUnidad: vi.fn(),
       actualizarUnidad: vi.fn(),
+      eliminarUnidad: vi.fn().mockReturnValue(of({})),
     };
     materialesService = {
       crearMaterial: vi.fn(),
+      eliminarMaterial: vi.fn().mockReturnValue(of({})),
       actualizarMaterial: vi.fn(),
       obtenerMaterialesPorUnidad: vi.fn().mockReturnValue(of([])),
     };
     toast = { success: vi.fn(), error: vi.fn() };
+    confirmDialog = { confirmar: vi.fn().mockReturnValue(of(true)) };
 
     await TestBed.configureTestingModule({
       imports: [UnidadesMaterial],
@@ -39,6 +45,7 @@ describe('UnidadesMaterial', () => {
         { provide: UnidadesService, useValue: unidadesService },
         { provide: MaterialesService, useValue: materialesService },
         { provide: ToastService, useValue: toast },
+        { provide: ConfirmDialogService, useValue: confirmDialog },
         { provide: AuthService, useValue: { currentUser: () => ({ rolNombre: 'Profesor' }) } },
         {
           provide: ActivatedRoute,
@@ -116,5 +123,52 @@ describe('UnidadesMaterial', () => {
 
     pending.error(new Error('boom'));
     expect(component.guardando()).toBe(false);
+  });
+
+  it('opens the unit form in an accessible modal labelled by its title', () => {
+    component.abrirFormularioUnidad();
+    fixture.detectChanges();
+
+    const dialogo = fixture.nativeElement.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement;
+    expect(dialogo).not.toBeNull();
+    const titulo = fixture.nativeElement.querySelector(`#${dialogo.getAttribute('aria-labelledby')}`);
+    expect(titulo.textContent).toContain('Crear Nueva Unidad');
+  });
+
+  it('closes the unit form with Escape and without saving', () => {
+    component.abrirFormularioUnidad();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    expect(component.mostrarFormularioUnidad()).toBe(false);
+    expect(unidadesService.crearUnidad).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('asks with the app dialog before deleting a unit, using the same text', () => {
+    component.eliminarUnidad('u1', new Event('click'));
+    expect(confirmDialog.confirmar).toHaveBeenCalledWith('¿Estás seguro de eliminar esta unidad y sus contenidos?');
+    expect(unidadesService.eliminarUnidad).toHaveBeenCalledWith('u1');
+  });
+
+  it('does not delete the unit when the teacher cancels', () => {
+    confirmDialog.confirmar.mockReturnValue(of(false));
+    component.eliminarUnidad('u1', new Event('click'));
+    expect(unidadesService.eliminarUnidad).not.toHaveBeenCalled();
+  });
+
+  it('asks before deleting a material and cancels without deleting', () => {
+    confirmDialog.confirmar.mockReturnValue(of(false));
+    component.eliminarMaterial(3, { contenidos: [] } as any);
+    expect(confirmDialog.confirmar).toHaveBeenCalledWith('¿Estás seguro de que deseas eliminar este material?');
+    expect(materialesService.eliminarMaterial).not.toHaveBeenCalled();
+
+    confirmDialog.confirmar.mockReturnValue(of(true));
+    component.eliminarMaterial(3, { contenidos: [] } as any);
+    expect(materialesService.eliminarMaterial).toHaveBeenCalledWith(3);
   });
 });

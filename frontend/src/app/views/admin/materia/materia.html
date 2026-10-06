@@ -119,54 +119,49 @@
 
   <!-- 3. Modal: Crear / Editar Materia -->
   @if (isModalOpen()) {
-  <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white border border-slate-200 w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-6">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-        <h2 class="text-lg font-bold text-slate-800">
-          {{ isEditing() ? 'Editar Materia' : 'Registrar Nueva Materia' }}
-        </h2>
-        <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">✕</button>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+  <app-modal [titulo]="isEditing() ? 'Editar Materia' : 'Registrar Nueva Materia'" (cerrar)="closeModal()">
+    <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Título de la materia *</label>
-          <input formControlName="titulo" type="text" placeholder="Ej: Desarrollo de Sistemas"
+          <label for="mat-titulo" class="block text-xs font-semibold text-slate-600 mb-1.5">Título de la materia *</label>
+          <input id="mat-titulo" formControlName="titulo" aria-required="true" [attr.aria-invalid]="errorCampo('titulo') ? 'true' : null" [attr.aria-describedby]="errorCampo('titulo') ? 'mat-titulo-error' : null" type="text" placeholder="Ej: Desarrollo de Sistemas"
             class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('titulo'); as msg) {<p id="mat-titulo-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Curso *</label>
-            <input formControlName="curso" type="text" placeholder="Ej: 1ro A"
+            <label for="mat-curso" class="block text-xs font-semibold text-slate-600 mb-1.5">Curso *</label>
+            <input id="mat-curso" formControlName="curso" aria-required="true" [attr.aria-invalid]="errorCampo('curso') ? 'true' : null" [attr.aria-describedby]="errorCampo('curso') ? 'mat-curso-error' : null" type="text" placeholder="Ej: 1ro A"
               class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('curso'); as msg) {<p id="mat-curso-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Año Lectivo *</label>
-            <input formControlName="anio" type="number" placeholder="2026"
+            <label for="mat-anio" class="block text-xs font-semibold text-slate-600 mb-1.5">Año Lectivo *</label>
+            <input id="mat-anio" formControlName="anio" aria-required="true" [attr.aria-invalid]="errorCampo('anio') ? 'true' : null" [attr.aria-describedby]="errorCampo('anio') ? 'mat-anio-error' : null" type="number" placeholder="2026"
               class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('anio'); as msg) {<p id="mat-anio-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Descripción</label>
-          <textarea formControlName="descripcion" rows="2" placeholder="Breve descripción de la materia..."
+          <label for="mat-descripcion" class="block text-xs font-semibold text-slate-600 mb-1.5">Descripción</label>
+          <textarea id="mat-descripcion" formControlName="descripcion" [attr.aria-invalid]="errorCampo('descripcion') ? 'true' : null" [attr.aria-describedby]="errorCampo('descripcion') ? 'mat-descripcion-error' : null" rows="2" placeholder="Breve descripción de la materia..."
             class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition resize-none"></textarea>
+@if (errorCampo('descripcion'); as msg) {<p id="mat-descripcion-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Criterios de Evaluación</label>
-          <textarea formControlName="criterios_evaluacion" rows="2" placeholder="Pautas de aprobación, entregas, etc."
+          <label for="mat-criterios_evaluacion" class="block text-xs font-semibold text-slate-600 mb-1.5">Criterios de Evaluación</label>
+          <textarea id="mat-criterios_evaluacion" formControlName="criterios_evaluacion" [attr.aria-invalid]="errorCampo('criterios_evaluacion') ? 'true' : null" [attr.aria-describedby]="errorCampo('criterios_evaluacion') ? 'mat-criterios_evaluacion-error' : null" rows="2" placeholder="Pautas de aprobación, entregas, etc."
             class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition resize-none"></textarea>
+@if (errorCampo('criterios_evaluacion'); as msg) {<p id="mat-criterios_evaluacion-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Webhook de Discord</label>
-          <input formControlName="discord_webhook_url" type="url" placeholder="https://discord.com/api/webhooks/..."
+          <label for="mat-discord_webhook_url" class="block text-xs font-semibold text-slate-600 mb-1.5">Webhook de Discord</label>
+          <input id="mat-discord_webhook_url" formControlName="discord_webhook_url" [attr.aria-invalid]="errorCampo('discord_webhook_url') ? 'true' : null" [attr.aria-describedby]="errorCampo('discord_webhook_url') ? 'mat-discord_webhook_url-error' : null" type="url" placeholder="https://discord.com/api/webhooks/..."
             class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
-          @if (form.get('discord_webhook_url')?.invalid && form.get('discord_webhook_url')?.touched) {
-          <p class="text-xs text-rose-600 mt-1">Ingresá una URL válida de webhook de Discord.</p>
-          }
+@if (errorCampo('discord_webhook_url'); as msg) {<p id="mat-discord_webhook_url-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
         </div>
 
         <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
@@ -180,8 +175,7 @@
           </button>
         </div>
       </form>
-    </div>
-  </div>
-  }
+  </app-modal>
+}
 
 </div>

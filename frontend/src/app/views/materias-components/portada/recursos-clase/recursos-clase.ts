@@ -7,10 +7,13 @@ import { ToastService } from '../../../../services/toast.service';
 import { MaterialesService } from '../../../../services/materiales.service';
 import { Material } from '../../../../model/unidad-material.model';
 
+import { Modal } from '../../../../shared/modal/modal';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
+import { filter } from 'rxjs';
 @Component({
   selector: 'app-recursos-clase',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [Modal, CommonModule, FormsModule],
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })
@@ -18,6 +21,8 @@ export class RecursosClaseComponent implements OnInit {
   @Input() materiaId: number | string | null = null;
 
   private materialesService = inject(MaterialesService);
+
+  private confirmDialog = inject(ConfirmDialogService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
 
@@ -270,14 +275,13 @@ export class RecursosClaseComponent implements OnInit {
     if (!material.id) {
       return;
     }
+    const materialId = material.id;
 
-    if (!confirm('¿Estás seguro de que deseas eliminar este recurso?')) {
-      return;
-    }
+    this.confirmDialog.confirmar('¿Estás seguro de que deseas eliminar este recurso?').pipe(filter(Boolean)).subscribe(() => {
 
-    this.materialesService.eliminarMaterial(material.id).subscribe({
+    this.materialesService.eliminarMaterial(materialId).subscribe({
       next: () => {
-        this.recursos.update((lista) => lista.filter((m) => m.id !== material.id));
+        this.recursos.update((lista) => lista.filter((m) => m.id !== materialId));
 
         this.toastService.success('Recurso eliminado');
       },
@@ -287,6 +291,7 @@ export class RecursosClaseComponent implements OnInit {
 
         this.toastService.error('Error al eliminar el recurso');
       },
+    });
     });
   }
 

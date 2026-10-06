@@ -6,10 +6,11 @@ import { map, catchError, of } from 'rxjs';
 import { Anuncio } from '../../../../model/anuncio.model';
 import { AnunciosService } from '../../../../services/anuncios.service';
 
+import { Modal } from '../../../../shared/modal/modal';
 @Component({
   selector: 'app-anuncios-resumen',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [Modal, CommonModule, RouterLink],
   templateUrl: './anuncios-resumen.html',
   styleUrl: './anuncios-resumen.css',
 })

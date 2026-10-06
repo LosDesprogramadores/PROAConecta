@@ -268,12 +268,9 @@
 </header>
 
 @if (isProfileModalOpen() && currentUser()?.persona) {
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
-  <div (click)="$event.stopPropagation()"
-    class="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 transition-all transform">
-
+<app-modal titulo="Perfil de usuario" ancho="sm" [relleno]="false" [sinCabecera]="true" (cerrar)="closeProfileModal()">
     <div class="h-24 bg-gradient-to-r from-sky-600 to-blue-800 relative">
-      <button type="button" (click)="closeProfileModal()"
+      <button type="button" (click)="closeProfileModal()" aria-label="Cerrar perfil"
         class="absolute top-3 right-3 p-1.5 rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors focus:outline-none">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -343,8 +340,7 @@
       </div>
     </div>
 
-  </div>
-</div>
+</app-modal>
 }
 
 <app-toast></app-toast>

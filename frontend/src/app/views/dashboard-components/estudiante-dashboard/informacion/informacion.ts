@@ -4,6 +4,7 @@ import { forkJoin } from 'rxjs';
 import { ActividadesService } from '../../../../services/actividades.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 
+import { Modal } from '../../../../shared/modal/modal';
 export interface MateriaPendienteResumen {
   materiaId: number | string;
   nombreMateria: string;
@@ -13,7 +14,7 @@ export interface MateriaPendienteResumen {
 @Component({
   selector: 'app-informacion',
   standalone: true,
-  imports: [],
+  imports: [Modal, ],
   templateUrl: './informacion.html',
   styleUrl: './informacion.css',
 })

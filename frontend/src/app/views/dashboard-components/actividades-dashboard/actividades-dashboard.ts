@@ -6,6 +6,8 @@ import { ActividadesService } from '../../../services/actividades.service';
 import { Actividad } from '../../../model/actividad-model';
 import { UserRole } from '../../../core/auth/auth.model';
 
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { filter } from 'rxjs';
 @Component({
   selector: 'app-actividades-dashboard',
   standalone: true,
@@ -15,6 +17,7 @@ import { UserRole } from '../../../core/auth/auth.model';
 })
 export class ActividadesDashboard implements OnInit {
   private authService = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
   private actividadesService = inject(ActividadesService);
   private router = inject(Router);
 
@@ -127,7 +130,7 @@ export class ActividadesDashboard implements OnInit {
   }
 
   eliminarActividad(actividad: Actividad): void {
-    if (confirm(`¿Estás seguro de que deseas eliminar la actividad "${actividad.titulo}"?`)) {
+    this.confirmDialog.confirmar(`¿Estás seguro de que deseas eliminar la actividad "${actividad.titulo}"?`).pipe(filter(Boolean)).subscribe(() => {
       this.actividadesService.eliminarActividad(actividad.id).subscribe({
         next: () => {
           this.actividades.update(acts => acts.filter(a => a.id !== actividad.id));
@@ -137,7 +140,7 @@ export class ActividadesDashboard implements OnInit {
           alert('No se pudo eliminar la actividad. Intenta nuevamente.');
         }
       });
-    }
+    });
   }
 
   irAMateria(materiaId: number): void {
