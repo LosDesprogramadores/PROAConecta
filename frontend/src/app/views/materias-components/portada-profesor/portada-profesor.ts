@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -31,6 +32,7 @@ export class PortadaProfesor implements OnInit {
   private materiaService = inject(MateriaService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private fb = inject(NonNullableFormBuilder);
 
   currentUser = this.authService.currentUser;
@@ -79,7 +81,7 @@ export class PortadaProfesor implements OnInit {
   }
 
   private cargarMateriaDesdeRuta(): void {
-    this.route.parent?.paramMap.subscribe((params) => {
+    this.route.parent?.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const idParam = params.get('id');
 
       if (!idParam) {

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NotificacionService } from '../../../services/notificaciones.service';
 import { Notificacion } from './notificacion';
@@ -68,5 +68,40 @@ describe('Notificacion (admin)', () => {
 
     component.guardarNotificacion();
     expect(servicio['actualizarNotificacion']).toHaveBeenCalledWith('n1', expect.objectContaining({ titulo: 'A' }));
+  });
+
+  describe('banner timer', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('hides the banner after 4 seconds', () => {
+      component.guardarNotificacion();
+      expect(component.mensajeError).not.toBe('');
+
+      vi.advanceTimersByTime(3999);
+      expect(component.mensajeError).not.toBe('');
+      vi.advanceTimersByTime(1);
+      expect(component.mensajeError).toBe('');
+    });
+
+    it('restarts the window when a new message is shown', () => {
+      component.guardarNotificacion();
+      vi.advanceTimersByTime(3000);
+      component.guardarNotificacion();
+
+      vi.advanceTimersByTime(3000);
+      expect(component.mensajeError).not.toBe('');
+      vi.advanceTimersByTime(1000);
+      expect(component.mensajeError).toBe('');
+    });
+
+    it('clears the pending timer when the view is destroyed', () => {
+      component.guardarNotificacion();
+      expect(vi.getTimerCount()).toBe(1);
+
+      fixture.destroy();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 });

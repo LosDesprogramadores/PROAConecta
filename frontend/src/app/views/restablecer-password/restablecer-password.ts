@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
@@ -11,6 +11,7 @@ import { ToastService } from '../../services/toast.service';
   styleUrl: './restablecer-password.css',
 })
 export class RestablecerPassword implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -70,7 +71,8 @@ export class RestablecerPassword implements OnInit {
       next: () => {
         this.isLoading.set(false);
         this.mensajeExito.set('¡Contraseña restablecida exitosamente! Redirigiendo a Inicio de Sesión...');
-        setTimeout(() => this.router.navigate(['/login']), 2500);
+        const redireccion = setTimeout(() => this.router.navigate(['/login']), 2500);
+        this.destroyRef.onDestroy(() => clearTimeout(redireccion));
       },
       error: (err) => {
         this.isLoading.set(false);

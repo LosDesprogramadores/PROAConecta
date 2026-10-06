@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ActividadesService, Entrega } from '../../../services/actividades.service';
+import { crearRutaFalsa } from '../../../testing/ruta-falsa';
 import { ActividadEntregasComponent } from './actividad-entregas';
 
 const entrega: Entrega = {
@@ -108,5 +109,27 @@ describe('ActividadEntregasComponent grading modal', () => {
     component.guardar();
     fixture.detectChanges();
     expect(dom().querySelector('#nota-error')?.textContent).toContain('entre 1.00 y 10.00');
+  });
+});
+
+describe('ActividadEntregasComponent subscription cleanup', () => {
+  it('stops listening to the parent route params once the view is destroyed', () => {
+    const ruta = crearRutaFalsa({ id: '1' });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ActividadEntregasComponent],
+      providers: [
+        { provide: ActividadesService, useValue: { getEntregas: vi.fn(() => of([])) } },
+        { provide: Router, useValue: { url: '/dashboard/actividades/1/entregas', navigate: vi.fn() } },
+        ruta.provider,
+      ],
+    });
+    const fixture = TestBed.createComponent(ActividadEntregasComponent);
+    fixture.detectChanges();
+    expect(ruta.observado()).toBe(true);
+
+    fixture.destroy();
+
+    expect(ruta.observado()).toBe(false);
   });
 });

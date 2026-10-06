@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +29,7 @@ export class Portada implements OnInit {
   private router = inject(Router);
   private materiaService = inject(MateriaService);
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   currentUser = this.authService.currentUser;
 
@@ -66,7 +68,7 @@ export class Portada implements OnInit {
   }
 
   private cargarMateriaDesdeRuta(): void {
-    this.route.parent?.paramMap.subscribe((params) => {
+    this.route.parent?.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const idParam = params.get('id');
 
       if (!idParam) {

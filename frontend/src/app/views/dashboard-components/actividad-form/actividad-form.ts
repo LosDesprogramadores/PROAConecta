@@ -1,6 +1,7 @@
 import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, computed, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActividadesService } from '../../../services/actividades.service';
@@ -17,6 +18,7 @@ import { IMateria } from '../../../model/materia.model';
 })
 export class ActividadForm implements OnInit {
   private fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private actividadesService = inject(ActividadesService);
   private materiaService = inject(MateriaService);
   private authService = inject(AuthService);
@@ -57,7 +59,7 @@ export class ActividadForm implements OnInit {
     }
 
     // 2) Modo edición (la ruta tiene el id de la actividad)
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const id = params.get('id');
       if (id && !this.materiaIdParam()) {
         // ruta del dashboard general con id de actividad
