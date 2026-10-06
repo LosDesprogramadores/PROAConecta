@@ -20,6 +20,10 @@ from core.exceptions import ErrorSerializer
 from core.permissions import EsAdministrador
 from core.throttling import LimiteDeIntentosMixin
 from .correos import enviar_recuperacion
+from .services import revocar_sesiones
+from rest_framework_simplejwt.exceptions import TokenBackendError, TokenError
+from rest_framework_simplejwt.state import token_backend
+from rest_framework_simplejwt.tokens import RefreshToken
 from core.roles import ROL_ADMINISTRADOR, ROL_ESTUDIANTE, ROL_PROFESOR, obtener_persona_y_rol
 
 
@@ -216,9 +220,53 @@ class CambiarPasswordPrimerIngresoView(APIView):
 
         usuario.set_password(password_nuevo)
         usuario.debe_cambiar_password = False
-        usuario.save()
+        with transaction.atomic():
+            usuario.save()
+            # Las sesiones abiertas con la clave anterior dejan de poder renovarse
+            revocar_sesiones(usuario)
 
-        return Response({'mensaje': 'Contraseña actualizada con éxito.'},status=status.HTTP_200_OK)
+        # El refresh del propio usuario también quedó revocado: se le entrega un par nuevo, con la forma del login
+        refresh = RefreshToken.for_user(usuario)
+        return Response({
+            'mensaje': 'Contraseña actualizada con éxito.',
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'debe_cambiar_password': False,
+        }, status=status.HTTP_200_OK)
+
+
+class CerrarSesionView(APIView):
+    """Revoca el refresh recibido. Idempotente: repetir el cierre con el mismo token también responde 204.
+
+    No exige un access vigente (mismo modelo que TokenBlacklistView de simplejwt): quien tiene el
+    refresh válido prueba que la sesión es suya, y con el access vencido el cierre no puede fallar.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        request=inline_serializer('CerrarSesion', {'refresh': serializers.CharField()}),
+        responses={204: None, 400: ErrorSerializer},
+    )
+    def post(self, request):
+        refresh = request.data.get('refresh')
+        if not refresh or not isinstance(refresh, str):
+            return _solicitud_invalida('Debe enviar el token de renovación.')
+
+        # La firma y el vencimiento se validan sin mirar la blacklist, para que repetir el cierre sea idempotente
+        try:
+            payload = token_backend.decode(refresh)
+        except TokenBackendError:
+            return _solicitud_invalida('El token de renovación es inválido.')
+
+        if payload.get('token_type') != 'refresh':
+            return _solicitud_invalida('El token de renovación es inválido.')
+
+        try:
+            RefreshToken(refresh).blacklist()
+        except TokenError:
+            pass  # ya estaba en la blacklist
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class SolicitarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
@@ -290,7 +338,10 @@ class ConfirmarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
 
         usuario.set_password(password_nuevo)
         usuario.debe_cambiar_password = False
-        usuario.save()
+        with transaction.atomic():
+            usuario.save()
+            # Las sesiones abiertas con la clave anterior dejan de poder renovarse
+            revocar_sesiones(usuario)
 
         return Response(
             {'mensaje': 'Contraseña restablecida exitosamente. Ya podés iniciar sesión.'},

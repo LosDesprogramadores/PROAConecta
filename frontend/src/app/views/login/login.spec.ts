@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -68,5 +68,23 @@ describe('Login error messages', () => {
     expect(fixture.nativeElement.querySelector(`#${dialogo.getAttribute('aria-labelledby')}`).textContent).toContain(
       'Recuperar contraseña',
     );
+  });
+});
+
+describe('Login after an expired session', () => {
+  it('shows a notice when the interceptor sent the user here with motivo=sesion-expirada', async () => {
+    await TestBed.configureTestingModule({
+      imports: [Login],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { login: vi.fn(), solicitarRecuperacion: vi.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ motivo: 'sesion-expirada' }) } } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Login);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.errorMessage()).toBe('Tu sesión expiró. Ingresá nuevamente.');
+    expect(fixture.nativeElement.textContent).toContain('Tu sesión expiró');
   });
 });

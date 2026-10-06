@@ -115,6 +115,24 @@ describe('NotificacionSocketService', () => {
     expect(FakeWebSocket.instances.length).toBe(1);
   });
 
+  it('keeps the open connection when the token is refreshed and uses a new ticket on the next reconnect', () => {
+    iniciar();
+    responderTicket('t1');
+    ultimo().abrir();
+
+    // Silent refresh: the token signal changes but the session is still the same
+    token.set('jwt-renovado');
+    TestBed.tick();
+    http.expectNone(ticketUrl);
+    expect(FakeWebSocket.instances.length).toBe(1);
+
+    ultimo().cerrarServidor(1006);
+    vi.advanceTimersByTime(1000);
+    responderTicket('t2');
+    expect(ultimo().url).toContain('ticket=t2');
+    expect(FakeWebSocket.instances.length).toBe(2);
+  });
+
   it('emits typed events and maps notifications for the legacy stream', () => {
     iniciar();
     responderTicket('t1');

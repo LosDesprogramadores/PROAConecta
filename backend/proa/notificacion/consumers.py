@@ -49,6 +49,10 @@ class NotificacionConsumer(AsyncWebsocketConsumer):
             'datos': event['datos'],
         }, default=str))
 
+    async def sesion_revocada(self, event):
+        # Evento interno (usuario desactivado o dado de baja): el cliente pide un ticket nuevo y el servidor lo niega
+        await self.close(code=CODIGO_NO_AUTENTICADO)
+
     @database_sync_to_async
     def obtener_materias_usuario(self, user):
         from academico.models import Materia

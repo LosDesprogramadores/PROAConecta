@@ -1,6 +1,6 @@
 import { Component, inject , signal} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
@@ -17,10 +17,16 @@ export class Login {
   private authService = inject(AuthService);
   private formbuilder = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private toastService = inject(ToastService);
  
   isLoading = signal<boolean>(false);
-  errorMessage = signal<string | null>(null);
+  // Set by the auth interceptor when the session could not be renewed
+  errorMessage = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('motivo') === 'sesion-expirada'
+      ? 'Tu sesión expiró. Ingresá nuevamente.'
+      : null,
+  );
   showPassword = signal<boolean>(false);
   showModalRecuperar = signal<boolean>(false);
   emailRecuperacion = signal<string>('');
