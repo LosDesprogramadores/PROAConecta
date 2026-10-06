@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from academico.models import Materia
 from academico.selectors import materias_con_acceso
 from .services import calificar_o_rectificar_estudiante
 
@@ -241,6 +242,13 @@ class ActividadViewSet(viewsets.ModelViewSet):
         )
 
         if materia_id:
+            # Un profesor que pide una materia que no es suya recibe 404, no una lista vacía que se
+            # confunde con "materia sin actividades" (misma regla que rendimiento-curso)
+            if not str(materia_id).isdigit():
+                raise ValidationError({'detail': 'El parámetro materia debe ser un número entero.'})
+            if self.action == 'list' and es_profesor(user):
+                if not Materia.objects.filter(pk=materia_id, profesor=persona).exists():
+                    raise NotFound('No encontrado.')
             qs = qs.filter(materia_id=materia_id)
         if unidad_id:
             qs = qs.filter(unidad_id=unidad_id)

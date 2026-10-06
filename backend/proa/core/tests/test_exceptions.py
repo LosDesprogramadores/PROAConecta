@@ -158,7 +158,7 @@ def test_respuestas_de_error_reales_no_usan_error_ni_message(api_as, admin, estu
         assert respuesta.status_code >= 400
         cuerpo = respuesta.json()
         assert 'message' not in cuerpo and 'mensaje' not in cuerpo
-        assert 'error' not in cuerpo or 'detail' in cuerpo  # `error` solo como alias de compatibilidad
+        assert 'error' not in cuerpo
 
 
 @pytest.mark.django_db
@@ -166,22 +166,23 @@ def test_respuestas_de_error_reales_no_usan_error_ni_message(api_as, admin, estu
     ('/api/auth/cambiar-password-primer-ingreso/', {}),
     ('/api/auth/cambiar-password-primer-ingreso/', {'password_actual': 'incorrecta', 'password_nuevo': 'Nueva-clave-123'}),
 ])
-def test_cambio_de_clave_trae_detail_y_el_alias_error_que_el_frontend_todavia_lee(api_as, estudiante, ruta, cuerpo):
+def test_cambio_de_clave_trae_solo_detail(api_as, estudiante, ruta, cuerpo):
     respuesta = api_as(estudiante).post(ruta, cuerpo, format='json')
 
     assert respuesta.status_code == 400
     assert respuesta.json()['detail']
-    assert respuesta.json()['error'] == respuesta.json()['detail']
+    assert 'error' not in respuesta.json()
 
 
 @pytest.mark.django_db
-def test_recuperacion_trae_detail_y_el_alias_error(cliente_anonimo):
+def test_recuperacion_trae_solo_detail(cliente_anonimo):
     solicitar = cliente_anonimo.post('/api/auth/solicitar-recuperacion/', {}, format='json')
     confirmar = cliente_anonimo.post('/api/auth/confirmar-recuperacion/', {}, format='json')
 
     for respuesta in (solicitar, confirmar):
         assert respuesta.status_code == 400
-        assert respuesta.json()['detail'] and respuesta.json()['error'] == respuesta.json()['detail']
+        assert respuesta.json()['detail']
+        assert 'error' not in respuesta.json()
 
 
 @pytest.mark.django_db

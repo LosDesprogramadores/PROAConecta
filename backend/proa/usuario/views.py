@@ -37,9 +37,7 @@ from core.roles import ROL_ADMINISTRADOR, ROL_ESTUDIANTE, ROL_PROFESOR, obtener_
 
 
 def _solicitud_invalida(detalle):
-    # `error` es un alias temporal de `detail`: login.ts, restablecer-password.ts y cambiar-password.ts
-    # del frontend todavía leen `error`. Se quita cuando esas tres pantallas lean `detail`
-    return Response({'detail': detalle, 'error': detalle}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'detail': detalle}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsuarioCreateView(generics.CreateAPIView):
