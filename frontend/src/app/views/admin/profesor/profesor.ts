@@ -8,6 +8,7 @@ import { IMateria} from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
 import { ToastService } from '../../../services/toast.service';
+import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 
 
 @Component({
@@ -59,6 +60,10 @@ export class Profesor implements OnInit {
     tel_contacto: ['']
   });
 
+
+  protected errorCampo(campo: string): string | null {
+    return mensajeErrorCampo(this.form.get(campo), { minlength: 'El DNI debe tener al menos 7 caracteres.' });
+  }
 
   ngOnInit(): void {
     this.cargarProfesores()

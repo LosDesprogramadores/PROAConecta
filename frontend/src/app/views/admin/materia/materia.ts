@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
+import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 
@@ -34,6 +35,10 @@ export class Materia implements OnInit {
     criterios_evaluacion: [ '' ],
     discord_webhook_url: [ '', [ Validators.maxLength( 500 ), Validators.pattern( /^(https:\/\/(discord|discordapp)\.com\/api\/webhooks\/.+)?$/ ) ] ]
   } );
+
+  protected errorCampo( campo: string ): string | null {
+    return mensajeErrorCampo( this.form.get( campo ), { pattern: 'Ingrese una URL válida de webhook de Discord.', min: 'El año debe ser 2000 o posterior.' } );
+  }
 
   ngOnInit(): void {
     this.cargarMaterias();

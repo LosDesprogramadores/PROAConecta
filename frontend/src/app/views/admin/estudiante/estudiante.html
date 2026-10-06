@@ -131,34 +131,40 @@
         <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nombre</label>
-              <input formControlName="nombre" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-nombre" class="block text-xs font-semibold text-slate-600 mb-1.5">Nombre</label>
+              <input id="est-nombre" formControlName="nombre" aria-required="true" [attr.aria-invalid]="errorCampo('nombre') ? 'true' : null" [attr.aria-describedby]="errorCampo('nombre') ? 'est-nombre-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('nombre'); as msg) {<p id="est-nombre-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Apellido</label>
-              <input formControlName="apellido" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-apellido" class="block text-xs font-semibold text-slate-600 mb-1.5">Apellido</label>
+              <input id="est-apellido" formControlName="apellido" aria-required="true" [attr.aria-invalid]="errorCampo('apellido') ? 'true' : null" [attr.aria-describedby]="errorCampo('apellido') ? 'est-apellido-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('apellido'); as msg) {<p id="est-apellido-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">DNI</label>
-              <input formControlName="dni" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-dni" class="block text-xs font-semibold text-slate-600 mb-1.5">DNI</label>
+              <input id="est-dni" formControlName="dni" aria-required="true" [attr.aria-invalid]="errorCampo('dni') ? 'true' : null" [attr.aria-describedby]="errorCampo('dni') ? 'est-dni-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('dni'); as msg) {<p id="est-dni-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Fecha de Nacimiento</label>
-              <input formControlName="fecha_nacimiento" type="date" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-fecha_nacimiento" class="block text-xs font-semibold text-slate-600 mb-1.5">Fecha de Nacimiento</label>
+              <input id="est-fecha_nacimiento" formControlName="fecha_nacimiento" aria-required="true" [attr.aria-invalid]="errorCampo('fecha_nacimiento') ? 'true' : null" [attr.aria-describedby]="errorCampo('fecha_nacimiento') ? 'est-fecha_nacimiento-error' : null" type="date" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('fecha_nacimiento'); as msg) {<p id="est-fecha_nacimiento-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
-            <input formControlName="email" type="email" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+            <label for="est-email" class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
+            <input id="est-email" formControlName="email" aria-required="true" [attr.aria-invalid]="errorCampo('email') ? 'true' : null" [attr.aria-describedby]="errorCampo('email') ? 'est-email-error' : null" type="email" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('email'); as msg) {<p id="est-email-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Teléfono</label>
-            <input formControlName="tel_contacto" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+            <label for="est-tel_contacto" class="block text-xs font-semibold text-slate-600 mb-1.5">Teléfono</label>
+            <input id="est-tel_contacto" formControlName="tel_contacto" [attr.aria-invalid]="errorCampo('tel_contacto') ? 'true' : null" [attr.aria-describedby]="errorCampo('tel_contacto') ? 'est-tel_contacto-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('tel_contacto'); as msg) {<p id="est-tel_contacto-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
           </div>
 
           <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">

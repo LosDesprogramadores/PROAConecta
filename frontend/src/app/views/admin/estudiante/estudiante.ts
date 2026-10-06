@@ -7,6 +7,7 @@ import { EstudianteService } from '../../../services/estudiante.service';
 import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
+import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { Toast } from '../../../shared/toast/toast';
 import { IColumnaTabla } from '../../../model/tabla.model';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
@@ -59,6 +60,10 @@ export class Estudiante implements OnInit {
     { titulo: 'Descripción', campo: 'descripcion' }
   ];
 
+
+  protected errorCampo(campo: string): string | null {
+    return mensajeErrorCampo(this.form.get(campo), { minlength: 'El DNI debe tener al menos 7 caracteres.' });
+  }
 
   ngOnInit(): void {
     this.cargarEstudiantes()
