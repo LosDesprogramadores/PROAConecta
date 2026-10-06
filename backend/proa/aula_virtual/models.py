@@ -1,5 +1,7 @@
 from django.db import models
 from core.models import ContenidoSoftDelete  # noqa: F401 (reexportado: vivía acá)
+from core.storage import RutaUnica
+from core.validators import validar_archivo
 from usuario.models import Persona
 from academico.models import Materia
 
@@ -46,7 +48,7 @@ class Material(ContenidoSoftDelete):
     )
     titulo = models.CharField(max_length=150) 
     descripcion = models.TextField(null=True, blank=True)
-    archivo = models.FileField(upload_to='materiales/%Y/%m/', null=True, blank=True)
+    archivo = models.FileField(upload_to=RutaUnica('materiales'), validators=[validar_archivo], null=True, blank=True)
     enlace = models.URLField(max_length=500, blank=True, null=True)
     tipo = models.CharField(max_length=20, choices=TipoContenido.choices, default=TipoContenido.DOCUMENTO)
     visible = models.BooleanField(default=True)
@@ -73,7 +75,7 @@ class Actividad(ContenidoSoftDelete):
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField(null=True, blank=True)
     fecha_limite = models.DateTimeField(null=True, blank=True)
-    archivo_adjunto = models.FileField(upload_to='actividades/%Y/%m/', null=True, blank=True)
+    archivo_adjunto = models.FileField(upload_to=RutaUnica('actividades'), validators=[validar_archivo], null=True, blank=True)
     enlace = models.URLField(max_length=500, null=True, blank=True)
     permitir_entrega_tardia = models.BooleanField(default=True)
     estado = models.CharField(max_length=20, choices=EstadoActividad.choices, default=EstadoActividad.PUBLICADA)
@@ -98,7 +100,7 @@ class Entrega(ContenidoSoftDelete):
 
     actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='entregas')
     estudiante = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='entregas')
-    archivo = models.FileField(upload_to='entregas/%Y/%m/', null=True, blank=True)
+    archivo = models.FileField(upload_to=RutaUnica('entregas'), validators=[validar_archivo], null=True, blank=True)
     enlace = models.URLField(max_length=500, null=True, blank=True)
     contenido_texto = models.TextField(null=True, blank=True)
     fuera_de_termino = models.BooleanField(default=False)

@@ -78,3 +78,9 @@ def materia_con_inscripcion(profesor, estudiante):
 def mongo_mock():
     # Base de datos en memoria, nueva en cada test
     return mongomock.MongoClient()['proa_test']
+
+
+@pytest.fixture(autouse=True)
+def media_temporal(settings, tmp_path):
+    # Los archivos subidos en los tests nunca llegan a backend/proa/media
+    settings.MEDIA_ROOT = tmp_path / 'media'
