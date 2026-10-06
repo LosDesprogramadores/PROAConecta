@@ -16,7 +16,7 @@ VARIABLE_CLAVE = 'SEED_DEMO_PASSWORD'
 LARGO_MINIMO_CLAVE = 8
 DOMINIO_EMAIL = 'proa-demo.test'
 
-# (dni, nombre, apellido, rol)
+# (dni, nombre, apellido); el rol lo da la lista
 ADMINISTRADORES = [('10000001', 'Ana', 'Administradora')]
 PROFESORES = [
     ('20000001', 'Pablo', 'Profesor'),
@@ -66,6 +66,14 @@ class Command(BaseCommand):
             action='store_true',
             help='Permite ejecutar el comando aunque DEBUG esté desactivado (no recomendado en producción).',
         )
+        parser.add_argument(
+            '--actualizar-claves',
+            action='store_true',
+            help=(
+                f'Reaplica la contraseña de {VARIABLE_CLAVE} a las cuentas de demostración que ya existen '
+                '(solo los DNI de demo). Exige que la variable esté definida.'
+            ),
+        )
 
     def handle(self, *args, **options):
         if not settings.DEBUG and not options['force']:
@@ -73,8 +81,10 @@ class Command(BaseCommand):
                 'seed_demo carga datos de demostración y solo corre con DEBUG activado. '
                 'Si de verdad querés ejecutarlo en este entorno, agregá --force.'
             )
+        self.actualizar_claves = options['actualizar_claves']
         clave, generada = self._obtener_clave()
         self.creados = 0
+        self.actualizados = 0
 
         with transaction.atomic():
             roles = self._roles()
@@ -88,14 +98,22 @@ class Command(BaseCommand):
         self.stdout.write(f'Administrador: DNI {admins[0][0].dni}')
         self.stdout.write('Profesores: DNI ' + ', '.join(p.dni for p, _ in profesores))
         self.stdout.write('Estudiantes: DNI ' + ', '.join(e.dni for e, _ in estudiantes))
+        self.stdout.write(f'Cuentas creadas: {self.creados}')
+        self.stdout.write(f'Contraseñas actualizadas: {self.actualizados}')
         if generada and self.creados:
             self.stdout.write(self.style.WARNING(f'Contraseña generada: {clave}'))
             self.stdout.write('Guardala ahora: no se vuelve a mostrar.')
-        elif self.creados == 0:
+        elif self.creados == 0 and not self.actualizar_claves:
             self.stdout.write('Los usuarios ya existían: no se modificaron sus contraseñas.')
 
     def _obtener_clave(self):
         clave = os.environ.get(VARIABLE_CLAVE)
+        # Nunca se pisa una clave existente con una al azar: la anterior se perdería
+        if self.actualizar_claves and not clave:
+            raise CommandError(
+                f'--actualizar-claves requiere definir {VARIABLE_CLAVE} con al menos '
+                f'{LARGO_MINIMO_CLAVE} caracteres. No se genera una clave al azar para cuentas existentes.'
+            )
         if clave is not None:
             if len(clave) < LARGO_MINIMO_CLAVE:
                 raise CommandError(
@@ -136,6 +154,17 @@ class Command(BaseCommand):
             usuario.set_password(clave)
             usuario.save()
             self.creados += 1
+        elif self.actualizar_claves:
+            # Solo se pisa la clave si la persona es de demo; si no, es una persona real con ese DNI
+            if persona.email == f'{dni}@{DOMINIO_EMAIL}':
+                usuario.set_password(clave)
+                usuario.debe_cambiar_password = False
+                usuario.save(update_fields=['password', 'debe_cambiar_password'])
+                self.actualizados += 1
+            else:
+                self.stdout.write(
+                    self.style.WARNING(f'Advertencia: el DNI {dni} no es una cuenta de demo; no se tocó su contraseña.')
+                )
         return persona, usuario
 
     def _materia(self, definicion, profesores, estudiantes):
