@@ -129,7 +129,7 @@ class PersonaRolView(APIView):
             .select_related('rol')
             .order_by('apellido', 'nombre')
         )
-        serializer = PersonaSerializer(personas, many=True)
+        serializer = PersonaSerializer(personas, many=True, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

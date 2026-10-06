@@ -1,10 +1,13 @@
 from rest_framework import serializers
 from usuario.models import Persona
-from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR
+from core.privacidad import PrivacidadPersonaMixin
+from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin
 from .models import Materia, Inscripcion
 
 # Información básica de la persona para mostrar en la lista sea profesor o Estudiante
-class PersonaResumenSerializer(serializers.ModelSerializer):
+class PersonaResumenSerializer(PrivacidadPersonaMixin, serializers.ModelSerializer):
+    # Un no administrador solo ve nombre y rol de otra persona (sin DNI ni email)
+    campos_publicos = ('id', 'nombre', 'apellido', 'nombre_completo', 'rol_nombre')
     nombre_completo = serializers.SerializerMethodField()
     rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
 
@@ -47,6 +50,14 @@ class MateriaSerializer(serializers.ModelSerializer):
             'anio', 'curso', 'profesor', 'profesor_detalle',
             'total_estudiantes', 'activo', 'fecha_creacion', 'fecha_actualizacion','discord_webhook_url'
         ]
+
+    def to_representation(self, instance):
+        datos = super().to_representation(instance)
+        # El webhook es un secreto: solo el administrador lo lee (el formulario de edición lo necesita)
+        request = self.context.get('request')
+        if not (request and es_admin(request.user)):
+            datos.pop('discord_webhook_url', None)
+        return datos
 
     def get_total_estudiantes(self, obj):
         # Las bajas no cuentan como estudiantes de la materia
