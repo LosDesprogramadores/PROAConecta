@@ -137,7 +137,11 @@ def _texto(valor):
     return escape('' if valor is None else str(valor))
 
 
-def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None, subtitulo=None):
+def secciones_a_pdf(titulo, secciones, horizontal=False, nombre=None, subtitulo=None):
+    """PDF con un título y una o más secciones ``{'titulo', 'columnas', 'filas'}``, cada una con su tabla.
+
+    El título de sección es opcional. Todas comparten encabezado de página, fecha y "Página X de Y".
+    """
     _registrar_fuentes()
     tamano = landscape(A4) if horizontal else A4
     margen = 15 * mm
@@ -145,32 +149,38 @@ def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None, subtitul
 
     estilo_titulo = ParagraphStyle('titulo', fontName=FUENTE_NEGRITA, fontSize=14, leading=18)
     estilo_subtitulo = ParagraphStyle('subtitulo', fontName=FUENTE, fontSize=10, leading=14)
+    estilo_seccion = ParagraphStyle('seccion', fontName=FUENTE_NEGRITA, fontSize=11, leading=15, keepWithNext=True)
     estilo_fecha = ParagraphStyle('fecha', fontName=FUENTE, fontSize=8, leading=11, textColor=colors.grey)
     estilo_celda = ParagraphStyle('celda', fontName=FUENTE, fontSize=8, leading=10)
     estilo_encabezado = ParagraphStyle('encabezado', parent=estilo_celda, fontName=FUENTE_NEGRITA)
 
-    datos = [[Paragraph(_texto(c), estilo_encabezado) for c in columnas]]
-    datos += [[Paragraph(_texto(v), estilo_celda) for v in fila] for fila in filas]
-
-    tabla = Table(datos, colWidths=[ancho_util / max(1, len(columnas))] * len(columnas), repeatRows=1)
-    tabla.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E5E7EB')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9FAFB')]),
-        ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#9CA3AF')),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
+    def construir_tabla(columnas, filas):
+        datos = [[Paragraph(_texto(c), estilo_encabezado) for c in columnas]]
+        datos += [[Paragraph(_texto(v), estilo_celda) for v in fila] for fila in filas]
+        tabla = Table(datos, colWidths=[ancho_util / max(1, len(columnas))] * len(columnas), repeatRows=1)
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E5E7EB')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9FAFB')]),
+            ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#9CA3AF')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        return tabla
 
     emitido = timezone.localdate().strftime('%d/%m/%Y')
-    historia = [
-        Paragraph(_texto(titulo), estilo_titulo),
-    ]
+    historia = [Paragraph(_texto(titulo), estilo_titulo)]
     if subtitulo:
         historia.append(Paragraph(_texto(subtitulo), estilo_subtitulo))
-    historia += [
-        Paragraph(f'Fecha de emisión: {emitido}', estilo_fecha),
-        Spacer(1, 6 * mm),
-        tabla,
-    ]
+    historia += [Paragraph(f'Fecha de emisión: {emitido}', estilo_fecha), Spacer(1, 6 * mm)]
+    total_filas = 0
+    for seccion in secciones:
+        filas = acotar_filas(seccion['filas'])
+        total_filas += len(filas)
+        if total_filas > LIMITE_FILAS_CSV:
+            raise ValidationError({'detail': MENSAJE_LIMITE})
+        if seccion.get('titulo'):
+            historia.append(Paragraph(_texto(seccion['titulo']), estilo_seccion))
+        historia.append(construir_tabla(seccion['columnas'], filas))
+        historia.append(Spacer(1, 6 * mm))
 
     buffer = io.BytesIO()
     documento = SimpleDocTemplate(
@@ -182,3 +192,9 @@ def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None, subtitul
     respuesta = _respuesta('application/pdf', nombre)
     respuesta.write(buffer.getvalue())
     return respuesta
+
+
+def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None, subtitulo=None):
+    return secciones_a_pdf(
+        titulo, [{'columnas': columnas, 'filas': filas}], horizontal=horizontal, nombre=nombre, subtitulo=subtitulo
+    )

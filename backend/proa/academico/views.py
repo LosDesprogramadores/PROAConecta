@@ -21,7 +21,7 @@ from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from core.exceptions import ErrorSerializer
 from core.pagination import PaginacionOpcional
 from core.exportaciones import exportar_tabla, formato_solicitado
-from .exportaciones import exportar_rendimiento_curso
+from .exportaciones import exportar_boletin, exportar_rendimiento_curso
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -220,6 +220,18 @@ class MateriaViewSet(viewsets.ModelViewSet):
         materia = self.get_object()
         data = obtener_rendimiento_curso_profesor(request.user, materia)
         return Response(data, status=status.HTTP_200_OK)
+
+    @extend_schema(responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer, 403: ErrorSerializer})
+    @action(detail=False, methods=['get'], url_path='mi-boletin/exportar')
+    def mi_boletin_exportar(self, request):
+        formato = formato_solicitado(request, permitidos=('pdf',), defecto='pdf')
+        persona, rol = _alcance(request.user)
+        # Boletín propio: ni el administrador ni el profesor tienen uno
+        if rol != ROL_ESTUDIANTE or persona is None:
+            raise PermissionDenied('Solo un estudiante puede descargar su boletín.')
+        materias = materias_con_acceso(persona).order_by('-anio', 'titulo', 'id')  # LIBRE cuenta, BAJA no
+        rendimientos = [obtener_rendimiento_estudiante(request.user, materia) for materia in materias]
+        return exportar_boletin(persona, rendimientos)
 
     @extend_schema(
         parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],
