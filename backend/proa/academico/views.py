@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.db import IntegrityError, transaction
 from aula_virtual.models import Nota
+from auditoria.bitacora import registrar_evento
 from .models import Materia, Inscripcion
 from .selectors import alumnos_de_materia, materias_con_acceso, materias_con_resumen
 from core.permissions import EsAdministrador
@@ -114,7 +115,15 @@ class MateriaViewSet(viewsets.ModelViewSet):
         profesor = entrada.validated_data['profesor_id']
         materia_ids = entrada.validated_data['materia_ids']
 
-        actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor=profesor)
+        with transaction.atomic():
+            titulares_previos = dict(Materia.objects.filter(id__in=materia_ids).values_list('id', 'profesor_id'))
+            actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor=profesor)
+            for materia_id, profesor_previo in titulares_previos.items():
+                registrar_evento(
+                    'PROFESOR_ASIGNADO', request.user, 'materia',
+                    {'antes': {'profesor_id': profesor_previo}, 'despues': {'profesor_id': profesor.id}},
+                    entidad_id=materia_id, materia_id=materia_id,
+                )
 
         return Response({
             'mensaje': f'Se asignó el profesor a {actualizadas} materias correctamente.',
@@ -152,7 +161,9 @@ class MateriaViewSet(viewsets.ModelViewSet):
     
     def perform_destroy(self, instance):
         # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
-        instance.soft_delete()
+        with transaction.atomic():
+            instance.soft_delete()
+            registrar_evento('MATERIA_BAJA', self.request.user, 'materia', entidad_id=instance.pk, materia_id=instance.pk)
 
     @extend_schema(
         parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],
@@ -184,6 +195,9 @@ class MateriaViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 materia.restore()
+                registrar_evento(
+                    'MATERIA_RESTAURADA', request.user, 'materia', entidad_id=materia.pk, materia_id=materia.pk,
+                )
         except IntegrityError:
             # Mientras estuvo de baja se creó otra materia activa con el mismo título, curso y año
             raise ValidationError({'detail': 'No se puede restaurar la materia: ya existe otra materia activa con el mismo título, curso y año.'})
@@ -193,8 +207,16 @@ class MateriaViewSet(viewsets.ModelViewSet):
     def desasignar_profesor(self, request, pk=None):
         try:
             materia = self.get_object()
-            materia.profesor = None
-            materia.save()
+            profesor_previo = materia.profesor_id
+            with transaction.atomic():
+                materia.profesor = None
+                materia.save()
+                if profesor_previo is not None:
+                    registrar_evento(
+                        'PROFESOR_DESVINCULADO', request.user, 'materia',
+                        {'antes': {'profesor_id': profesor_previo}, 'despues': {'profesor_id': None}},
+                        entidad_id=materia.pk, materia_id=materia.pk,
+                    )
             return Response(
                 {'detail': 'Materia desasignada correctamente.'}, 
                 status=status.HTTP_200_OK
@@ -339,13 +361,21 @@ class InscripcionViewSet(viewsets.ModelViewSet):
                     materia_id=m_id,
                     defaults={'estado': Inscripcion.EstadoInscripcion.CURSANDO}
                 )
+                estado_previo = None
                 if not created and obj.estado == Inscripcion.EstadoInscripcion.BAJA:
                     # Se reactiva la misma fila: no se duplica la inscripción
+                    estado_previo = obj.estado
                     obj.estado = Inscripcion.EstadoInscripcion.CURSANDO
                     obj.save(update_fields=['estado'])
                     created = True
                 if created:
                     inscripciones_creadas.append(obj)
+                    datos = {'despues': {'estado': obj.estado, 'estudiante_id': estudiante_id}}
+                    if estado_previo:
+                        datos['antes'] = {'estado': estado_previo}
+                    registrar_evento(
+                        'INSCRIPCION_CREADA', request.user, 'inscripcion', datos, entidad_id=obj.pk, materia_id=m_id,
+                    )
 
         return Response({
             'mensaje': f'Se inscribió al alumno en {len(inscripciones_creadas)} materias.',
@@ -379,8 +409,16 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
         if inscripcion:
             # La baja conserva la fila: el historial y las notas no se pierden
-            inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
-            inscripcion.save(update_fields=['estado'])
+            estado_previo = inscripcion.estado
+            with transaction.atomic():
+                inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
+                inscripcion.save(update_fields=['estado'])
+                registrar_evento(
+                    'INSCRIPCION_BAJA', request.user, 'inscripcion',
+                    {'antes': {'estado': estado_previo, 'estudiante_id': estudiante_id},
+                     'despues': {'estado': inscripcion.estado, 'estudiante_id': estudiante_id}},
+                    entidad_id=inscripcion.pk, materia_id=materia_id,
+                )
             return Response({"mensaje": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
 
         return Response({"detail": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)

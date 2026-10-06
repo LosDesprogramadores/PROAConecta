@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from academico.models import Materia, Inscripcion
+from auditoria.bitacora import registrar_evento
 from django.db import transaction
 from django.db.models import Q
 from django.utils.text import slugify
@@ -113,6 +114,10 @@ class PersonaViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             persona.soft_delete()
+            registrar_evento(
+                'PERSONA_BAJA', request.user, 'persona',
+                {'antes': {'activo': True}, 'despues': {'activo': False}}, entidad_id=persona.pk,
+            )
 
         if rol_nombre == ROL_PROFESOR:
             return Response({'detail': f'Profesor {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'}, status=status.HTTP_200_OK)
@@ -120,6 +125,16 @@ class PersonaViewSet(viewsets.ModelViewSet):
             return Response({'detail': f'Estudiante {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'}, status=status.HTTP_200_OK)
 
         return Response({'detail': 'Registro eliminado correctamente.'}, status=status.HTTP_200_OK)
+
+    def perform_update(self, serializer):
+        rol_previo = serializer.instance.rol_id
+        with transaction.atomic():
+            persona = serializer.save()
+            if persona.rol_id != rol_previo:
+                registrar_evento(
+                    'ROL_CAMBIADO', self.request.user, 'persona',
+                    {'antes': {'rol_id': rol_previo}, 'despues': {'rol_id': persona.rol_id}}, entidad_id=persona.pk,
+                )
 
     @staticmethod
     def _quedan_administradores_activos(excluyendo):
@@ -186,7 +201,14 @@ class PersonaViewSet(viewsets.ModelViewSet):
         if not persona:
             return Response({'detail': 'No encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         
-        persona.restore()
+        estaba_de_baja = persona.fecha_baja is not None
+        with transaction.atomic():
+            persona.restore()
+            if estaba_de_baja:
+                registrar_evento(
+                    'PERSONA_RESTAURADA', request.user, 'persona',
+                    {'antes': {'activo': False}, 'despues': {'activo': True}}, entidad_id=persona.pk,
+                )
         return Response({'detail': 'Persona restaurada correctamente.'}, status=status.HTTP_200_OK)
 
 MENSAJE_OK = inline_serializer('MensajeExito', {'mensaje': serializers.CharField()})
