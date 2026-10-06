@@ -4,6 +4,13 @@ from channels.db import database_sync_to_async
 
 class NotificacionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        user = self.scope.get("user")
+        if not user or not user.is_authenticated:
+            # Se acepta y se cierra para que el navegador reciba el código 4401
+            await self.accept()
+            await self.close(code=4401)
+            return
+
         self.room_group_name = "notificaciones_globales"
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -24,6 +31,8 @@ class NotificacionConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
+        if not hasattr(self, "room_group_name"):
+            return
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name

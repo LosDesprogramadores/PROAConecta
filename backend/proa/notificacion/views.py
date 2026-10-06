@@ -8,6 +8,7 @@ from pymongo.errors import PyMongoError
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+from . import tickets
 from .mongo import COLECCION_NOTIFICACION, obtener_coleccion
 
 class NotificacionListCreateView(APIView):
@@ -119,3 +120,13 @@ class NotificacionDetailView(APIView):
             return Response({"detail": "Notificación eliminada correctamente."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class WsTicketView(APIView):
+    """Entrega un ticket de un solo uso (30 s) para abrir el WebSocket sin exponer el JWT."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        return Response({
+            "ticket": tickets.emitir(request.user),
+            "expira_en": tickets.TTL_TICKET_SEGUNDOS,
+        }, status=status.HTTP_200_OK)

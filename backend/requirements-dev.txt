@@ -7,3 +7,5 @@ pytest-asyncio==1.4.0
 factory-boy==3.3.3
 mongomock==4.3.0
 pytest-cov==7.1.0
+# channels.testing importa daphne al cargarse (WebsocketCommunicator)
+daphne>=4.0.0
