@@ -1,47 +1,66 @@
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+from .tiempo_real import grupo_materia, grupo_usuario
+
+CODIGO_NO_AUTENTICADO = 4401
+
 
 class NotificacionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_group_name = "notificaciones_globales"
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        self.grupos = []
+        user = self.scope.get('user')
 
-        self.user = self.scope.get("user")
-        self.grupos_materias = []
+        if not user or not user.is_authenticated:
+            # Se acepta y se cierra para que el navegador reciba el código 4401
+            await self.accept()
+            await self.close(code=CODIGO_NO_AUTENTICADO)
+            return
 
-        if self.user and self.user.is_authenticated:
-            materias_ids = await self.obtener_materias_usuario(self.user)
-            
-            self.grupos_materias = [f"materia_{str(m_id)}" for m_id in materias_ids]
+        # La pertenencia se evalúa al conectar: quien pase a BAJA sigue recibiendo eventos hasta reconectar
+        # (aceptado por ahora). Los grupos los decide el servidor: el cliente nunca pide a cuáles unirse
+        self.grupos = [grupo_usuario(user.pk)]
+        self.grupos += [grupo_materia(m_id) for m_id in await self.obtener_materias_usuario(user)]
 
-            for grupo in self.grupos_materias:
-                await self.channel_layer.group_add(grupo, self.channel_name)
+        for grupo in self.grupos:
+            await self.channel_layer.group_add(grupo, self.channel_name)
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        for grupo in self.grupos_materias:
+        for grupo in self.grupos:
             await self.channel_layer.group_discard(grupo, self.channel_name)
 
-    async def enviar_notificacion(self, event):
-        notificacion = event["notificacion"]
+    async def receive(self, text_data=None, bytes_data=None):
+        # Solo se admite ping; los envíos de negocio van por REST
+        try:
+            mensaje = json.loads(text_data or '')
+        except ValueError:
+            return
+        if isinstance(mensaje, dict) and mensaje.get('tipo') == 'ping':
+            await self.send(text_data=json.dumps({'tipo': 'pong'}))
+
+    async def evento(self, event):
         await self.send(text_data=json.dumps({
-            "notificacion": notificacion
-        }))
+            'tipo': event['tipo'],
+            'fecha': event['fecha'],
+            'datos': event['datos'],
+        }, default=str))
 
     @database_sync_to_async
     def obtener_materias_usuario(self, user):
-        try:
-             return []
-        except Exception as e:
-            print(f"Error obteniendo materias para el socket: {e}")
+        from academico.models import Materia
+        from academico.selectors import materias_con_acceso
+        from core.roles import obtener_persona_y_rol
+
+        persona, rol = obtener_persona_y_rol(user)
+        # Sin rol (persona de baja o cuenta desactivada) no hay materias
+        if persona is None or rol is None:
             return []
+
+        # Titular de la cátedra o inscripción que no sea BAJA (LIBRE sigue siendo parte de la materia)
+        como_titular = Materia.objects.filter(profesor=persona).values_list('id', flat=True)
+        como_alumno = materias_con_acceso(persona).values_list('id', flat=True)
+        return sorted(set(como_titular) | set(como_alumno))

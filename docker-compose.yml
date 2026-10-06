@@ -48,6 +48,8 @@ services:
     # Sin restart: si falla migrate el backend queda detenido y el error se ve en los logs
     volumes:
       - ./backend:/app
+      # Archivos subidos (MEDIA_ROOT = /app/proa/media); el volumen sobrevive a recrear el contenedor
+      - mediadata:/app/proa/media
     ports:
       - "8000:8000"
     # Si backend/.env no existe el stack igual levanta (ver backend/.env.example)
@@ -105,3 +107,4 @@ services:
 volumes:
   pgdata:
   mongodata:
+  mediadata:

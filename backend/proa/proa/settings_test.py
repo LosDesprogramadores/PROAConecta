@@ -20,6 +20,11 @@ CHANNEL_LAYERS = {
     'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
 }
 
+# Tickets del WebSocket en memoria
+CACHES = {
+    'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
+}
+
 # Los correos quedan en django.core.mail.outbox
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 

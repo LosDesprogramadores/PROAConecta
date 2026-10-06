@@ -9,3 +9,10 @@ paths = [
   '''^backend/proa/.+/tests/.+\.py$''',
   '''^backend/proa/conftest\.py$''',
 ]
+
+# Clave de ejemplo pública del RFC 6455 ("the sample nonce"); no es un secreto
+[[allowlists]]
+description = "Clave de handshake de ejemplo del RFC 6455"
+regexes = [
+  '''dGhlIHNhbXBsZSBub25jZQ==''',
+]

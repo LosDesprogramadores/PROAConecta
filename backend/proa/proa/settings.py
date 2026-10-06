@@ -240,6 +240,21 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:4200')
 # Con REDIS_URL (compose) los WebSockets funcionan entre procesos; sin ella queda en memoria
 REDIS_URL = os.getenv('REDIS_URL')
 
+# La caché guarda los tickets del WebSocket: con Redis es compartida entre procesos, sin él es local
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
 if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
@@ -254,6 +269,11 @@ else:
         }
     }
 
+if not DEBUG and not REDIS_URL:
+    import logging
 
-
-
+    # La caché local y el channel layer en memoria no se comparten entre workers
+    logging.getLogger(__name__).warning(
+        "REDIS_URL no está definida con DEBUG desactivado: la caché local y el channel layer en memoria "
+        "no funcionan entre varios workers, por lo que los tickets y los eventos de WebSocket pueden fallar."
+    )

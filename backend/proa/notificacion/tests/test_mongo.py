@@ -89,8 +89,9 @@ URL = '/api/notificaciones/'
 
 
 @pytest.fixture
-def cliente(api_as, estudiante):
-    return api_as(estudiante)
+def cliente(api_as, admin):
+    # Editar y borrar notificaciones es solo de administradores
+    return api_as(admin)
 
 
 def test_listado_devuelve_200_ordenado_por_fecha_desc(cliente):
