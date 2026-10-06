@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 import { ActividadesService, Entrega } from '../../../services/actividades.service';
+import { FileDownloadService } from '../../../core/http/file-download';
+import { ToastService } from '../../../services/toast.service';
+import { environment } from '../../../../environments/environment';
 
 interface ColumnaActividad {
   id: number;
@@ -25,6 +28,8 @@ export class CalificacionesProfesor implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private actividadesService = inject(ActividadesService);
+  private descargas = inject(FileDownloadService);
+  private toast = inject(ToastService);
 
   materiaId!: number;
 
@@ -32,6 +37,7 @@ export class CalificacionesProfesor implements OnInit {
   filas = signal<FilaAlumno[]>([]);
   cargando = signal(false);
   error = signal('');
+  descargando = signal(false);
 
   promedios = computed(() =>
     this.filas().map((fila) => {
@@ -134,6 +140,25 @@ export class CalificacionesProfesor implements OnInit {
     });
 
     return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  descargarPdf(): void {
+    if (this.descargando()) {
+      return;
+    }
+    this.descargando.set(true);
+    const url = `${environment.apiUrl}materias/${this.materiaId}/rendimiento-curso/exportar/`;
+
+    this.descargas.descargar(url, { formato: 'pdf' }, `calificaciones-${this.materiaId}.pdf`).subscribe({
+      next: () => {
+        this.descargando.set(false);
+        this.toast.success('El PDF de calificaciones se generó correctamente.');
+      },
+      error: (err) => {
+        this.descargando.set(false);
+        this.toast.error(this.toast.readable_message_extraction(err), 'No se pudo descargar el PDF');
+      },
+    });
   }
 
   irACalificar(actividadId: number): void {

@@ -110,4 +110,17 @@ describe('MateriaService', () => {
     expect(conFiltro.request.params.get('estado')).toBe('BAJA');
     conFiltro.flush([]);
   });
+
+  it('lists a page of subjects and returns the envelope', () => {
+    let cuenta = -1;
+    service.listarPaginado({ page: 2, page_size: 10 }).subscribe((r) => (cuenta = r.count));
+
+    const req = http.expectOne((r) => r.url === base);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('page_size')).toBe('10');
+    req.flush({ count: 31, next: null, previous: null, results: [] });
+
+    expect(cuenta).toBe(31);
+  });
 });

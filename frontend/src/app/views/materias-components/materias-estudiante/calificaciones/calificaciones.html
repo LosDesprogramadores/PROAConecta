@@ -43,11 +43,12 @@
 
       </div>
 
-      <!-- Botón PDF -->
-      <button type="button" (click)="exportarPDF()"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold shadow-sm hover:bg-slate-50 transition">
-        <span>📄</span>
-        Exportar PDF
+      <!-- Boletín en PDF con todas las materias del estudiante -->
+      <button type="button" (click)="descargarBoletin()"
+        [disabled]="descargando()"
+        [attr.aria-busy]="descargando()"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold shadow-sm hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed">
+        {{ descargando() ? 'Generando boletín...' : 'Descargar boletín' }}
       </button>
 
     </div>

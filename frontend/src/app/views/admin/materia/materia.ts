@@ -6,6 +6,8 @@ import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
+import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
+import { environment } from '../../../../environments/environment';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
@@ -13,7 +15,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 @Component( {
   selector: 'app-materia',
   standalone: true,
-  imports: [ Modal, CommonModule, ReactiveFormsModule ],
+  imports: [ Modal, CommonModule, ReactiveFormsModule, ExportarListado ],
   templateUrl: './materia.html'
 } )
 export class Materia implements OnInit {
@@ -22,6 +24,7 @@ export class Materia implements OnInit {
   private toastService = inject( ToastService );
   private confirmDialog = inject( ConfirmDialogService );
 
+  protected readonly urlExportarMaterias = `${environment.apiUrl}materias/exportar/`;
   materias = signal<IMateria[]>( [] );
   isModalOpen = signal<boolean>( false );
   isEditing = signal<boolean>( false );

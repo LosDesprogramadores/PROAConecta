@@ -189,3 +189,45 @@ def test_nombre_archivo_limpia_acentos_espacios_y_caracteres_peligrosos(monkeypa
     nombre = nombre_archivo('Matemática I / "2do" A\r\n', 'pdf')
 
     assert nombre == 'matematica-i-2do-a-2026-10-06.pdf'
+
+@pytest.mark.parametrize('valor', ['\n=CMD()', ' =CMD()', '  \t@x', '\r\n+1+1', ' -2+3'])
+def test_formulas_con_espacio_o_salto_previo_se_neutralizan(valor):
+    respuesta = write_csv('a.csv', ['dato'], [[valor]])
+    assert _filas_csv(respuesta)[1][0] == f"'{valor}"
+
+
+def test_texto_con_espacio_previo_sin_formula_no_se_toca():
+    assert _filas_csv(write_csv('a.csv', ['dato'], [['  hola']]))[1][0] == '  hola'
+
+
+def test_exportar_tabla_pdf_respeta_el_limite_de_filas(monkeypatch):
+    monkeypatch.setattr(exportaciones, 'LIMITE_FILAS_CSV', 2)
+    with pytest.raises(ValidationError) as error:
+        exportaciones.exportar_tabla('pdf', 'x', 'X', ['n'], ([i] for i in range(3)))
+    assert error.value.detail == {'detail': 'Hay demasiados registros para exportar. Refine los filtros.'}
+
+
+
+def test_pdf_con_subtitulo_lo_muestra_bajo_el_titulo():
+    texto, _ = _texto_pdf(tabla_a_pdf('Calificaciones', ['a'], [['x']], subtitulo='Docente titular: Pérez, Ana'))
+    assert 'Docente titular: Pérez, Ana' in texto
+
+
+def test_secciones_a_pdf_dibuja_cada_seccion_con_su_titulo():
+    from core.exportaciones import secciones_a_pdf
+
+    texto, _ = _texto_pdf(secciones_a_pdf('Boletín', [
+        {'titulo': 'Álgebra', 'columnas': ['a'], 'filas': [['uno']]},
+        {'titulo': 'Física', 'columnas': ['a'], 'filas': [['dos']]},
+    ]))
+    assert 'Álgebra' in texto and 'Física' in texto and 'uno' in texto and 'dos' in texto
+
+
+def test_tabla_a_pdf_respeta_el_limite_de_filas_total(monkeypatch):
+    monkeypatch.setattr(exportaciones, 'LIMITE_FILAS_CSV', 3)
+    with pytest.raises(ValidationError) as error:
+        exportaciones.secciones_a_pdf('t', [
+            {'columnas': ['a'], 'filas': [['1'], ['2']]},
+            {'columnas': ['a'], 'filas': [['3'], ['4']]},
+        ])
+    assert error.value.detail == {'detail': 'Hay demasiados registros para exportar. Refine los filtros.'}

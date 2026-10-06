@@ -32,6 +32,7 @@ MENSAJE_LIMITE = 'Hay demasiados registros para exportar. Refine los filtros.'
 
 # OWASP: una celda que empieza así se interpreta como fórmula en Excel y LibreOffice
 PREFIJOS_DE_FORMULA = ('=', '+', '-', '@', '\t', '\r')
+ESPACIOS_PREVIOS = ' \t\r\n\v\f'
 
 DIRECTORIO_FUENTES = Path(__file__).resolve().parent / 'static' / 'fonts'
 FUENTE = 'DejaVuSans'
@@ -42,13 +43,42 @@ def _celda_csv(valor):
     if valor is None:
         return ''
     # Solo los textos se neutralizan: un número negativo real (int, Decimal) no es una fórmula
-    if isinstance(valor, str) and valor.startswith(PREFIJOS_DE_FORMULA):
+    # El espacio o el salto de línea previos no la desactivan: Excel los ignora antes de evaluar
+    if isinstance(valor, str) and (
+        valor.startswith(PREFIJOS_DE_FORMULA) or valor.lstrip(ESPACIOS_PREVIOS).startswith(PREFIJOS_DE_FORMULA)
+    ):
         return f"'{valor}"
     return valor
 
 
 def nombre_archivo(recurso, ext):
     return f'{slugify(recurso)}-{timezone.localdate().isoformat()}.{ext}'
+
+
+def formato_solicitado(request, permitidos=('csv', 'pdf'), defecto='csv'):
+    """Lee ``?formato=``: vacío usa el defecto y cualquier valor fuera de los permitidos es 400."""
+    formato = (request.query_params.get('formato') or defecto).lower()
+    if formato not in permitidos:
+        raise ValidationError({'detail': 'Formato no soportado.'})
+    return formato
+
+
+def acotar_filas(filas):
+    """Materializa las filas con el mismo tope que el CSV: un PDF sin límite agota memoria y tiempo."""
+    acotadas = []
+    for fila in filas:
+        if len(acotadas) >= LIMITE_FILAS_CSV:
+            raise ValidationError({'detail': MENSAJE_LIMITE})
+        acotadas.append(fila)
+    return acotadas
+
+
+def exportar_tabla(formato, recurso, titulo, columnas, filas, horizontal=False):
+    """Responde la tabla como descarga en el formato pedido, con el nombre ``<recurso>-<fecha>.<ext>``."""
+    nombre = nombre_archivo(recurso, formato)
+    if formato == 'pdf':
+        return tabla_a_pdf(titulo, columnas, acotar_filas(filas), horizontal=horizontal, nombre=nombre)
+    return write_csv(nombre, columnas, filas)
 
 
 def _respuesta(contenido_tipo, nombre):
@@ -107,35 +137,50 @@ def _texto(valor):
     return escape('' if valor is None else str(valor))
 
 
-def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None):
+def secciones_a_pdf(titulo, secciones, horizontal=False, nombre=None, subtitulo=None):
+    """PDF con un título y una o más secciones ``{'titulo', 'columnas', 'filas'}``, cada una con su tabla.
+
+    El título de sección es opcional. Todas comparten encabezado de página, fecha y "Página X de Y".
+    """
     _registrar_fuentes()
     tamano = landscape(A4) if horizontal else A4
     margen = 15 * mm
     ancho_util = tamano[0] - 2 * margen
 
     estilo_titulo = ParagraphStyle('titulo', fontName=FUENTE_NEGRITA, fontSize=14, leading=18)
+    estilo_subtitulo = ParagraphStyle('subtitulo', fontName=FUENTE, fontSize=10, leading=14)
+    estilo_seccion = ParagraphStyle('seccion', fontName=FUENTE_NEGRITA, fontSize=11, leading=15, keepWithNext=True)
     estilo_fecha = ParagraphStyle('fecha', fontName=FUENTE, fontSize=8, leading=11, textColor=colors.grey)
     estilo_celda = ParagraphStyle('celda', fontName=FUENTE, fontSize=8, leading=10)
     estilo_encabezado = ParagraphStyle('encabezado', parent=estilo_celda, fontName=FUENTE_NEGRITA)
 
-    datos = [[Paragraph(_texto(c), estilo_encabezado) for c in columnas]]
-    datos += [[Paragraph(_texto(v), estilo_celda) for v in fila] for fila in filas]
-
-    tabla = Table(datos, colWidths=[ancho_util / max(1, len(columnas))] * len(columnas), repeatRows=1)
-    tabla.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E5E7EB')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9FAFB')]),
-        ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#9CA3AF')),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
+    def construir_tabla(columnas, filas):
+        datos = [[Paragraph(_texto(c), estilo_encabezado) for c in columnas]]
+        datos += [[Paragraph(_texto(v), estilo_celda) for v in fila] for fila in filas]
+        tabla = Table(datos, colWidths=[ancho_util / max(1, len(columnas))] * len(columnas), repeatRows=1)
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E5E7EB')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9FAFB')]),
+            ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#9CA3AF')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        return tabla
 
     emitido = timezone.localdate().strftime('%d/%m/%Y')
-    historia = [
-        Paragraph(_texto(titulo), estilo_titulo),
-        Paragraph(f'Fecha de emisión: {emitido}', estilo_fecha),
-        Spacer(1, 6 * mm),
-        tabla,
-    ]
+    historia = [Paragraph(_texto(titulo), estilo_titulo)]
+    if subtitulo:
+        historia.append(Paragraph(_texto(subtitulo), estilo_subtitulo))
+    historia += [Paragraph(f'Fecha de emisión: {emitido}', estilo_fecha), Spacer(1, 6 * mm)]
+    total_filas = 0
+    for seccion in secciones:
+        filas = acotar_filas(seccion['filas'])
+        total_filas += len(filas)
+        if total_filas > LIMITE_FILAS_CSV:
+            raise ValidationError({'detail': MENSAJE_LIMITE})
+        if seccion.get('titulo'):
+            historia.append(Paragraph(_texto(seccion['titulo']), estilo_seccion))
+        historia.append(construir_tabla(seccion['columnas'], filas))
+        historia.append(Spacer(1, 6 * mm))
 
     buffer = io.BytesIO()
     documento = SimpleDocTemplate(
@@ -147,3 +192,9 @@ def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None):
     respuesta = _respuesta('application/pdf', nombre)
     respuesta.write(buffer.getvalue())
     return respuesta
+
+
+def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None, subtitulo=None):
+    return secciones_a_pdf(
+        titulo, [{'columnas': columnas, 'filas': filas}], horizontal=horizontal, nombre=nombre, subtitulo=subtitulo
+    )

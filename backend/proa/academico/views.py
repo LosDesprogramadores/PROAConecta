@@ -19,6 +19,9 @@ from .serializer import (
 )
 from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from core.exceptions import ErrorSerializer
+from core.pagination import PaginacionOpcional
+from core.exportaciones import exportar_tabla, formato_solicitado
+from .exportaciones import exportar_boletin, exportar_rendimiento_curso
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -73,11 +76,13 @@ def _alcance(user):
 class MateriaViewSet(viewsets.ModelViewSet):
     queryset = materias_con_resumen()
     serializer_class = MateriaSerializer
+    pagination_class = PaginacionOpcional
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['titulo', 'anio', 'curso']
     # Las altas, ediciones, bajas y asignaciones son solo del administrador; la lectura se acota en get_queryset
     acciones_de_administrador = {
         'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor', 'restaurar',
+        'exportar',
     }
 
     def get_permissions(self):
@@ -149,6 +154,26 @@ class MateriaViewSet(viewsets.ModelViewSet):
         # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
         instance.soft_delete()
 
+    @extend_schema(
+        parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],
+        responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer},
+    )
+    @action(detail=False, methods=['get'], url_path='exportar')
+    def exportar(self, request):
+        formato = formato_solicitado(request)
+        # Mismos filtros y orden que el listado; total_estudiantes ya excluye la baja y cuenta LIBRE
+        materias = self.filter_queryset(self.get_queryset())
+        columnas = ['nombre', 'curso', 'anio', 'profesor', 'inscriptos_activos']
+        filas = (
+            [
+                m.titulo, m.curso, m.anio,
+                f'{m.profesor.apellido}, {m.profesor.nombre}' if m.profesor else '',
+                m.total_estudiantes,
+            ]
+            for m in materias
+        )
+        return exportar_tabla(formato, 'materias', 'Materias', columnas, filas)
+
     @action(detail=True, methods=['post'], url_path='restaurar')
     def restaurar(self, request, pk=None):
         materia = self.get_object()  # solo encuentra materias dadas de baja (get_queryset)
@@ -196,6 +221,30 @@ class MateriaViewSet(viewsets.ModelViewSet):
         data = obtener_rendimiento_curso_profesor(request.user, materia)
         return Response(data, status=status.HTTP_200_OK)
 
+    @extend_schema(responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer, 403: ErrorSerializer})
+    @action(detail=False, methods=['get'], url_path='mi-boletin/exportar')
+    def mi_boletin_exportar(self, request):
+        formato = formato_solicitado(request, permitidos=('pdf',), defecto='pdf')
+        persona, rol = _alcance(request.user)
+        # Boletín propio: ni el administrador ni el profesor tienen uno
+        if rol != ROL_ESTUDIANTE or persona is None:
+            raise PermissionDenied('Solo un estudiante puede descargar su boletín.')
+        materias = materias_con_acceso(persona).order_by('-anio', 'titulo', 'id')  # LIBRE cuenta, BAJA no
+        rendimientos = [obtener_rendimiento_estudiante(request.user, materia) for materia in materias]
+        return exportar_boletin(persona, rendimientos)
+
+    @extend_schema(
+        parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],
+        responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer},
+    )
+    @action(detail=True, methods=['get'], url_path='rendimiento-curso/exportar')
+    def rendimiento_curso_exportar(self, request, pk=None):
+        formato = formato_solicitado(request)
+        # Una materia ajena es 404 desde get_queryset; el estudiante inscripto la ve y verificar_profesor_materia lo corta con 403
+        materia = self.get_object()
+        datos = obtener_rendimiento_curso_profesor(request.user, materia)
+        return exportar_rendimiento_curso(formato, materia, datos)
+
     @action(detail=True, methods=['get'], url_path='alumnos')
     def alumnos(self, request, pk=None):
         materia = self.get_object()
@@ -232,6 +281,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.select_related('materia__profesor', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer
+    pagination_class = PaginacionOpcional
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['fecha_inscripcion', 'estado']
     acciones_de_administrador = {

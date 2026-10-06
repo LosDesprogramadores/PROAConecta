@@ -3,6 +3,7 @@ import { Observable } from "rxjs/internal/Observable";
 import { IPersona, Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";
 import { MateriaService } from "./materia.service";
+import { ConsultaPaginada, RespuestaPaginada } from "../core/models/api-response.interface";
 
 @Injectable({
     providedIn: 'root'
@@ -19,6 +20,10 @@ private readonly materiaService = inject(MateriaService);
 obtenerProfesores():Observable<Persona[]>{
     return this.personaService.obtenerPersonas(RolId.PROFESOR);
 
+}
+
+listarPaginado(consulta: ConsultaPaginada): Observable<RespuestaPaginada<Persona>> {
+    return this.personaService.listarPaginado(RolId.PROFESOR, consulta);
 }
 
 crearProfesores(nuevoProfesor:IPersona):Observable<Persona>{

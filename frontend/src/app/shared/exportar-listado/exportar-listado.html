@@ -1,0 +1,18 @@
+<div class="inline-flex items-center gap-2" role="group" aria-label="Exportar listado">
+  <button
+    type="button"
+    (click)="exportar('csv')"
+    [disabled]="estado() === 'cargando'"
+    [attr.aria-busy]="formatoActivo() === 'csv'"
+    class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+    {{ formatoActivo() === 'csv' ? 'Exportando...' : 'Exportar CSV' }}
+  </button>
+  <button
+    type="button"
+    (click)="exportar('pdf')"
+    [disabled]="estado() === 'cargando'"
+    [attr.aria-busy]="formatoActivo() === 'pdf'"
+    class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+    {{ formatoActivo() === 'pdf' ? 'Exportando...' : 'Exportar PDF' }}
+  </button>
+</div>

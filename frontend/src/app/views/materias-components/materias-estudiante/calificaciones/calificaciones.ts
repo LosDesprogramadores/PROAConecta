@@ -4,6 +4,8 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { UserRole } from '../../../../core/auth/auth.model';
 import {CalificacionesService, RendimientoEstudiante,} from '../../../../services/calificaciones.service';
 import { ToastService } from '../../../../services/toast.service';
+import { FileDownloadService } from '../../../../core/http/file-download';
+import { environment } from '../../../../../environments/environment';
 
 interface CalificacionEstudiante {
   id: number;
@@ -24,6 +26,7 @@ export class Calificaciones implements OnInit {
   private route = inject(ActivatedRoute);
   private calificacionesService = inject(CalificacionesService);
   private toastService = inject(ToastService);
+  private descargas = inject(FileDownloadService);
 
   private currentUser = this.authService.currentUser;
 
@@ -50,6 +53,8 @@ export class Calificaciones implements OnInit {
   cargando = signal(false);
 
   error = signal('');
+
+  descargando = signal(false);
 
   ngOnInit(): void {
     if (!this.esEstudiante()) {
@@ -121,7 +126,26 @@ export class Calificaciones implements OnInit {
     });
   }
 
-  exportarPDF(): void {
-    this.toastService.info('La exportación a PDF estará disponible próximamente.');
+  descargarBoletin(): void {
+    if (this.descargando()) {
+      return;
+    }
+    this.descargando.set(true);
+
+    this.descargas
+      .descargar(`${environment.apiUrl}materias/mi-boletin/exportar/`, {}, 'boletin.pdf')
+      .subscribe({
+        next: () => {
+          this.descargando.set(false);
+          this.toastService.success('El boletín se generó correctamente.');
+        },
+        error: (err) => {
+          this.descargando.set(false);
+          this.toastService.error(
+            this.toastService.readable_message_extraction(err),
+            'No se pudo descargar el boletín',
+          );
+        },
+      });
   }
 }

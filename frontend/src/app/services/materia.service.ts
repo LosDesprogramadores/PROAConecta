@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { EstadoInscripcion, IAlumnoMateria, IMateria } from '../model/materia.model';
 import { environment } from '../../environments/environment';
+import { ConsultaPaginada, RespuestaPaginada } from '../core/models/api-response.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +14,11 @@ export class MateriaService {
 
   obtenerMaterias(): Observable<IMateria[]> {
     return this.http.get<IMateria[]>(this.baseUrl);
+  }
+
+  /** Paginated variant of `obtenerMaterias`: the server answers the page envelope when `page` is sent. */
+  listarPaginado(consulta: ConsultaPaginada): Observable<RespuestaPaginada<IMateria>> {
+    return this.http.get<RespuestaPaginada<IMateria>>(this.baseUrl, { params: { ...consulta } });
   }
 
   obtenerMateriaPorId(id: number): Observable<IMateria> {

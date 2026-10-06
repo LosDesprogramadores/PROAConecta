@@ -14,6 +14,12 @@
     </div>
   }
 
+  @if (exportarUrl) {
+    <div class="px-5 py-3 border-b border-slate-100 flex justify-end">
+      <app-exportar-listado [url]="exportarUrl" [params]="exportarParams" [recurso]="exportarRecurso" />
+    </div>
+  }
+
   <div class="overflow-x-auto">
     <table class="w-full text-left text-sm text-slate-600 border-collapse">
       <thead class="bg-slate-50/50 text-xs font-semibold uppercase text-slate-400 border-b border-slate-200/80">
@@ -77,6 +83,14 @@
       </tbody>
     </table>
   </div>
+
+  @if (totalRegistros !== null) {
+    <app-paginador
+      [total]="totalRegistros"
+      [pagina]="paginaActual"
+      [tamano]="tamanoPagina"
+      (paginaCambiada)="onPaginaCambiada.emit($event)" />
+  }
 
 </div>
 
