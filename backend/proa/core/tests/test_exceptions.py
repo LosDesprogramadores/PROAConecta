@@ -257,7 +257,8 @@ def test_calificar_fuera_de_rango_responde_error_por_campo(api_as, profesor, est
 # --- documentación de la API ---
 
 @pytest.mark.django_db
-def test_los_endpoints_tocados_documentan_su_entrada_y_el_error(admin, api_as):
+def test_los_endpoints_tocados_documentan_su_entrada_y_el_error(admin, api_as, settings):
+    settings.DOCS_API_PUBLICAS = True  # el esquema solo se sirve en desarrollo (SEC-25)
     esquema = api_as(admin).get('/api/schema/?format=json').json()
     rutas = esquema['paths']
 

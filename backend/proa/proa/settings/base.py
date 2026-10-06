@@ -97,6 +97,11 @@ REST_FRAMEWORK = {
     },
 }
 
+# Documentación de la API (/api/schema/, swagger-ui y redoc). Apagada por defecto (producción y tests): la UI
+# del navegador no puede mandar el JWT en la cabecera, así que "solo administradores" sería inalcanzable y un
+# esquema público delata toda la superficie de la API (SEC-25). proa.settings.dev la enciende.
+DOCS_API_PUBLICAS = False
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'PROAConecta API',
     'DESCRIPTION': 'Documentación interactiva de materias, asignaciones e inscripciones',
