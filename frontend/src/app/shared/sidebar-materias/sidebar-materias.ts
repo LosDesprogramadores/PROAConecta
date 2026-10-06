@@ -13,7 +13,7 @@ import { UserRole } from '../../core/auth/auth.model';
 export class SidebarMaterias implements OnInit {
   materiaId: string | null = null;
 
-  links: { label: string; path: string }[] = [];
+  links: { label: string; path: string; queryParams?: Record<string, string> }[] = [];
 
   areaPersonalPath = '';
 
@@ -69,6 +69,13 @@ export class SidebarMaterias implements OnInit {
       },
     ];
 
+    // The inbox is global; the query param filters it by this subject.
+    const linkMensajes = {
+      label: 'Mensajes',
+      path: '/dashboard/mensajes',
+      queryParams: { materia: this.materiaId },
+    };
+
     switch (this.authService.rol()) {
       case UserRole.ESTUDIANTE:
         this.links = [
@@ -77,6 +84,7 @@ export class SidebarMaterias implements OnInit {
             label: 'Calificaciones',
             path: `/view-materia/${this.materiaId}/calificaciones`,
           },
+          linkMensajes,
         ];
         break;
 
@@ -91,6 +99,7 @@ export class SidebarMaterias implements OnInit {
             label: 'Alumnos',
             path: `/view-materia/${this.materiaId}/alumnos`,
           },
+          linkMensajes,
         ];
         break;
 

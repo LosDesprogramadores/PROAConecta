@@ -29,6 +29,25 @@ describe('app routes', () => {
     expect(ruta?.component).toBe(ActividadForm);
   });
 
+  it('keeps the administrator out of the private inbox (dashboard/mensajes)', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isLoggedIn: () => true, rol: () => UserRole.ADMIN } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const ruta = primeraCoincidencia(hijosDe('dashboard'), ['mensajes'])!;
+    const resultado = TestBed.runInInjectionContext(() =>
+      (ruta.canActivate![0] as (r: ActivatedRouteSnapshot, s: RouterStateSnapshot) => unknown)(
+        {} as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    );
+    expect(resultado).toBeInstanceOf(UrlTree);
+    expect(router.serializeUrl(resultado as UrlTree)).toBe('/dashboard-admin');
+  });
+
   it('keeps the wildcard last and pointed at the 404 screen', () => {
     const ultima = routes[routes.length - 1];
     expect(ultima.path).toBe('**');

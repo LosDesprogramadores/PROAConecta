@@ -19,13 +19,13 @@
         <div class="hidden lg:flex items-center gap-2">
           @if (!isMateriaRoute()) {
             @for (link of navLinksAdmi; track link.path) {
-              <a [routerLink]="link.path" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
+              <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
                 class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
                 {{ link.label }}
               </a>
             }
             @for (link of navLinks; track link.path) {
-              <a [routerLink]="link.path" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
+              <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
                 class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
                 {{ link.label }}
               </a>
@@ -34,7 +34,7 @@
 
           @if (isMateriaRoute() && !esEstudiante()) {
             @for (link of navLinksMateria; track link.path) {
-              <a [routerLink]="link.path" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
+              <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
                 class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
                 {{ link.label }}
               </a>
@@ -52,12 +52,18 @@
 
           <div class="relative">
             <button type="button" id="messages-button" (click)="toggleMessages()"
-              class="p-2 rounded-full text-slate-600 hover:text-slate-900 hover:bg-white/50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              title="Mensajes">
+              class="relative p-2 rounded-full text-slate-600 hover:text-slate-900 hover:bg-white/50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              title="Mensajes" [attr.aria-label]="unreadMessages() > 0 ? 'Mensajes, ' + unreadMessages() + ' sin leer' : 'Mensajes'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
               </svg>
+              @if (unreadMessages() > 0) {
+              <span aria-hidden="true"
+                class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                {{ unreadMessages() }}
+              </span>
+              }
             </button>
 
             <div id="messages-dropdown" 
@@ -68,21 +74,33 @@
               
               <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <span class="font-semibold text-slate-800 text-sm">Mensajes</span>
-                <span class="text-xs text-sky-600 cursor-pointer hover:underline">Marcar leídos</span>
+                @if (unreadMessages() > 0) {
+                <span class="text-xs text-slate-500">{{ unreadMessages() }} sin leer</span>
+                }
               </div>
 
               <div class="max-h-72 overflow-y-auto divide-y divide-slate-100">
-                @for (msg of messages(); track msg.sender) {
-                <div class="p-3 hover:bg-slate-50 transition cursor-pointer flex items-start gap-3">
-                  <div class="bg-sky-100 text-sky-700 rounded-full h-8 w-8 flex items-center justify-center font-semibold text-xs shrink-0">
-                    {{ msg.sender.charAt(0) }}
+                @if (messagesLoading() && messages().length === 0) {
+                <p class="p-4 text-xs text-slate-500 text-center" role="status">Cargando...</p>
+                } @else if (messagesError()) {
+                <p class="p-4 text-xs text-red-600 text-center" role="alert">No se pudieron cargar los mensajes.</p>
+                } @else {
+                @for (msg of messages(); track msg.id) {
+                <a routerLink="/dashboard/mensajes" (click)="closeMenus()"
+                  class="p-3 hover:bg-slate-50 transition flex items-start gap-3"
+                  [class.bg-sky-50/40]="!msg.leido">
+                  <div class="bg-sky-100 text-sky-700 rounded-full h-8 w-8 flex items-center justify-center font-semibold text-xs shrink-0" aria-hidden="true">
+                    {{ (msg.remitente.nombre_completo ?? '?').charAt(0) }}
                   </div>
                   <div class="overflow-hidden">
-                    <p class="text-xs font-semibold text-slate-800 truncate">{{ msg.sender }}</p>
-                    <p class="text-xs text-slate-500 truncate">{{ msg.text }}</p>
-                    <span class="text-[10px] text-slate-400">{{ msg.time }}</span>
+                    <p class="text-xs text-slate-800 truncate" [class.font-bold]="!msg.leido" [class.font-semibold]="msg.leido">{{ msg.remitente.nombre_completo }}</p>
+                    <p class="text-xs text-slate-500 truncate">{{ msg.asunto }}</p>
+                    <span class="text-[10px] text-slate-400">{{ msg.fecha_creacion | date:'short' }}</span>
                   </div>
-                </div>
+                </a>
+                } @empty {
+                <p class="p-4 text-xs text-slate-500 text-center">No tienes mensajes.</p>
+                }
                 }
               </div>
 
@@ -225,7 +243,7 @@
 
         @if (!isMateriaRoute()) {
         @for (link of navLinksAdmi; track link.path) {
-        <a [routerLink]="link.path" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
+        <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
           class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
           {{ link.label }}
         </a>
@@ -234,7 +252,7 @@
 
         @if (!isMateriaRoute()) {
         @for (link of navLinks; track link.path) {
-        <a [routerLink]="link.path" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
+        <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
           class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
           {{ link.label }}
         </a>
@@ -243,7 +261,7 @@
 
         @if (isMateriaRoute()) {
         @for (link of navLinksMateria; track link.path) {
-        <a [routerLink]="link.path" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
+        <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
           class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
           {{ link.label }}
         </a>

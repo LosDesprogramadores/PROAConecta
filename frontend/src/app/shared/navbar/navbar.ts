@@ -7,17 +7,13 @@ import { ToastService } from '../../services/toast.service';
 import { INotificacion } from '../../model/notificacion.model';
 import { CommonModule } from '@angular/common';
 import { NotificacionesEstadoService } from '../../services/notificaciones-estado.service';
+import { MensajesEstadoService } from '../../services/mensajes-estado.service';
 
 import { Modal } from '../modal/modal';
 interface NavLink {
   label: string;
   path: string;
-}
-
-interface Message {
-  sender: string;
-  text: string;
-  time: string;
+  queryParams?: Record<string, string>;
 }
 
 @Component({
@@ -32,6 +28,7 @@ export class Navbar implements OnInit {
   private toastService = inject(ToastService);
   private router = inject(Router);
   private notificacionesEstado = inject(NotificacionesEstadoService);
+  private mensajesEstado = inject(MensajesEstadoService);
 
   currentUser = this.authService.currentUser;
   // En escritorio el estudiante navega la materia desde sidebar-materias; en móvil el sidebar no existe.
@@ -50,10 +47,11 @@ export class Navbar implements OnInit {
   notificationsLoading = this.notificacionesEstado.cargando;
   notificationsError = this.notificacionesEstado.error;
 
-  messages = signal<Message[]>([
-    { sender: 'Profesor Gomez', text: 'Hola, te escribo por la tarea...', time: 'Hace 10 min' },
-    { sender: 'Maria Perez', text: '¿Nos juntamos a estudiar?', time: 'Hace 1 hora' }
-  ]);
+  // Last five received messages and the real unread counter (live through the socket).
+  messages = this.mensajesEstado.ultimos;
+  unreadMessages = this.mensajesEstado.noLeidos;
+  messagesLoading = this.mensajesEstado.cargando;
+  messagesError = this.mensajesEstado.error;
 
   navLinksAdmi: NavLink[] = [];
 
@@ -144,8 +142,13 @@ export class Navbar implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.currentUser()) {
+    const user = this.currentUser();
+    if (user) {
       this.notificacionesEstado.iniciar();
+      // The administrator has no private inbox (the server answers 403).
+      if (user.rolId !== UserRole.ADMIN) {
+        this.mensajesEstado.iniciar();
+      }
     }
   }
 
@@ -184,6 +187,7 @@ export class Navbar implements OnInit {
           label: 'Calificaciones',
           path: `/view-materia/${materiaId}/estudiante/calificaciones`,
         },
+        { label: 'Mensajes', path: '/dashboard/mensajes', queryParams: { materia: materiaId } },
       ];
     }
 
@@ -208,6 +212,7 @@ export class Navbar implements OnInit {
 
     if (user?.rolId === UserRole.DOCENTE) {
       links.push({ label: 'Alumnos', path: `/view-materia/${materiaId}/alumnos` });
+      links.push({ label: 'Mensajes', path: '/dashboard/mensajes', queryParams: { materia: materiaId } });
     }
 
     return links;

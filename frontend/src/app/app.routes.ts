@@ -98,7 +98,8 @@ export const routes: Routes = [
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },
-      { path: 'mensajes', component: MensajesComponent },
+      // The administrator has no private inbox (the server answers 403).
+      { path: 'mensajes', canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ESTUDIANTE])], component: MensajesComponent },
       { path: 'notificaciones', component: NotificacionesComponent },
 
       { path: '', redirectTo: 'ingreso', pathMatch: 'full' },
