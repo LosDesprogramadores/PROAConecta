@@ -30,3 +30,27 @@ class NotificacionEntradaSerializer(serializers.Serializer):
             if attrs.get(campo) == '':
                 attrs[campo] = None
         return attrs
+
+
+class AnuncioEntradaSerializer(serializers.Serializer):
+    """Cuerpo de un anuncio de materia. Solo título y mensaje: el autor sale de la sesión y el tipo, el
+    alcance y la materia los fija el servidor (cualquier otro campo del cuerpo se ignora)."""
+
+    titulo = serializers.CharField(
+        max_length=120,
+        error_messages={
+            'required': 'Este campo es obligatorio.',
+            'null': 'Este campo es obligatorio.',
+            'blank': 'Este campo no puede estar vacío.',
+            'max_length': 'Máximo {max_length} caracteres.',
+        },
+    )
+    mensaje = serializers.CharField(
+        max_length=2000,
+        error_messages={
+            'required': 'Este campo es obligatorio.',
+            'null': 'Este campo es obligatorio.',
+            'blank': 'Este campo no puede estar vacío.',
+            'max_length': 'Máximo {max_length} caracteres.',
+        },
+    )

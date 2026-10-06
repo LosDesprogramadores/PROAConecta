@@ -83,6 +83,9 @@ def _filtros_de_consulta(user, params) -> dict:
     materia_id = _entero(params, 'materia_id')
     if materia_id is not None:
         condiciones.append({'materia_id': materia_id})
+    tipo = params.get('tipo')
+    if tipo:
+        condiciones.append({'tipo_notificacion_codigo': tipo})
     if str(params.get('no_leidas', '')).lower() == 'true':
         condiciones.append({'leida_por': {'$ne': user.pk}})
     if str(params.get('vigentes', '')).lower() == 'true':
@@ -130,6 +133,18 @@ def _serializar(docs, user):
         'fecha_creacion': _como_texto(d.get('fecha_creacion')),
         'leida': user.pk in d.get('leida_por', []),
     } for d in docs]
+
+
+def serializar_por_id(user, obj_id):
+    """El aviso con el mismo formato de un elemento de ``listar`` (se relee de Mongo para que las
+    fechas salgan igual que en el listado)."""
+    doc = _coleccion().find_one({'_id': obj_id})
+    return _serializar([doc], user)[0] if doc else None
+
+
+def serializar_documento(user, doc):
+    """Formato de un elemento de ``listar`` para un documento ya en memoria."""
+    return _serializar([doc], user)[0]
 
 
 def listar(user, params, ruta):
