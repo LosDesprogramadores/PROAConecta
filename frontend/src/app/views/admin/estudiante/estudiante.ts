@@ -10,6 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { Toast } from '../../../shared/toast/toast';
+import { Paginador } from '../../../shared/paginador/paginador';
 import { IColumnaTabla } from '../../../model/tabla.model';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
 import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
@@ -17,9 +18,11 @@ import { environment } from '../../../../environments/environment';
 
 
 
+const TAMANO_PAGINA = 20;
+
 @Component({
   selector: 'app-estudiante',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica, ExportarListado],
+  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica, ExportarListado, Paginador],
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })
@@ -31,6 +34,9 @@ export class Estudiante implements OnInit {
   protected readonly urlExportarPersonas = `${environment.apiUrl}personas/exportar/`;
   protected readonly rolEstudiante = RolId.ESTUDIANTE;
   estudiantes = signal<Persona[]>([])
+  readonly tamanoPagina = TAMANO_PAGINA;
+  total = signal<number>(0);
+  pagina = signal<number>(1);
 
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
@@ -74,17 +80,24 @@ export class Estudiante implements OnInit {
     this.cargarEstudiantes()
   }
 
-  cargarEstudiantes(): void {
+  /** Loads one server page. A page that emptied out (last row deleted) falls back to the previous one. */
+  cargarEstudiantes(pagina: number = this.pagina()): void {
     this.isLoading.set(true);
-    this.estudianteService.obtenerEstudiates().subscribe({
-      next: (data) => {
-        this.estudiantes.set(data);
+    this.estudianteService.listarPaginado({ page: pagina, page_size: TAMANO_PAGINA }).subscribe({
+      next: (respuesta) => {
+        if (respuesta.results.length === 0 && pagina > 1) {
+          this.cargarEstudiantes(pagina - 1);
+          return;
+        }
+        this.estudiantes.set(respuesta.results);
+        this.total.set(respuesta.count);
+        this.pagina.set(pagina);
         this.isLoading.set(false);
-        console.log(data)
       },
 
       error: (err) => {
         console.error('Error al cargar estudiantes:', err);
+        this.toastService.error(this.toastService.readable_message_extraction(err), "");
         this.isLoading.set(false);
       }
     })
@@ -140,7 +153,8 @@ export class Estudiante implements OnInit {
         next: (res: Persona) => {
           console.log('Estudiante creado con éxito:', res);
           this.toastService.success(`Estudiante ${res.nombre} ${res.apellido} se creó con éxito.`);
-          this.estudiantes.update(lista => [...lista, res]);
+          // Jump to the last page: that is where the new row appears.
+          this.cargarEstudiantes(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
           this.closeModal();
         },
         error: (err) => {
@@ -166,7 +180,7 @@ confirmarEliminacion(): void {
     next: () => {
       console.log('Estudiante eliminado con éxito');
       this.toastService.success('Estudiante eliminado con éxito.');
-      this.estudiantes.update(lista => lista.filter(e => e.id !== estudianteId));
+      this.cargarEstudiantes();
       this.cancelarEliminacion();
     },
     error: (err) => {

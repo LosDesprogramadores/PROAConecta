@@ -12,11 +12,14 @@ import { Modal } from '../../../shared/modal/modal';
 import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
 import { environment } from '../../../../environments/environment';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
+import { Paginador } from '../../../shared/paginador/paginador';
 
+
+const TAMANO_PAGINA = 20;
 
 @Component({
   selector: 'app-profesor',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica, ExportarListado],
+  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica, ExportarListado, Paginador],
   templateUrl: './profesor.html',
   styleUrl: './profesor.css',
 })
@@ -29,6 +32,9 @@ export class Profesor implements OnInit {
   private toastService = inject(ToastService)
 
   profesores = signal<Persona[]>([])
+  readonly tamanoPagina = TAMANO_PAGINA;
+  total = signal<number>(0);
+  pagina = signal<number>(1);
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   selectedId = signal<number | null>(null);
@@ -74,13 +80,19 @@ export class Profesor implements OnInit {
     this.cargarProfesores()
   }
 
-  cargarProfesores(): void {
+  /** Loads one server page. A page that emptied out (last row deleted) falls back to the previous one. */
+  cargarProfesores(pagina: number = this.pagina()): void {
     this.isLoading.set(true);
-    this.profesorService.obtenerProfesores().subscribe({
-      next: (data) => {
-        this.profesores.set(data);
+    this.profesorService.listarPaginado({ page: pagina, page_size: TAMANO_PAGINA }).subscribe({
+      next: (respuesta) => {
+        if (respuesta.results.length === 0 && pagina > 1) {
+          this.cargarProfesores(pagina - 1);
+          return;
+        }
+        this.profesores.set(respuesta.results);
+        this.total.set(respuesta.count);
+        this.pagina.set(pagina);
         this.isLoading.set(false);
-        console.log(data)
       },
       error: (err) => {
         console.error('Error al cargar profesores:', err)
@@ -140,7 +152,8 @@ export class Profesor implements OnInit {
         next: (res: Persona) => {
           console.log('Profesor creado con éxito:', res);
           this.toastService.success("Profesor se creo correctamente.")
-          this.profesores.update(lista => [...lista, res]);
+          // Jump to the last page: that is where the new row appears.
+          this.cargarProfesores(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
           this.closeModal();
         },
         error: (err) => {
@@ -164,7 +177,7 @@ export class Profesor implements OnInit {
       next: (res) => {
         console.log('Profesor eliminado con éxito:', res);
         this.toastService.success("Profesor eliminado correctamente.");
-        this.profesores.update(lista => lista.filter(p => p.id !== id));
+        this.cargarProfesores();
         this.closeModal();
       },
       error: (err) => {
