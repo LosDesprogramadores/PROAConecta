@@ -137,13 +137,14 @@ def _texto(valor):
     return escape('' if valor is None else str(valor))
 
 
-def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None):
+def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None, subtitulo=None):
     _registrar_fuentes()
     tamano = landscape(A4) if horizontal else A4
     margen = 15 * mm
     ancho_util = tamano[0] - 2 * margen
 
     estilo_titulo = ParagraphStyle('titulo', fontName=FUENTE_NEGRITA, fontSize=14, leading=18)
+    estilo_subtitulo = ParagraphStyle('subtitulo', fontName=FUENTE, fontSize=10, leading=14)
     estilo_fecha = ParagraphStyle('fecha', fontName=FUENTE, fontSize=8, leading=11, textColor=colors.grey)
     estilo_celda = ParagraphStyle('celda', fontName=FUENTE, fontSize=8, leading=10)
     estilo_encabezado = ParagraphStyle('encabezado', parent=estilo_celda, fontName=FUENTE_NEGRITA)
@@ -162,6 +163,10 @@ def tabla_a_pdf(titulo, columnas, filas, horizontal=False, nombre=None):
     emitido = timezone.localdate().strftime('%d/%m/%Y')
     historia = [
         Paragraph(_texto(titulo), estilo_titulo),
+    ]
+    if subtitulo:
+        historia.append(Paragraph(_texto(subtitulo), estilo_subtitulo))
+    historia += [
         Paragraph(f'Fecha de emisión: {emitido}', estilo_fecha),
         Spacer(1, 6 * mm),
         tabla,

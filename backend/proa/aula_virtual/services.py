@@ -159,6 +159,8 @@ def obtener_rendimiento_curso_profesor(user, materia) -> dict:
 
         alumnos_resumen.append({
             'estudiante_id': est.id,
+            'apellido': est.apellido,
+            'nombre': est.nombre,
             'nombre_completo': f"{est.apellido}, {est.nombre}".strip(),
             'dni': getattr(est, 'dni', None),
             'total_evaluaciones': len(mis_calificaciones),

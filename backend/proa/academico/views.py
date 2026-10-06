@@ -21,6 +21,7 @@ from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from core.exceptions import ErrorSerializer
 from core.pagination import PaginacionOpcional
 from core.exportaciones import exportar_tabla, formato_solicitado
+from .exportaciones import exportar_rendimiento_curso
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -219,6 +220,18 @@ class MateriaViewSet(viewsets.ModelViewSet):
         materia = self.get_object()
         data = obtener_rendimiento_curso_profesor(request.user, materia)
         return Response(data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],
+        responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer},
+    )
+    @action(detail=True, methods=['get'], url_path='rendimiento-curso/exportar')
+    def rendimiento_curso_exportar(self, request, pk=None):
+        formato = formato_solicitado(request)
+        # Una materia ajena es 404 desde get_queryset; el estudiante inscripto la ve y verificar_profesor_materia lo corta con 403
+        materia = self.get_object()
+        datos = obtener_rendimiento_curso_profesor(request.user, materia)
+        return exportar_rendimiento_curso(formato, materia, datos)
 
     @action(detail=True, methods=['get'], url_path='alumnos')
     def alumnos(self, request, pk=None):
