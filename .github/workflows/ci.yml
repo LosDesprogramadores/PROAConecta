@@ -53,6 +53,9 @@ jobs:
         run: npm ci
       - name: Compilar
         run: npx ng build --configuration production
+      # Obligatorio: sin continue-on-error. Falla ante cualquier error de ESLint (los warnings no bloquean)
+      - name: Lint del frontend
+        run: npm run lint
       # Obligatorio: sin continue-on-error. Vitest sobre jsdom, sin navegador ni modo watch
       - name: Tests del frontend
         run: npx ng test --watch=false

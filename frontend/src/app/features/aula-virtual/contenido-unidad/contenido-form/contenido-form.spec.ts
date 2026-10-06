@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContenidoUnidad } from '../../../../model/unidad-contenido.model';
 import { ContenidoFormComponent } from './contenido-form';
+import { ToastService } from '../../../../services/toast.service';
 
 const existente: ContenidoUnidad = {
   id: 'c1', titulo: 'Clase 1', descripcion: 'Intro', tipo: 'video', url: 'https://youtu.be/x',
@@ -27,7 +28,6 @@ describe('ContenidoFormComponent', () => {
   }
 
   beforeEach(async () => {
-    vi.spyOn(window, 'alert').mockImplementation(() => undefined);
     await TestBed.configureTestingModule({ imports: [ContenidoFormComponent] }).compileComponents();
   });
 
@@ -45,16 +45,17 @@ describe('ContenidoFormComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('✏️ Editar Contenido');
   });
 
-  it('validates title, URL presence and URL format with an alert', () => {
+  it('validates title, URL presence and URL format with a warning toast', () => {
     crear(null);
+    const warning = vi.spyOn(TestBed.inject(ToastService), 'warning').mockImplementation(() => undefined);
     (component as unknown as { enviar(): void }).enviar();
     component.formulario.patchValue({ titulo: 'T' });
     (component as unknown as { enviar(): void }).enviar();
     component.formulario.patchValue({ url: 'x' });
     (component as unknown as { enviar(): void }).enviar();
-    expect(window.alert).toHaveBeenNthCalledWith(1, 'El título es requerido');
-    expect(window.alert).toHaveBeenNthCalledWith(2, 'La URL es requerida');
-    expect(window.alert).toHaveBeenNthCalledWith(3, 'Por favor ingresa una URL válida (ej: https://...)');
+    expect(warning).toHaveBeenNthCalledWith(1, 'El título es requerido');
+    expect(warning).toHaveBeenNthCalledWith(2, 'La URL es requerida');
+    expect(warning).toHaveBeenNthCalledWith(3, 'Por favor ingresa una URL válida (ej: https://...)');
     expect(guardados).toEqual([]);
   });
 

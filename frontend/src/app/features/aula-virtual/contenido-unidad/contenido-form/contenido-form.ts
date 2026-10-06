@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ContenidoUnidad } from '../../../../model/unidad-contenido.model';
+import { ToastService } from '../../../../services/toast.service';
 import { TipoContenido, pasosAyuda, tituloAyuda } from '../contenido-tipo';
 
 /**
@@ -17,6 +18,7 @@ import { TipoContenido, pasosAyuda, tituloAyuda } from '../contenido-tipo';
 })
 export class ContenidoFormComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly toastService = inject(ToastService);
 
   readonly contenido = input<ContenidoUnidad | null>(null);
 
@@ -54,17 +56,17 @@ export class ContenidoFormComponent implements OnInit {
     const valores = this.formulario.getRawValue();
 
     if (!valores.titulo.trim()) {
-      alert('El título es requerido');
+      this.toastService.warning('El título es requerido');
       return;
     }
     if (!valores.url.trim()) {
-      alert('La URL es requerida');
+      this.toastService.warning('La URL es requerida');
       return;
     }
     try {
       new URL(valores.url);
     } catch {
-      alert('Por favor ingresa una URL válida (ej: https://...)');
+      this.toastService.warning('Por favor ingresa una URL válida (ej: https://...)');
       return;
     }
 

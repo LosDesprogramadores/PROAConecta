@@ -7,6 +7,7 @@ import { Actividad } from '../../../model/actividad-model';
 import { UserRole } from '../../../core/auth/auth.model';
 
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { ToastService } from '../../../services/toast.service';
 import { filter } from 'rxjs';
 @Component({
   selector: 'app-actividades',
@@ -18,6 +19,7 @@ import { filter } from 'rxjs';
 export class Actividades implements OnInit {
   private authService = inject(AuthService);
   private confirmDialog = inject(ConfirmDialogService);
+  private toastService = inject(ToastService);
   private actividadesService = inject(ActividadesService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -133,7 +135,7 @@ export class Actividades implements OnInit {
         },
         error: (err: any) => {
           console.error('Error al eliminar la actividad:', err);
-          alert('No se pudo eliminar la actividad. Intenta nuevamente.');
+          this.toastService.error('No se pudo eliminar la actividad. Intenta nuevamente.');
         }
       });
     });
