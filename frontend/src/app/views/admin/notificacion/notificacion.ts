@@ -1,13 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { NotificacionService } from '../../../services/notificaciones.service';
 import { INotificacion } from '../../../model/notificacion.model';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-notificacion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './notificacion.html',
   styleUrl: './notificacion.css',
 })
@@ -23,16 +23,16 @@ export class Notificacion implements OnInit {
   notificacionAEliminar: string | null = null;
   editandoId: string | null = null;
 
-  // Inicializamos tipado correctamente cumpliendo con el modelo existente
-  nuevaNoti: Partial<INotificacion> = {
-    titulo: '',
-    mensaje: '',
-    tipo_notificacion_codigo: 'GENERAL',
-    alcance: 'AMBOS',
-    fecha_desde: '',
-    fecha_hasta: '',
-    leida: false
-  };
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  readonly formulario = this.fb.group({
+    titulo: ['', Validators.required],
+    mensaje: ['', Validators.required],
+    tipo_notificacion_codigo: ['GENERAL', Validators.required],
+    alcance: ['AMBOS', Validators.required],
+    fecha_desde: ['', Validators.required],
+    fecha_hasta: ['', Validators.required],
+  });
 
   constructor(private notificacionService: NotificacionService) { }
 
@@ -57,22 +57,19 @@ export class Notificacion implements OnInit {
   }
 
 guardarNotificacion(): void {
-    if (!this.nuevaNoti.titulo || !this.nuevaNoti.mensaje || !this.nuevaNoti.alcance || !this.nuevaNoti.tipo_notificacion_codigo || !this.nuevaNoti.fecha_desde || !this.nuevaNoti.fecha_hasta) {
+    if (this.formulario.invalid) {
+      this.formulario.markAllAsTouched();
       this.mostrarError('Todos los campos son obligatorios.');
       return;
     }
 
+    const valores = this.formulario.getRawValue();
     const notificacionData = {
-      titulo: this.nuevaNoti.titulo!,
-      mensaje: this.nuevaNoti.mensaje!,
-      tipo_notificacion_codigo: this.nuevaNoti.tipo_notificacion_codigo || 'GENERAL',
-      alcance: this.nuevaNoti.alcance || 'AMBOS',
-      fecha_desde: this.nuevaNoti.fecha_desde && this.nuevaNoti.fecha_desde.trim() !== '' ? this.nuevaNoti.fecha_desde : null,
-      fecha_hasta: this.nuevaNoti.fecha_hasta && this.nuevaNoti.fecha_hasta.trim() !== '' ? this.nuevaNoti.fecha_hasta : null,
+      ...valores,
+      fecha_desde: valores.fecha_desde.trim() !== '' ? valores.fecha_desde : null,
+      fecha_hasta: valores.fecha_hasta.trim() !== '' ? valores.fecha_hasta : null,
       leida: false
     };
-
-    console.log('DATOS QUE SE ENVIÁN AL BACKEND:', notificacionData);
 
     if (this.editandoId) {
       this.notificacionService.actualizarNotificacion(this.editandoId, notificacionData as any).subscribe({
@@ -105,15 +102,14 @@ guardarNotificacion(): void {
   
   cargarParaEditar(noti: INotificacion): void {
     this.editandoId = noti.id || noti._id || null;
-    this.nuevaNoti = {
+    this.formulario.setValue({
       titulo: noti.titulo,
       mensaje: noti.mensaje,
       tipo_notificacion_codigo: noti.tipo_notificacion_codigo || 'GENERAL',
       alcance: noti.alcance || 'AMBOS',
       fecha_desde: noti.fecha_desde ? noti.fecha_desde.slice(0, 16) : '',
       fecha_hasta: noti.fecha_hasta ? noti.fecha_hasta.slice(0, 16) : '',
-      leida: noti.leida ?? false
-    };
+    });
     this.mostrarFormulario = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -151,15 +147,7 @@ guardarNotificacion(): void {
   }
 
   private limpiarFormulario(): void {
-    this.nuevaNoti = {
-      titulo: '',
-      mensaje: '',
-      tipo_notificacion_codigo: 'GENERAL',
-      alcance: 'AMBOS',
-      fecha_desde: '',
-      fecha_hasta: '',
-      leida: false
-    };
+    this.formulario.reset();
   }
 
   private mostrarExito(msg: string): void {
@@ -172,13 +160,5 @@ guardarNotificacion(): void {
     this.mensajeError = msg;
     this.mensajeExito = '';
     setTimeout(() => { this.mensajeError = ''; }, 4000);
-  }
-
-  actualizarFechaDesde(event: any): void {
-    this.nuevaNoti.fecha_desde = event.target.value;
-  }
-
-  actualizarFechaHasta(event: any): void {
-    this.nuevaNoti.fecha_hasta = event.target.value;
   }
 }

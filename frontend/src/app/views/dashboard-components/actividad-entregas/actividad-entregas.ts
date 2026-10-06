@@ -1,7 +1,7 @@
 import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ActividadesService, Entrega } from '../../../services/actividades.service'; // ajustá la ruta
 import { ToastService } from '../../../services/toast.service';
@@ -12,7 +12,7 @@ import { ArchivoProtegidoDirective } from '../../../core/http/archivo-protegido.
 @Component({
   selector: 'app-actividad-entregas',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, Modal, ArchivoProtegidoDirective],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, Modal, ArchivoProtegidoDirective],
   templateUrl: './actividad-entregas.html',
 })
 export class ActividadEntregasComponent implements OnInit {
@@ -37,8 +37,10 @@ export class ActividadEntregasComponent implements OnInit {
 
   // modal de calificación
   entregaSeleccionada = signal<Entrega | null>(null);
-  nota = signal<number | null>(null);
-  comentario = signal('');
+  readonly calificacion = new FormGroup({
+    nota: new FormControl<number | null>(null),
+    comentario: new FormControl('', { nonNullable: true }),
+  });
   guardando = signal(false);
   errorModal = signal('');
 
@@ -80,8 +82,10 @@ export class ActividadEntregasComponent implements OnInit {
 
   abrirModal(entrega: Entrega): void {
     this.entregaSeleccionada.set(entrega);
-    this.nota.set(entrega.nota ? Number(entrega.nota.calificacion) : null);
-    this.comentario.set(entrega.nota?.descripcion ?? '');
+    this.calificacion.reset({
+      nota: entrega.nota ? Number(entrega.nota.calificacion) : null,
+      comentario: entrega.nota?.descripcion ?? '',
+    });
     this.errorModal.set('');
   }
 
@@ -91,7 +95,7 @@ export class ActividadEntregasComponent implements OnInit {
 
   guardar(): void {
     const entrega = this.entregaSeleccionada();
-    const nota = this.nota();
+    const { nota, comentario } = this.calificacion.getRawValue();
     if (!entrega) return;
 
     const errorNota = validarNota(nota);
@@ -106,8 +110,8 @@ export class ActividadEntregasComponent implements OnInit {
     this.actividadesService
       .calificarEntregaIndividual(entrega.id, {
         calificacion: nota,
-        descripcion: this.comentario(),
-        comentario: this.comentario(),
+        descripcion: comentario,
+        comentario,
       })
       .subscribe({
         next: () => {

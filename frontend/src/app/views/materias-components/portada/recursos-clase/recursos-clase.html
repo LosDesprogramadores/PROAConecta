@@ -115,15 +115,15 @@
     <app-modal [titulo]="recursoEditandoId !== null ? '✏️ Editar Recurso' : '📚 Agregar Recurso'" ancho="sm" (cerrar)="cancelarFormularioRecurso()">
         
 
-        <form (ngSubmit)="guardarRecurso()" class="space-y-4">
+        <form [formGroup]="formulario" (ngSubmit)="guardarRecurso()" class="space-y-4">
           <!-- TIPO -->
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1"> Tipo de Recurso </label>
+            <label for="recurso-tipo" class="block text-xs font-semibold text-slate-600 mb-1"> Tipo de Recurso </label>
 
             <select
-              [(ngModel)]="nuevoTipoRecurso"
-              name="tipo"
+              id="recurso-tipo"
+              formControlName="tipo"
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="DOCUMENTO">📄 Documento (Drive / PDF)</option>
@@ -137,12 +137,12 @@
           <!-- TÍTULO -->
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1"> Título * </label>
+            <label for="recurso-titulo" class="block text-xs font-semibold text-slate-600 mb-1"> Título * </label>
 
             <input
+              id="recurso-titulo"
               type="text"
-              [(ngModel)]="nuevoTituloRecurso"
-              name="titulo"
+              formControlName="titulo"
               placeholder="Ej: Programa de la materia"
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
@@ -152,14 +152,14 @@
           <!-- URL -->
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
+            <label for="recurso-url" class="block text-xs font-semibold text-slate-600 mb-1">
               URL / Enlace Web
             </label>
 
             <input
+              id="recurso-url"
               type="url"
-              [(ngModel)]="nuevoUrlRecurso"
-              name="url"
+              formControlName="url"
               placeholder="https://..."
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -172,9 +172,10 @@
           <!-- ARCHIVO -->
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1"> O subir archivo </label>
+            <label for="recurso-archivo" class="block text-xs font-semibold text-slate-600 mb-1"> O subir archivo </label>
 
             <input
+              id="recurso-archivo"
               type="file"
               (change)="onArchivoSeleccionado($event)"
               class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -194,8 +195,7 @@
             <label class="inline-flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
-                [(ngModel)]="nuevoMaterialVisible"
-                name="materialVisible"
+                formControlName="visible"
                 class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
               />
 

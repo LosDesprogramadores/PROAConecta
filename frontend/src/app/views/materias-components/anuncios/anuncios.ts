@@ -1,154 +1,165 @@
-import { Component, Input, OnInit, signal, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ReactiveFormsModule, NonNullableFormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
+
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserRole } from '../../../core/auth/auth.model';
 import { AnuncioMateria } from '../../../model/anuncio-materia.model';
+import { AnunciosService } from '../../../services/anuncios.service';
+import { MateriaService } from '../../../services/materia.service';
+import { NotificacionSocketService } from '../../../services/notificacion-socket.service';
+import { ToastService } from '../../../services/toast.service';
+import { Paginador } from '../../../shared/paginador/paginador';
+import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
+
+const TAMANO_PAGINA = 10;
+export const MAX_TITULO = 120;
+export const MAX_MENSAJE = 2000;
 
 @Component({
   selector: 'app-anuncios-materia',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, Paginador],
   templateUrl: './anuncios.html',
   styleUrls: ['./anuncios.css']
 })
 export class AnunciosMateriaComponent implements OnInit {
-  @Input() materiaId?: string;
+  private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
+  private readonly anunciosService = inject(AnunciosService);
+  private readonly materiaService = inject(MateriaService);
+  private readonly socket = inject(NotificacionSocketService);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(NonNullableFormBuilder);
 
-  private router = inject(Router);
+  readonly tamanoPagina = TAMANO_PAGINA;
+  readonly maxTitulo = MAX_TITULO;
+  readonly maxMensaje = MAX_MENSAJE;
 
-  // Signals
-  anuncios = signal<AnuncioMateria[]>([]);
-  filtroTexto = signal('');
-  cargando = signal(true);
+  materiaId = '';
 
-  ngOnInit() {
-    this.cargarAnuncios();
-  }
+  readonly anuncios = signal<AnuncioMateria[]>([]);
+  readonly total = signal(0);
+  readonly pagina = signal(1);
+  readonly filtroTexto = signal('');
+  readonly cargando = signal(true);
+  readonly error = signal(false);
+  readonly enviando = signal(false);
+  readonly esTitular = signal(false);
 
-  cargarAnuncios() {
-    // TODO: Llamar a la API para obtener los anuncios desde el backend
-    setTimeout(() => {
-      this.anuncios.set([
-        {
-          id: 1,
-          titulo: '📌 Cronograma de exámenes finales - Diciembre 2026',
-          autor: 'Coordinación Pedagógica',
-          avatarUrl: undefined,
-          fechaCreacion: new Date('2026-08-20'),
-          ultimaRespuesta: {
-            autor: 'Coordinación Pedagógica',
-            fecha: new Date('2026-08-20'),
-            avatarUrl: undefined
-          },
-          cantidadReplicas: 0,
-          importante: true,
-          bloqueado: true
-        },
-        {
-          id: 2,
-          titulo: 'Nuevo material de Unidad 4 disponible',
-          autor: 'Prof. Carlos Mendoza',
-          avatarUrl: undefined,
-          fechaCreacion: new Date('2026-08-18'),
-          ultimaRespuesta: {
-            autor: 'Sofía Martínez',
-            fecha: new Date('2026-08-21'),
-            avatarUrl: undefined
-          },
-          cantidadReplicas: 3
-        },
-        {
-          id: 3,
-          titulo: 'Recordatorio: Entrega del TP2',
-          autor: 'Prof. Marina Benítez',
-          avatarUrl: undefined,
-          fechaCreacion: new Date('2026-08-14'),
-          ultimaRespuesta: {
-            autor: 'Prof. Marina Benítez',
-            fecha: new Date('2026-08-14'),
-            avatarUrl: undefined
-          },
-          cantidadReplicas: 0
-        },
-        {
-          id: 4,
-          titulo: 'Cambio de horario clase sincrónica',
-          autor: 'Prof. Carlos Mendoza',
-          avatarUrl: undefined,
-          fechaCreacion: new Date('2026-08-05'),
-          ultimaRespuesta: {
-            autor: 'Lucas Rossi',
-            fecha: new Date('2026-08-06'),
-            avatarUrl: undefined
-          },
-          cantidadReplicas: 2
-        },
-        {
-          id: 5,
-          titulo: '¡Bienvenidos al ciclo lectivo ProaConecta!',
-          autor: 'Equipo Técnico PRoA',
-          avatarUrl: undefined,
-          fechaCreacion: new Date('2026-03-10'),
-          ultimaRespuesta: {
-            autor: 'Equipo Técnico PRoA',
-            fecha: new Date('2026-03-10'),
-            avatarUrl: undefined
-          },
-          cantidadReplicas: 0
-        }
-      ]);
-      this.cargando.set(false);
-    }, 500);
-  }
-
-  buscar(input: string | Event): void {
-    const texto = typeof input === 'string'
-      ? input
-      : (input.target as HTMLInputElement).value;
-
-    this.filtroTexto.set(texto);
-  }
-
-  anunciosFiltrados(): AnuncioMateria[] {
+  readonly anunciosFiltrados = computed(() => {
     const filtro = this.filtroTexto().toLowerCase();
-    if (!filtro) {
-      return this.anuncios();
+    return filtro
+      ? this.anuncios().filter((a) => a.titulo.toLowerCase().includes(filtro))
+      : this.anuncios();
+  });
+
+  readonly formulario = this.fb.group({
+    titulo: ['', [Validators.required, Validators.maxLength(MAX_TITULO)]],
+    mensaje: ['', [Validators.required, Validators.maxLength(MAX_MENSAJE)]],
+  });
+
+  ngOnInit(): void {
+    this.materiaId = this.route.snapshot.paramMap.get('id') ?? this.route.parent?.snapshot.paramMap.get('id') ?? '';
+    if (!this.materiaId) {
+      this.error.set(true);
+      this.cargando.set(false);
+      return;
     }
-    return this.anuncios().filter(anuncio =>
-      anuncio.titulo.toLowerCase().includes(filtro)
-    );
+    this.verificarTitular();
+    this.cargarAnuncios(1);
+    this.escucharAnunciosNuevos();
   }
 
-  abrirAnuncio(anuncio: AnuncioMateria): void {
-    this.router.navigate(['/view-materia/anuncios', anuncio.id]);
-  }
-
-  formatearFecha(fecha: Date): string {
-    const hoy = new Date();
-    const ayer = new Date(hoy);
-    ayer.setDate(ayer.getDate() - 1);
-
-    const fechaObj = new Date(fecha);
-
-    if (fechaObj.toDateString() === hoy.toDateString()) {
-      return fechaObj.toLocaleTimeString('es-AR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    if (fechaObj.toDateString() === ayer.toDateString()) {
-      return 'Ayer';
-    }
-
-    return fechaObj.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+  cargarAnuncios(pagina: number): void {
+    this.cargando.set(true);
+    this.error.set(false);
+    this.anunciosService.listarPorMateria(this.materiaId, { page: pagina, page_size: TAMANO_PAGINA }).subscribe({
+      next: (respuesta) => {
+        this.anuncios.set(respuesta.results);
+        this.total.set(respuesta.count);
+        this.pagina.set(pagina);
+        this.cargando.set(false);
+      },
+      error: () => {
+        this.error.set(true);
+        this.cargando.set(false);
+      },
     });
   }
 
-  trackByAnuncioId(index: number, anuncio: AnuncioMateria): number {
+  publicar(): void {
+    if (this.formulario.invalid || this.enviando()) {
+      this.formulario.markAllAsTouched();
+      return;
+    }
+    this.enviando.set(true);
+    this.anunciosService.publicar(this.materiaId, this.formulario.getRawValue()).subscribe({
+      next: (anuncio) => {
+        this.agregarSiNoExiste(anuncio);
+        this.formulario.reset();
+        this.enviando.set(false);
+        this.toast.success('El anuncio se publicó correctamente.');
+      },
+      error: (err) => {
+        this.enviando.set(false);
+        this.toast.error(this.toast.readable_message_extraction(err), 'No se pudo publicar el anuncio');
+      },
+    });
+  }
+
+  buscar(input: string | Event): void {
+    const texto = typeof input === 'string' ? input : (input.target as HTMLInputElement).value;
+    this.filtroTexto.set(texto);
+  }
+
+  errorDe(campo: 'titulo' | 'mensaje'): string | null {
+    return mensajeErrorCampo(this.formulario.controls[campo]);
+  }
+
+  trackByAnuncioId(_index: number, anuncio: AnuncioMateria): string {
     return anuncio.id;
+  }
+
+  /** The titular professor is the only one who writes: the subject says who that is. */
+  private verificarTitular(): void {
+    const usuario = this.auth.currentUser();
+    if (usuario?.rolId !== UserRole.DOCENTE) {
+      return;
+    }
+    this.materiaService.obtenerMateriaPorId(Number(this.materiaId)).subscribe({
+      next: (materia) => this.esTitular.set(materia.profesor != null && materia.profesor === usuario.persona?.id),
+      error: () => this.esTitular.set(false),
+    });
+  }
+
+  private escucharAnunciosNuevos(): void {
+    this.socket
+      .eventos()
+      .pipe(
+        filter((e) => e.tipo === 'anuncio.creado'),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((evento) => {
+        const anuncio = evento.datos as AnuncioMateria;
+        if (String(anuncio.materia_id) === this.materiaId) {
+          this.agregarSiNoExiste(anuncio);
+        }
+      });
+  }
+
+  /** The publisher receives its own event too, so the id decides. Only the first page shows it live. */
+  private agregarSiNoExiste(anuncio: AnuncioMateria): void {
+    if (this.anuncios().some((a) => a.id === anuncio.id)) {
+      return;
+    }
+    this.total.update((n) => n + 1);
+    if (this.pagina() === 1) {
+      this.anuncios.update((lista) => [anuncio, ...lista].slice(0, TAMANO_PAGINA));
+    }
   }
 }

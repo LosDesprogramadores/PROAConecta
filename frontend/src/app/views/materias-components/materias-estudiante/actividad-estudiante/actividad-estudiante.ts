@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ActividadesService, Entrega } from '../../../../services/actividades.service';
@@ -15,7 +15,7 @@ export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
 @Component({
   selector: 'app-actividad-estudiante',
   standalone: true,
-  imports: [Modal, CommonModule, RouterModule, FormsModule, Toast, ArchivoProtegidoDirective],
+  imports: [Modal, CommonModule, RouterModule, ReactiveFormsModule, Toast, ArchivoProtegidoDirective],
   templateUrl: './actividad-estudiante.html',
   styleUrl: './actividad-estudiante.css',
 })
@@ -24,6 +24,7 @@ export class ActividadEstudiante implements OnInit {
   private actividadesService = inject(ActividadesService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private fb = inject(NonNullableFormBuilder);
 
   currentUser = this.authService.currentUser;
 
@@ -47,8 +48,10 @@ export class ActividadEstudiante implements OnInit {
   cargandoMiEntrega = signal<boolean>(false);
 
   // Formulario de Entrega
-  contenidoTexto = signal<string>('');
-  enlaceUrl = signal<string>('');
+  readonly formEntrega = this.fb.group({
+    contenidoTexto: '',
+    enlaceUrl: '',
+  });
   archivoSeleccionado: File | null = null;
   eliminarArchivoPrevio = signal<boolean>(false);
   enviandoEntrega = signal<boolean>(false);
@@ -170,8 +173,10 @@ export class ActividadEstudiante implements OnInit {
 
     if (miEntrega) {
       this.miEntregaActual.set(miEntrega);
-      this.contenidoTexto.set(miEntrega.contenido_texto || '');
-      this.enlaceUrl.set(miEntrega.enlace || '');
+      this.formEntrega.setValue({
+        contenidoTexto: miEntrega.contenido_texto || '',
+        enlaceUrl: miEntrega.enlace || '',
+      });
       this.modoEdicion.set(false);
     } else {
       this.miEntregaActual.set(null);
@@ -187,8 +192,7 @@ export class ActividadEstudiante implements OnInit {
   }
 
   limpiarFormulario(): void {
-    this.contenidoTexto.set('');
-    this.enlaceUrl.set('');
+    this.formEntrega.reset();
     this.archivoSeleccionado = null;
     this.eliminarArchivoPrevio.set(false);
     this.errorFormulario.set(null);
@@ -220,8 +224,9 @@ guardarEntrega(): void {
   const act = this.actividadSeleccionada();
   if (!act) return;
 
-  const tieneTexto = !!this.contenidoTexto().trim();
-  const tieneEnlace = !!this.enlaceUrl().trim();
+  const { contenidoTexto, enlaceUrl } = this.formEntrega.getRawValue();
+  const tieneTexto = !!contenidoTexto.trim();
+  const tieneEnlace = !!enlaceUrl.trim();
   const tieneNuevoArchivo = !!this.archivoSeleccionado;
   const conservaArchivoPrevio = !!this.miEntregaActual()?.archivo && !this.eliminarArchivoPrevio();
 
@@ -239,13 +244,13 @@ guardarEntrega(): void {
   formData.append('actividad', String(act.id));
 
   if (tieneTexto) {
-    formData.append('contenido_texto', this.contenidoTexto().trim());
+    formData.append('contenido_texto', contenidoTexto.trim());
   } else {
     formData.append('contenido_texto', '');
   }
 
   if (tieneEnlace) {
-    formData.append('enlace', this.enlaceUrl().trim());
+    formData.append('enlace', enlaceUrl.trim());
   } else {
     formData.append('enlace', '');
   }

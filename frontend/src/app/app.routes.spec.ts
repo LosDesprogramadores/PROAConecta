@@ -15,6 +15,9 @@ import { CalificacionesProfesor } from './views/materias-components/calificacion
  * resolution order on the real route table.
  */
 describe('app routes', () => {
+  /** Resolves the component a lazy route would render. */
+  const cargar = async (ruta?: Route) => (ruta?.loadComponent as (() => Promise<unknown>) | undefined)?.();
+
   const hijosDe = (path: string) => routes.find((r) => r.path === path)?.children ?? [];
 
   function primeraCoincidencia(hijos: typeof routes, segmentos: string[]) {
@@ -24,15 +27,77 @@ describe('app routes', () => {
     });
   }
 
-  it('resolves dashboard/actividades/nueva to the form and not to :id', () => {
+  it('resolves dashboard/actividades/nueva to the form and not to :id', async () => {
     const ruta = primeraCoincidencia(hijosDe('dashboard'), ['actividades', 'nueva']);
-    expect(ruta?.component).toBe(ActividadForm);
+    expect(await cargar(ruta)).toBe(ActividadForm);
   });
 
-  it('keeps the wildcard last and pointed at the 404 screen', () => {
+  it('keeps the administrator out of the private inbox (dashboard/mensajes)', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isLoggedIn: () => true, rol: () => UserRole.ADMIN } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const ruta = primeraCoincidencia(hijosDe('dashboard'), ['mensajes'])!;
+    const resultado = TestBed.runInInjectionContext(() =>
+      (ruta.canActivate![0] as (r: ActivatedRouteSnapshot, s: RouterStateSnapshot) => unknown)(
+        {} as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    );
+    expect(resultado).toBeInstanceOf(UrlTree);
+    expect(router.serializeUrl(resultado as UrlTree)).toBe('/dashboard-admin');
+  });
+
+  it('keeps the wildcard last and pointed at the 404 screen', async () => {
     const ultima = routes[routes.length - 1];
     expect(ultima.path).toBe('**');
-    expect(ultima.component).toBe(NotFound);
+    expect(await cargar(ultima)).toBe(NotFound);
+  });
+
+  it('loads every view lazily: no route carries an eager component', () => {
+    const eager: string[] = [];
+    const recorrer = (lista: Route[], prefijo: string) =>
+      lista.forEach((r) => {
+        if (r.component) {
+          eager.push(`${prefijo}/${r.path}`);
+        }
+        recorrer(r.children ?? [], `${prefijo}/${r.path}`);
+      });
+    recorrer(routes, '');
+    expect(eager).toEqual([]);
+  });
+
+  it('every route with a screen declares loadComponent, and the table keeps its guards', () => {
+    const hojas: Route[] = [];
+    const recorrer = (lista: Route[]) =>
+      lista.forEach((r) => {
+        if (r.loadComponent) {
+          hojas.push(r);
+        }
+        recorrer(r.children ?? []);
+      });
+    recorrer(routes);
+    expect(hojas.length).toBeGreaterThanOrEqual(40);
+
+    const sinGuardia = (padre: string) => hijosDe(padre).filter((r) => !!r.loadComponent && !r.canActivate && !r.canMatch);
+    // Protected areas: the guard lives on the parent route.
+    for (const padre of ['dashboard', 'view-materia/:id', 'dashboard-admin']) {
+      expect(routes.find((r) => r.path === padre)?.canActivate?.length, padre).toBeGreaterThan(0);
+    }
+    expect(routes.find((r) => r.path === 'dashboard-admin')?.canActivate?.length).toBe(2);
+    expect(sinGuardia('dashboard').map((r) => r.path)).toEqual(['anuncios', 'materias', 'tablaGenerica', 'notificaciones']);
+  });
+
+  it('keeps the route order: static segments before :id in dashboard and in view-materia', () => {
+    const orden = (padre: string) => hijosDe(padre).map((r) => r.path);
+    const dashboard = orden('dashboard');
+    expect(dashboard.indexOf('actividades/nueva')).toBeLessThan(dashboard.indexOf('actividades/:id'));
+    expect(dashboard.indexOf('actividades/editar/:id')).toBeLessThan(dashboard.indexOf('actividades/:id'));
+    const materia = orden('view-materia/:id');
+    expect(materia.indexOf('actividades/nueva')).toBeLessThan(materia.indexOf('actividades/:id/editar'));
   });
 });
 
@@ -49,7 +114,7 @@ describe('view-materia/:id/calificaciones by role', () => {
   }
 
   /** Component of the first `calificaciones` route whose canMatch accepts the role. */
-  function componenteQueResuelve(rol: UserRole | undefined) {
+  async function componenteQueResuelve(rol: UserRole | undefined) {
     configurar({ logueado: rol !== undefined, rol });
     const segmentos = [new UrlSegment('calificaciones', {})];
     const ruta = hijos.find(
@@ -60,7 +125,7 @@ describe('view-materia/:id/calificaciones by role', () => {
             TestBed.runInInjectionContext(() => (guard as (r: Route, s: UrlSegment[]) => unknown)(r, segmentos)) === true,
         ),
     );
-    return ruta?.component;
+    return (ruta?.loadComponent as (() => Promise<unknown>) | undefined)?.();
   }
 
   function planillaProfesor(sesion: { logueado: boolean; rol?: UserRole }) {
@@ -75,20 +140,20 @@ describe('view-materia/:id/calificaciones by role', () => {
     return resultado instanceof UrlTree ? router.serializeUrl(resultado) : resultado;
   }
 
-  it('shows the student view (own grades and average) to a student', () => {
-    expect(componenteQueResuelve(UserRole.ESTUDIANTE)).toBe(Calificaciones);
+  it('shows the student view (own grades and average) to a student', async () => {
+    expect(await componenteQueResuelve(UserRole.ESTUDIANTE)).toBe(Calificaciones);
   });
 
-  it('shows the grade sheet to the professor', () => {
-    expect(componenteQueResuelve(UserRole.DOCENTE)).toBe(CalificacionesProfesor);
+  it('shows the grade sheet to the professor', async () => {
+    expect(await componenteQueResuelve(UserRole.DOCENTE)).toBe(CalificacionesProfesor);
   });
 
-  it('shows the grade sheet to the admin', () => {
-    expect(componenteQueResuelve(UserRole.ADMIN)).toBe(CalificacionesProfesor);
+  it('shows the grade sheet to the admin', async () => {
+    expect(await componenteQueResuelve(UserRole.ADMIN)).toBe(CalificacionesProfesor);
   });
 
-  it('resolves nothing without a known role', () => {
-    expect(componenteQueResuelve(undefined)).toBeUndefined();
+  it('resolves nothing without a known role', async () => {
+    expect(await componenteQueResuelve(undefined)).toBeUndefined();
   });
 
   it('redirects to /login instead of the 404 when there is no session or role', () => {

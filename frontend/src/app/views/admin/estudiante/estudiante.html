@@ -118,6 +118,9 @@
         </tbody>
       </table>
     </div>
+    @if (total() > tamanoPagina) {
+      <app-paginador [total]="total()" [pagina]="pagina()" [tamano]="tamanoPagina" (paginaCambiada)="cargarEstudiantes($event)" />
+    }
   </div>
 
   <!-- Modal Adaptado -->

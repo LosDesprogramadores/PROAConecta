@@ -67,7 +67,7 @@ describe('UnidadesMaterial', () => {
   it('calls crearUnidad only once when guardarUnidad is invoked twice while pending', () => {
     const pending = new Subject<unknown>();
     unidadesService.crearUnidad.mockReturnValue(pending);
-    component.nuevoNombreUnidad = 'Unidad 1';
+    component.formularioUnidad.patchValue({ titulo: 'Unidad 1' });
 
     component.guardarUnidad();
     component.guardarUnidad();
@@ -83,7 +83,7 @@ describe('UnidadesMaterial', () => {
   it('disables the save button and shows "Guardando..." while pending', () => {
     unidadesService.crearUnidad.mockReturnValue(new Subject<unknown>());
     component.abrirFormularioUnidad();
-    component.nuevoNombreUnidad = 'Unidad 1';
+    component.formularioUnidad.patchValue({ titulo: 'Unidad 1' });
     fixture.detectChanges();
 
     component.guardarUnidad();
@@ -98,7 +98,7 @@ describe('UnidadesMaterial', () => {
 
   it('re-enables saving after an error', () => {
     unidadesService.crearUnidad.mockReturnValueOnce(throwError(() => new Error('boom')));
-    component.nuevoNombreUnidad = 'Unidad 1';
+    component.formularioUnidad.patchValue({ titulo: 'Unidad 1' });
 
     component.guardarUnidad();
 
@@ -113,7 +113,7 @@ describe('UnidadesMaterial', () => {
   it('calls crearMaterial only once when guardarRecurso is invoked twice while pending', () => {
     const pending = new Subject<unknown>();
     materialesService.crearMaterial.mockReturnValue(pending);
-    component.nuevoTituloRecurso = 'Guia 1';
+    component.formularioRecurso.patchValue({ titulo: 'Guia 1' });
 
     component.guardarRecurso();
     component.guardarRecurso();

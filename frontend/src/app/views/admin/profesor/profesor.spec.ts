@@ -17,7 +17,7 @@ describe('Profesor admin form accessibility', () => {
       imports: [Profesor],
       providers: [
         provideRouter([]),
-        { provide: ProfesorService, useValue: { obtenerProfesores: vi.fn(() => of([])) } },
+        { provide: ProfesorService, useValue: { listarPaginado: vi.fn(() => of({ count: 0, next: null, previous: null, results: [] })) } },
         { provide: MateriaService, useValue: {} },
       ],
     }).compileComponents();
@@ -84,5 +84,69 @@ describe('Profesor admin form accessibility', () => {
     fixture.detectChanges();
     expect(component.isModalOpen()).toBe(false);
     expect(dom().querySelector('[role="dialog"]')).toBeNull();
+  });
+});
+
+describe('Profesor admin pagination', () => {
+  let fixture: ComponentFixture<Profesor>;
+  let component: Profesor;
+  let listar: ReturnType<typeof vi.fn>;
+  const persona = (id: number) => ({ id, nombre: 'N', apellido: 'A', dni: '1234567' + id, email: 'a@b.c', tel_contacto: '', fecha_nacimiento: '2000-01-01' });
+  const pagina = (results: unknown[], count = results.length) => ({ count, next: null, previous: null, results });
+
+  beforeEach(async () => {
+    listar = vi.fn(() => of(pagina([persona(1)], 1)));
+    await TestBed.configureTestingModule({
+      imports: [Profesor],
+      providers: [
+        provideRouter([]),
+        { provide: ProfesorService, useValue: { listarPaginado: listar, crearProfesores: vi.fn(() => of(persona(99))) } },
+        { provide: MateriaService, useValue: {} },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Profesor);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('asks the server for the first page of 20', () => {
+    expect(listar).toHaveBeenCalledWith({ page: 1, page_size: 20 });
+    expect(component.total()).toBe(1);
+  });
+
+  it('shows the pager only when there is more than one page and loads the chosen page', () => {
+    expect(fixture.nativeElement.querySelector('app-paginador')).toBeNull();
+
+    listar.mockReturnValue(of(pagina([persona(1)], 45)));
+    component.cargarProfesores(1);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Página 1 de 3');
+
+    component.cargarProfesores(2);
+    expect(listar).toHaveBeenLastCalledWith({ page: 2, page_size: 20 });
+    expect(component.pagina()).toBe(2);
+  });
+
+  it('falls back to the previous page when the current one empties out', () => {
+    listar.mockReturnValueOnce(of(pagina([], 20)));
+    listar.mockReturnValue(of(pagina([persona(1)], 20)));
+    component.cargarProfesores(2);
+    expect(listar).toHaveBeenLastCalledWith({ page: 1, page_size: 20 });
+    expect(component.pagina()).toBe(1);
+  });
+
+  it('after creating a record it jumps to the last page, where the new row appears', () => {
+    listar.mockReturnValue(of(pagina([persona(1)], 40)));
+    component.cargarProfesores(1);
+    listar.mockClear();
+
+    component.openCreateModal();
+    component.form.setValue({
+      nombre: 'N', apellido: 'A', dni: '12345678', email: 'a@b.c', fecha_nacimiento: '2000-01-01', tel_contacto: '',
+    });
+    component.save();
+
+    // 40 + 1 records at 20 per page: the new one lives on page 3.
+    expect(listar).toHaveBeenCalledWith({ page: 3, page_size: 20 });
   });
 });

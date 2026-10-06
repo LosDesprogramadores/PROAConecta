@@ -1,6 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -16,7 +16,7 @@ import { ArchivoProtegidoDirective } from '../../../core/http/archivo-protegido.
 @Component({
   selector: 'app-material',
   standalone: true,
-  imports: [Modal, CommonModule, FormsModule, ArchivoProtegidoDirective],
+  imports: [Modal, CommonModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './material.html',
   styleUrl: './material.css',
 })
@@ -26,6 +26,7 @@ export class Material implements OnInit {
   private materialesService = inject(MaterialesService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private fb = inject(NonNullableFormBuilder);
 
   private currentUser = this.authService.currentUser;
 
@@ -45,11 +46,13 @@ export class Material implements OnInit {
   mostrarFormulario = signal<boolean>(false);
   materialEditandoId: number | string | null = null;
   archivoSeleccionado: File | null = null;
-  nuevoTipo = 'DOCUMENTO';
-  nuevoTitulo = '';
-  nuevaDescripcion = '';
-  nuevoUrl = '';
-  nuevoVisible = true;
+  readonly formulario = this.fb.group({
+    tipo: 'DOCUMENTO',
+    titulo: ['', Validators.required],
+    descripcion: '',
+    url: '',
+    visible: true,
+  });
 
   ngOnInit(): void {
     let materiaIdParam: string | null = null;
@@ -97,22 +100,20 @@ export class Material implements OnInit {
 
   subirMaterial(): void {
     this.materialEditandoId = null;
-    this.nuevoTipo = 'DOCUMENTO';
-    this.nuevoTitulo = '';
-    this.nuevaDescripcion = '';
-    this.nuevoUrl = '';
-    this.nuevoVisible = true;
+    this.formulario.reset();
     this.archivoSeleccionado = null;
     this.mostrarFormulario.set(true);
   }
 
   editarMaterial(material: MaterialModel): void {
     this.materialEditandoId = material.id ?? null;
-    this.nuevoTipo = material.tipo || 'DOCUMENTO';
-    this.nuevoTitulo = material.titulo || '';
-    this.nuevaDescripcion = material.descripcion || '';
-    this.nuevoUrl = material.enlace || '';
-    this.nuevoVisible = material.visible ?? true;
+    this.formulario.reset({
+      tipo: material.tipo || 'DOCUMENTO',
+      titulo: material.titulo || '',
+      descripcion: material.descripcion || '',
+      url: material.enlace || '',
+      visible: material.visible ?? true,
+    });
     this.archivoSeleccionado = null;
     this.mostrarFormulario.set(true);
   }
@@ -132,12 +133,14 @@ export class Material implements OnInit {
 
   guardarMaterial(): void {
     if (this.materiaId === null) return;
-    if (!this.nuevoTitulo.trim()) {
+    const valores = this.formulario.getRawValue();
+    if (!valores.titulo.trim()) {
+      this.formulario.controls.titulo.markAsTouched();
       this.toastService.error('El título es obligatorio');
       return;
     }
 
-    let urlFormateada = this.nuevoUrl.trim();
+    let urlFormateada = valores.url.trim();
     if (urlFormateada && !/^https?:\/\//i.test(urlFormateada)) {
       urlFormateada = `https://${urlFormateada}`;
     }
@@ -150,11 +153,11 @@ export class Material implements OnInit {
 
     const payload: Partial<MaterialModel> = {
       materia: this.materiaId,
-      tipo: this.nuevoTipo.toUpperCase(),
-      titulo: this.nuevoTitulo.trim(),
-      descripcion: this.nuevaDescripcion.trim() || undefined,
+      tipo: valores.tipo.toUpperCase(),
+      titulo: valores.titulo.trim(),
+      descripcion: valores.descripcion.trim() || undefined,
       enlace: urlFormateada || undefined,
-      visible: this.nuevoVisible,
+      visible: valores.visible,
     };
 
     if (this.materialEditandoId) {

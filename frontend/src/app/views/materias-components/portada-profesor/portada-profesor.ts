@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   UnidadMateria,
   ContenidoUnidad,
@@ -18,7 +18,7 @@ import { Modal } from '../../../shared/modal/modal';
 @Component({
   selector: 'app-portada-profesor',
   standalone: true,
-  imports: [Modal, CommonModule, RouterModule, FormsModule, UnidadesMaterial, ProximasEntregas],
+  imports: [Modal, CommonModule, RouterModule, ReactiveFormsModule, UnidadesMaterial, ProximasEntregas],
   templateUrl: './portada-profesor.html',
   styleUrls: ['./portada-profesor.css'],
 })
@@ -29,6 +29,7 @@ export class PortadaProfesor implements OnInit {
   private router = inject(Router);
   private materiaService = inject(MateriaService);
   private route = inject(ActivatedRoute);
+  private fb = inject(NonNullableFormBuilder);
 
   currentUser = this.authService.currentUser;
 
@@ -41,12 +42,14 @@ export class PortadaProfesor implements OnInit {
 
   materiaId: number | null = null;
   editandoDescripcion = signal<boolean>(false);
-  tempDescripcion = '';
+  readonly descripcionControl = new FormControl('', { nonNullable: true });
   unidadExpandida = signal<string | null>(null);
 
   mostrarFormularioUnidad = signal<boolean>(false);
-  nuevoNombreUnidad = '';
-  nuevoDescripcionUnidad = '';
+  readonly formularioUnidad = this.fb.group({
+    nombre: ['', Validators.required],
+    descripcion: '',
+  });
 
   get datosActuales(): MateriaPortada {
     return (
@@ -159,7 +162,7 @@ export class PortadaProfesor implements OnInit {
   }
 
   iniciarEdicionDescripcion(): void {
-    this.tempDescripcion = this.datosActuales.presentacion;
+    this.descripcionControl.setValue(this.datosActuales.presentacion);
     this.editandoDescripcion.set(true);
   }
 
@@ -168,7 +171,7 @@ export class PortadaProfesor implements OnInit {
 
     const materiaActualizada: IMateria = {
       titulo: this.datosActuales.nombre,
-      descripcion: this.tempDescripcion.trim(),
+      descripcion: this.descripcionControl.value.trim(),
       anio: this.datosActuales.anio,
       curso: this.datosActuales.curso,
     };
@@ -203,8 +206,7 @@ export class PortadaProfesor implements OnInit {
 
   abrirFormularioUnidad(): void {
     this.mostrarFormularioUnidad.set(true);
-    this.nuevoNombreUnidad = '';
-    this.nuevoDescripcionUnidad = '';
+    this.formularioUnidad.reset();
   }
 
   cancelarFormularioUnidad(): void {
@@ -212,7 +214,9 @@ export class PortadaProfesor implements OnInit {
   }
 
   guardarUnidad(): void {
-    if (!this.nuevoNombreUnidad.trim()) {
+    const { nombre, descripcion } = this.formularioUnidad.getRawValue();
+    if (!nombre.trim()) {
+      this.formularioUnidad.controls.nombre.markAsTouched();
       alert('El nombre de la unidad es requerido');
       return;
     }
@@ -221,8 +225,8 @@ export class PortadaProfesor implements OnInit {
     const nuevaUnidad: UnidadMateria = {
       id: `unidad-${Date.now()}`,
       numero: unidades.length + 1,
-      nombre: this.nuevoNombreUnidad.trim(),
-      descripcion: this.nuevoDescripcionUnidad.trim() || undefined,
+      nombre: nombre.trim(),
+      descripcion: descripcion.trim() || undefined,
       contenidos: [],
     };
 

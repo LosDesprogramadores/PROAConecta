@@ -1,0 +1,74 @@
+<app-modal titulo="Nuevo mensaje" ancho="md" (cerrar)="cerrar.emit()">
+  <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate class="space-y-4" id="form-nuevo-mensaje">
+    <div>
+      <label for="mensaje-materia" class="block text-sm font-medium text-slate-700 mb-1">Materia</label>
+      <select id="mensaje-materia" formControlName="materia"
+        [attr.aria-invalid]="errorDe('materia') ? 'true' : null"
+        class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <option [ngValue]="null" disabled>Elige una materia</option>
+        @for (materia of materias(); track materia.id) {
+          <option [ngValue]="materia.id">{{ materia.titulo }}</option>
+        }
+      </select>
+      @if (errorDe('materia'); as mensaje) {
+        <p class="mt-1 text-xs text-red-600" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+
+    <div>
+      <label for="mensaje-destinatario" class="block text-sm font-medium text-slate-700 mb-1">Destinatario</label>
+      <select id="mensaje-destinatario" formControlName="destinatario"
+        [attr.aria-invalid]="errorDe('destinatario') ? 'true' : null"
+        class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100">
+        <option [ngValue]="null" disabled>
+          {{ cargandoDestinatarios() ? 'Cargando...' : 'Elige un destinatario' }}
+        </option>
+        @for (destinatario of destinatarios(); track destinatario.id) {
+          <option [ngValue]="destinatario.id">{{ destinatario.nombre_completo }}</option>
+        }
+      </select>
+      @if (formulario.controls.materia.value && !cargandoDestinatarios() && destinatarios().length === 0) {
+        <p class="mt-1 text-xs text-slate-500" role="status">No hay destinatarios disponibles en esta materia</p>
+      }
+      @if (errorDe('destinatario'); as mensaje) {
+        <p class="mt-1 text-xs text-red-600" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+
+    <div>
+      <label for="mensaje-asunto" class="block text-sm font-medium text-slate-700 mb-1">Asunto</label>
+      <input id="mensaje-asunto" type="text" formControlName="asunto" [maxlength]="maxAsunto"
+        [attr.aria-invalid]="errorDe('asunto') ? 'true' : null"
+        class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      @if (errorDe('asunto'); as mensaje) {
+        <p class="mt-1 text-xs text-red-600" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+
+    <div>
+      <label for="mensaje-cuerpo" class="block text-sm font-medium text-slate-700 mb-1">Mensaje</label>
+      <textarea id="mensaje-cuerpo" rows="6" formControlName="cuerpo" [maxlength]="maxCuerpo"
+        [attr.aria-invalid]="errorDe('cuerpo') ? 'true' : null"
+        class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+      <div class="flex justify-between">
+        @if (errorDe('cuerpo'); as mensaje) {
+          <p class="mt-1 text-xs text-red-600" role="alert">{{ mensaje }}</p>
+        } @else {
+          <span></span>
+        }
+        <span class="mt-1 text-xs text-slate-400">{{ formulario.controls.cuerpo.value.length }}/{{ maxCuerpo }}</span>
+      </div>
+    </div>
+  </form>
+
+  <div modal-pie class="flex justify-end gap-2">
+    <button type="button" (click)="cerrar.emit()"
+      class="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+      Cancelar
+    </button>
+    <button type="submit" form="form-nuevo-mensaje" [disabled]="!puedeEnviar()"
+      class="px-4 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed">
+      {{ enviando() ? 'Enviando...' : 'Enviar' }}
+    </button>
+  </div>
+</app-modal>

@@ -1,31 +1,19 @@
-import { Component, computed, effect, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 import { Toast } from '../toast/toast';
 import { ToastService } from '../../services/toast.service';
-import { NotificacionSocketService } from '../../services/notificacion-socket.service';
 import { INotificacion } from '../../model/notificacion.model';
-import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { NotificacionService } from '../../services/notificaciones.service';
+import { NotificacionesEstadoService } from '../../services/notificaciones-estado.service';
+import { MensajesEstadoService } from '../../services/mensajes-estado.service';
 
 import { Modal } from '../modal/modal';
 interface NavLink {
   label: string;
   path: string;
-}
-
-interface Message {
-  sender: string;
-  text: string;
-  time: string;
-}
-
-interface NotificationItem {
-  title: string;
-  description: string;
-  time: string;
+  queryParams?: Record<string, string>;
 }
 
 @Component({
@@ -35,14 +23,12 @@ interface NotificationItem {
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-export class Navbar implements OnInit, OnDestroy {
+export class Navbar implements OnInit {
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
-  private notiSocketService = inject(NotificacionSocketService);
   private router = inject(Router);
-  private notiService = inject(NotificacionService);
-
-  private socketSub$!: Subscription;
+  private notificacionesEstado = inject(NotificacionesEstadoService);
+  private mensajesEstado = inject(MensajesEstadoService);
 
   currentUser = this.authService.currentUser;
   // En escritorio el estudiante navega la materia desde sidebar-materias; en móvil el sidebar no existe.
@@ -55,14 +41,17 @@ export class Navbar implements OnInit, OnDestroy {
   isMessagesOpen = signal<boolean>(false);
   isNotificationsOpen = signal<boolean>(false);
 
-  unreadCount = signal<number>(0);
+  // Real unread counter and last five notifications, shared with the notifications page.
+  unreadCount = this.notificacionesEstado.noLeidas;
+  notifications = this.notificacionesEstado.ultimas;
+  notificationsLoading = this.notificacionesEstado.cargando;
+  notificationsError = this.notificacionesEstado.error;
 
-  messages = signal<Message[]>([
-    { sender: 'Profesor Gomez', text: 'Hola, te escribo por la tarea...', time: 'Hace 10 min' },
-    { sender: 'Maria Perez', text: '¿Nos juntamos a estudiar?', time: 'Hace 1 hora' }
-  ]);
-
-   notifications = signal<INotificacion[]>([]);
+  // Last five received messages and the real unread counter (live through the socket).
+  messages = this.mensajesEstado.ultimos;
+  unreadMessages = this.mensajesEstado.noLeidos;
+  messagesLoading = this.mensajesEstado.cargando;
+  messagesError = this.mensajesEstado.error;
 
   navLinksAdmi: NavLink[] = [];
 
@@ -153,25 +142,18 @@ export class Navbar implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.cargarHistorialNotificaciones();
-
-    // The server routes events by user and subject group, so no role filtering is needed here.
-    this.socketSub$ = this.notiSocketService.escucharNotificaciones().subscribe({
-      next: (nuevaNoti: INotificacion) => {
-        this.notifications.update(lista => [nuevaNoti, ...lista]);
-        this.unreadCount.update(count => count + 1);
-        this.toastService.info(`🔔 ${nuevaNoti.titulo}`);
-      },
-      error: (err) => {
-        console.error('Error en el socket del navbar:', err);
+    const user = this.currentUser();
+    if (user) {
+      this.notificacionesEstado.iniciar();
+      // The administrator has no private inbox (the server answers 403).
+      if (user.rolId !== UserRole.ADMIN) {
+        this.mensajesEstado.iniciar();
       }
-    });
+    }
   }
 
-  ngOnDestroy(): void {
-    if (this.socketSub$) {
-      this.socketSub$.unsubscribe();
-    }
+  marcarNotificacionLeida(notif: INotificacion): void {
+    this.notificacionesEstado.marcarLeida(notif).subscribe({ error: () => undefined });
   }
 
   private obtenerLinksMateria(): NavLink[] {
@@ -205,6 +187,7 @@ export class Navbar implements OnInit, OnDestroy {
           label: 'Calificaciones',
           path: `/view-materia/${materiaId}/estudiante/calificaciones`,
         },
+        { label: 'Mensajes', path: '/dashboard/mensajes', queryParams: { materia: materiaId } },
       ];
     }
 
@@ -229,6 +212,7 @@ export class Navbar implements OnInit, OnDestroy {
 
     if (user?.rolId === UserRole.DOCENTE) {
       links.push({ label: 'Alumnos', path: `/view-materia/${materiaId}/alumnos` });
+      links.push({ label: 'Mensajes', path: '/dashboard/mensajes', queryParams: { materia: materiaId } });
     }
 
     return links;
@@ -255,9 +239,6 @@ export class Navbar implements OnInit, OnDestroy {
     this.isMessagesOpen.set(false);
     this.isProfileMenuOpen.set(false);
 
-    if (this.isNotificationsOpen()) {
-      this.unreadCount.set(0);
-    }
   }
 
   closeMenus(): void {
@@ -309,17 +290,5 @@ export class Navbar implements OnInit, OnDestroy {
     } else {
       this.toastService.info('Configuración: en desarrollo');
     }
-  }
-
-  cargarHistorialNotificaciones(): void {
-    this.notiService.obtenerNotificaciones().subscribe({
-      next: (data: INotificacion[]) => {
-        this.notifications.set(data);
-        this.unreadCount.set(0); 
-      },
-      error: (err) => {
-        console.error('Error al cargar historial de notificaciones:', err);
-      }
-    });
   }
 }
