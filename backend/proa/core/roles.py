@@ -42,8 +42,8 @@ def es_profesor_de_materia(user, materia) -> bool:
 def tiene_inscripcion_activa(persona, materia) -> bool:
     # Import diferido: academico depende de usuario, que a su vez depende de core.
     # alumnos_de_materia excluye BAJA; LIBRE sigue siendo parte de la materia.
-    if persona is None:
-        return False
+    if persona is None or getattr(materia, 'fecha_baja', None) is not None:
+        return False  # una materia dada de baja no da acceso a nadie
     from academico.selectors import alumnos_de_materia
 
     return alumnos_de_materia(materia).filter(estudiante=persona).exists()

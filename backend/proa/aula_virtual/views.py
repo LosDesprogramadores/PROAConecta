@@ -41,7 +41,9 @@ class UnidadViewSet(viewsets.ModelViewSet):
             return Unidad.objects.none()
 
         # Conmuta entre elementos activos o dados de baja
-        qs = Unidad.objects.filter(fecha_baja__isnull=not en_papelera).select_related('materia')
+        qs = Unidad.objects.filter(
+            fecha_baja__isnull=not en_papelera, materia__fecha_baja__isnull=True
+        ).select_related('materia')
 
         if materia_id:
             qs = qs.filter(materia_id=materia_id)
@@ -130,7 +132,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
         # Conmuta entre activos o dados de baja
         materiales = Material.objects.filter(
-            fecha_baja__isnull=not en_papelera
+            fecha_baja__isnull=not en_papelera, materia__fecha_baja__isnull=True
         ).select_related('materia', 'unidad')
 
         if tipo:
@@ -227,7 +229,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
         # cantidad_entregas se calcula en la misma consulta (sin las entregas dadas de baja)
         qs = Actividad.objects.filter(
-            fecha_baja__isnull=not en_papelera
+            fecha_baja__isnull=not en_papelera, materia__fecha_baja__isnull=True
         ).select_related('materia', 'unidad').annotate(
             cantidad_entregas=Count('entregas', filter=Q(entregas__fecha_baja__isnull=True))
         )
@@ -346,7 +348,9 @@ class EntregaViewSet(viewsets.ModelViewSet):
         if en_papelera and es_estudiante(user):
             return Entrega.objects.none()
 
-        qs = Entrega.objects.filter(fecha_baja__isnull=not en_papelera).select_related(
+        qs = Entrega.objects.filter(
+            fecha_baja__isnull=not en_papelera, actividad__materia__fecha_baja__isnull=True
+        ).select_related(
             'actividad__materia', 'estudiante', 'nota__profesor'
         )
 

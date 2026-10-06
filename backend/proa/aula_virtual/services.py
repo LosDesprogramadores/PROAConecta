@@ -6,7 +6,9 @@ from .helpers import verificar_profesor_materia, obtener_persona_y_rol, validar_
 
 
 def calificar_o_rectificar_estudiante(profesor_user, actividad_id: int, estudiante_id: int, calificacion, descripcion: str = ''):
-    actividad = Actividad.objects.filter(pk=actividad_id, fecha_baja__isnull=True).select_related('materia').first()
+    actividad = Actividad.objects.filter(
+        pk=actividad_id, fecha_baja__isnull=True, materia__fecha_baja__isnull=True
+    ).select_related('materia').first()
     if not actividad:
         raise ValidationError({'actividad_id': 'Actividad no encontrada o dada de baja.'})
 

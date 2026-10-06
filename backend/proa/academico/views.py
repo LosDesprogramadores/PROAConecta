@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
 from .selectors import alumnos_de_materia, materias_con_acceso, materias_con_resumen
@@ -73,7 +73,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['titulo', 'anio', 'curso']
     # Las altas, ediciones, bajas y asignaciones son solo del administrador; la lectura se acota en get_queryset
     acciones_de_administrador = {
-        'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor',
+        'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor', 'restaurar',
     }
 
     def get_permissions(self):
@@ -113,6 +113,13 @@ class MateriaViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     def get_queryset(self):
+        if self.action == 'restaurar':
+            return materias_con_resumen(en_papelera=True)
+        # La papelera es del administrador: otro rol recibe una lista vacía, como en el resto de la API
+        if self.action == 'list' and self.request.query_params.get('papelera') == 'true':
+            if not _es_admin(self.request.user):
+                return Materia.objects.none()
+            return materias_con_resumen(en_papelera=True)
         queryset = self._queryset_por_rol(super().get_queryset())
         profesor_id = self.request.query_params.get('profesor')
         excluir_profesor = self.request.query_params.get('excluir_profesor')
@@ -133,6 +140,25 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
         return queryset
     
+    def perform_destroy(self, instance):
+        # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'], url_path='restaurar')
+    def restaurar(self, request, pk=None):
+        materia = self.get_object()  # solo encuentra materias dadas de baja (get_queryset)
+        # Un profesor dado de baja mientras tanto no vuelve como titular
+        if materia.profesor_id and materia.profesor.fecha_baja is not None:
+            materia.profesor = None
+            materia.save(update_fields=['profesor'])
+        try:
+            with transaction.atomic():
+                materia.restore()
+        except IntegrityError:
+            # Mientras estuvo de baja se creó otra materia activa con el mismo título, curso y año
+            raise ValidationError({'detail': 'No se puede restaurar la materia: ya existe otra materia activa con el mismo título, curso y año.'})
+        return Response({'mensaje': f'Materia "{materia.titulo}" restaurada correctamente.'}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['patch'], url_path='desasignar-profesor')
     def desasignar_profesor(self, request, pk=None):
         try:
@@ -213,7 +239,8 @@ class InscripcionViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Las inscripciones de una materia dada de baja se conservan, pero no se muestran
+        queryset = super().get_queryset().filter(materia__fecha_baja__isnull=True)
         persona, rol = _alcance(self.request.user)
         if self.request.user.is_authenticated and not _es_admin(self.request.user):
             if rol == ROL_PROFESOR:

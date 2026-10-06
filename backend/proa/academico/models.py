@@ -1,8 +1,16 @@
 from django.db import models
+from core.models import ContenidoSoftDelete
 from usuario.models import Persona
 
 
-class Materia(models.Model):
+class MateriaActivaManager(models.Manager):
+    # Una materia dada de baja no existe para el resto del sistema: Materia.objects ya la excluye.
+    # Solo la papelera y la restauración usan Materia.todas
+    def get_queryset(self):
+        return super().get_queryset().filter(fecha_baja__isnull=True)
+
+
+class Materia(ContenidoSoftDelete):
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField(null=True, blank=True)
     criterios_evaluacion = models.TextField(null=True, blank=True)
@@ -31,6 +39,10 @@ class Materia(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
+    # El primero declarado es el manager por defecto (DRF, formularios): solo materias activas
+    objects = MateriaActivaManager()
+    todas = models.Manager()
+
     class Meta:
         db_table = 'materia'
         verbose_name = 'Materia'
@@ -39,6 +51,7 @@ class Materia(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['titulo', 'curso', 'anio'],
+                condition=models.Q(fecha_baja__isnull=True),
                 name='unique_materia_curso_anio'
             )
         ]
@@ -57,7 +70,7 @@ class Inscripcion(models.Model):
 
     materia = models.ForeignKey(
         Materia,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='inscripciones'
     )
     estudiante = models.ForeignKey(

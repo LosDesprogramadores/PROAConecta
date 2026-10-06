@@ -28,10 +28,12 @@ def materias_con_acceso(persona):
     return Materia.objects.filter(id__in=inscripciones.values('materia_id'))
 
 
-def materias_con_resumen():
+def materias_con_resumen(en_papelera=False):
     # Materias listas para serializar sin consultas por fila: el profesor y su rol llegan con un JOIN y
-    # total_estudiantes se calcula en la misma consulta (la baja no cuenta; LIBRE sí)
-    return Materia.objects.select_related('profesor__rol').annotate(
+    # total_estudiantes se calcula en la misma consulta (la baja no cuenta; LIBRE sí).
+    # Por defecto solo las activas; la papelera (solo administrador) muestra las dadas de baja
+    base = Materia.todas.filter(fecha_baja__isnull=False) if en_papelera else Materia.objects.all()
+    return base.select_related('profesor__rol').annotate(
         total_estudiantes=Count(
             'inscripciones',
             filter=~Q(inscripciones__estado=Inscripcion.EstadoInscripcion.BAJA),

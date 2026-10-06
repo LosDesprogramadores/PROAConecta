@@ -64,6 +64,7 @@ class PersonaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Materia.objects solo ve materias activas: una dada de baja no impide dar de baja al profesor
         if rol_nombre == ROL_PROFESOR and Materia.objects.filter(profesor=persona).exists():
             return Response(
                 {'detail': 'No se puede eliminar un profesor con materias asignadas.'},

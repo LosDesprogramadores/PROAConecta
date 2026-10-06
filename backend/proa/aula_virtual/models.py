@@ -1,26 +1,11 @@
 from django.db import models
-from django.utils import timezone
+from core.models import ContenidoSoftDelete  # noqa: F401 (reexportado: vivía acá)
 from usuario.models import Persona
 from academico.models import Materia
 
 
-class ContenidoSoftDelete(models.Model):
-    fecha_baja = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        abstract = True
-
-    def soft_delete(self):
-        self.fecha_baja = timezone.now()
-        self.save(update_fields=['fecha_baja'])
-
-    def restore(self):
-        self.fecha_baja = None
-        self.save(update_fields=['fecha_baja'])
-
-
 class Unidad(ContenidoSoftDelete):
-    materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='unidades')
+    materia = models.ForeignKey(Materia, on_delete=models.PROTECT, related_name='unidades')
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField(null=True, blank=True)
     orden = models.PositiveIntegerField(default=1)
@@ -50,7 +35,7 @@ class Material(ContenidoSoftDelete):
         VIDEO = 'VIDEO', 'Video'
         ENLACE = 'ENLACE', 'Enlace externo'
         
-    materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='materiales')
+    materia = models.ForeignKey(Materia, on_delete=models.PROTECT, related_name='materiales')
     unidad = models.ForeignKey(
         Unidad,
         on_delete=models.CASCADE,
@@ -82,7 +67,7 @@ class Actividad(ContenidoSoftDelete):
         BORRADOR = 'BORRADOR', 'Borrador'
         PUBLICADA = 'PUBLICADA', 'Publicada'
 
-    materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='actividades')
+    materia = models.ForeignKey(Materia, on_delete=models.PROTECT, related_name='actividades')
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, null=True, blank=True, related_name='actividades', help_text='Si es NULL, es una actividad general. Si tiene ID pertenece a una unidad.')
         
     titulo = models.CharField(max_length=150)
