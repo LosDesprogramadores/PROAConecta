@@ -39,4 +39,23 @@ describe('TablaGenerica', () => {
     );
     expect(textos).toEqual(['Exportar CSV', 'Exportar PDF']);
   });
+
+  it('shows no pager by default (backward compatible)', async () => {
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-paginador')).toBeNull();
+  });
+
+  it('shows the pager with the page info and emits the requested page', async () => {
+    const paginas: number[] = [];
+    component.onPaginaCambiada.subscribe((p) => paginas.push(p));
+    component.totalRegistros = 120;
+    component.paginaActual = 2;
+    component.tamanoPagina = 50;
+    fixture.changeDetectorRef.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('app-paginador').textContent).toContain('Página 2 de 3');
+    fixture.nativeElement.querySelector('button[aria-label="Página siguiente"]').click();
+    expect(paginas).toEqual([3]);
+  });
 });

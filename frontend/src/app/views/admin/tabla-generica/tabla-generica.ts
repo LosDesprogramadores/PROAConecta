@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { Modal } from '../../../shared/modal/modal';
 import { IColumnaTabla } from '../../../model/tabla.model';
 import { ParametrosDescarga } from '../../../core/http/file-download';
+import { Paginador } from '../../../shared/paginador/paginador';
 import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
 
 @Component({
   selector: 'app-tabla-generica',
   standalone: true,
-  imports: [CommonModule, Modal, ExportarListado],
+  imports: [CommonModule, Modal, ExportarListado, Paginador],
   templateUrl: './tabla-generica.html',
   styleUrl: './tabla-generica.css',
 })
@@ -23,6 +24,15 @@ export class TablaGenerica {
   @Input() exportarUrl: string = '';
   @Input() exportarParams: ParametrosDescarga = {};
   @Input() exportarRecurso: string = 'listado';
+
+  /**
+   * Server-side pagination. When `totalRegistros` is null (default) the table renders every row in
+   * `datos` and shows no pager, as before.
+   */
+  @Input() totalRegistros: number | null = null;
+  @Input() paginaActual: number = 1;
+  @Input() tamanoPagina: number = 50;
+  onPaginaCambiada = output<number>();
 
   @Input() modalTitulo: string = '¿Estás seguro?';
   @Input() modalMensaje: string = 'Esta acción eliminará el registro seleccionado de forma permanente.';

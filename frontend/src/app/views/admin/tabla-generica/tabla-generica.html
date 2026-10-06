@@ -84,6 +84,14 @@
     </table>
   </div>
 
+  @if (totalRegistros !== null) {
+    <app-paginador
+      [total]="totalRegistros"
+      [pagina]="paginaActual"
+      [tamano]="tamanoPagina"
+      (paginaCambiada)="onPaginaCambiada.emit($event)" />
+  }
+
 </div>
 
 @if (isDeleteModalOpen()) {
