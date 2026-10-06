@@ -7,6 +7,7 @@ import { EstudianteService } from '../../../services/estudiante.service';
 import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
+import { Modal } from '../../../shared/modal/modal';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { Toast } from '../../../shared/toast/toast';
 import { IColumnaTabla } from '../../../model/tabla.model';
@@ -16,7 +17,7 @@ import { TablaGenerica } from '../tabla-generica/tabla-generica';
 
 @Component({
   selector: 'app-estudiante',
-  imports: [ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica],
+  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica],
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })

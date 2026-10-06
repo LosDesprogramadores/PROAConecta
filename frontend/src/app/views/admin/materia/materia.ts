@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
+import { Modal } from '../../../shared/modal/modal';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
@@ -12,7 +13,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 @Component( {
   selector: 'app-materia',
   standalone: true,
-  imports: [ CommonModule, ReactiveFormsModule ],
+  imports: [ Modal, CommonModule, ReactiveFormsModule ],
   templateUrl: './materia.html'
 } )
 export class Materia implements OnInit {

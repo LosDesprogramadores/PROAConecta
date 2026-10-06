@@ -71,4 +71,18 @@ describe('Estudiante admin form accessibility', () => {
     expect(campo.getAttribute('aria-invalid')).toBeNull();
     expect(campo.getAttribute('aria-describedby')).toBeNull();
   });
+
+  it('renders the form inside an accessible modal dialog', () => {
+    const dialogo = dom().querySelector('[role="dialog"][aria-modal="true"]')!;
+    expect(dialogo).not.toBeNull();
+    expect(dialogo.querySelector('form')).not.toBeNull();
+    expect(dom().querySelector(`#${dialogo.getAttribute('aria-labelledby')}`)?.textContent).toContain('Registrar');
+  });
+
+  it('closes the modal with Escape', () => {
+    dom().querySelector('[role="dialog"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(component.isModalOpen()).toBe(false);
+    expect(dom().querySelector('[role="dialog"]')).toBeNull();
+  });
 });
