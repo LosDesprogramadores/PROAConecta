@@ -6,6 +6,7 @@ from .models import Unidad, Material, Actividad, Entrega, Nota
 from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
 
 MENSAJE_UNIDAD_DUPLICADA = 'Ya existe una unidad con ese título en esta materia.'
+MENSAJE_ACTIVIDAD_FIJA = 'No se puede cambiar la actividad de una entrega existente.'
 
 
 class UnidadSerializer(serializers.ModelSerializer):
@@ -193,6 +194,11 @@ class EntregaSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get('request')
         user = getattr(request, 'user', None)
+        # La actividad se fija al crear: cambiarla saltearía la verificación de inscripción
+        # y chocaría con la restricción única (actividad, estudiante)
+        if self.instance is not None and 'actividad' in attrs and attrs['actividad'] != self.instance.actividad:
+            raise serializers.ValidationError({'actividad': MENSAJE_ACTIVIDAD_FIJA})
+
         actividad = attrs.get('actividad', getattr(self.instance, 'actividad', None))
 
         if not actividad or actividad.fecha_baja is not None:

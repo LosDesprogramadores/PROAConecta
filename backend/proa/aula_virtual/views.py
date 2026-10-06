@@ -394,6 +394,9 @@ class EntregaViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user = self.request.user
         persona, _ = obtener_persona_y_rol(user)
+        # Una entrega corregida tiene nota asentada: solo el administrador puede darla de baja
+        if instance.estado == Entrega.EstadoEntrega.CORREGIDO and not es_admin(user):
+            raise PermissionDenied("No se puede eliminar una entrega que ya fue corregida.")
         if es_profesor(user):
             verificar_profesor_materia(user, instance.actividad.materia)
         elif es_estudiante(user) and instance.estudiante != persona:
