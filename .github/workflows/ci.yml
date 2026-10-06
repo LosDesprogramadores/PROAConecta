@@ -88,4 +88,4 @@ jobs:
             # Rama nueva (before en ceros) o force-push (before inalcanzable): se compara con develop
             range="origin/develop..HEAD"
           fi
-          ./gitleaks git --redact --verbose --log-opts="${range}" .
+          ./gitleaks git --redact --verbose --config .gitleaks.toml --log-opts="${range}" .

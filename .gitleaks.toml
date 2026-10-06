@@ -1,0 +1,11 @@
+# Configuración de gitleaks para el CI: reglas por defecto más excepciones acotadas
+[extend]
+useDefault = true
+
+# Los tests usan contraseñas ficticias que solo existen en la base de prueba
+[[allowlists]]
+description = "Contraseñas ficticias en tests del backend"
+paths = [
+  '''^backend/proa/.+/tests/.+\.py$''',
+  '''^backend/proa/conftest\.py$''',
+]
