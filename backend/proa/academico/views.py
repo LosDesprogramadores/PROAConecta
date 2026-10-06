@@ -6,7 +6,14 @@ from django.db import transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
 from .selectors import alumnos_de_materia
-from .serializer import AlumnoMateriaSerializer, MateriaSerializer, InscripcionSerializer
+from .serializer import (
+    AlumnoMateriaSerializer,
+    AsignarProfesorSerializer,
+    DesinscribirSerializer,
+    InscribirLoteSerializer,
+    InscripcionSerializer,
+    MateriaSerializer,
+)
 from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -51,27 +58,16 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='asignar-profesor')
     def asignar_profesor(self, request):
-        profesor_id = request.data.get('profesor_id') or request.data.get('profesor')
-        materia_ids = request.data.get('materia_ids') or request.data.get('materias', [])
+        entrada = AsignarProfesorSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        profesor = entrada.validated_data['profesor_id']
+        materia_ids = entrada.validated_data['materia_ids']
 
-        if not profesor_id:
-            return Response(
-                {'error': 'El campo profesor_id es obligatorio.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not isinstance(materia_ids, list) or len(materia_ids) == 0:
-            return Response(
-                {'error': 'Debes enviar un array materia_ids con al menos un ID.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        Materia.objects.filter(profesor_id=profesor_id)
-        actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor_id=profesor_id)
+        actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor=profesor)
 
         return Response({
             'mensaje': f'Se asignó el profesor a {actualizadas} materias correctamente.',
-            'profesor_id': profesor_id,
+            'profesor_id': profesor.id,
             'materia_ids': materia_ids
         }, status=status.HTTP_200_OK)
 
@@ -181,20 +177,10 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='inscribir')
     def inscribir_lote(self, request):
-        estudiante_id = request.data.get('estudiante_id')
-        materia_ids = request.data.get('materia_ids', [])
-
-        if not estudiante_id:
-            return Response(
-                {'error': 'El campo estudiante_id es obligatorio.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not isinstance(materia_ids, list) or len(materia_ids) == 0:
-            return Response(
-                {'error': 'Debes enviar un array materia_ids con al menos un ID.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        entrada = InscribirLoteSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        estudiante_id = entrada.validated_data['estudiante_id'].id
+        materia_ids = entrada.validated_data['materia_ids']
 
         inscripciones_creadas = []
         with transaction.atomic():
@@ -220,8 +206,10 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='desinscribir')
     def desinscribir_estudiante(self, request):
-        estudiante_id = request.data.get('estudiante_id')
-        materia_id = request.data.get('materia_id')
+        entrada = DesinscribirSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        estudiante_id = entrada.validated_data['estudiante_id'].id
+        materia_id = entrada.validated_data['materia_id'].id
 
         tiene_notas = Nota.objects.filter(
             entrega__estudiante_id=estudiante_id,
