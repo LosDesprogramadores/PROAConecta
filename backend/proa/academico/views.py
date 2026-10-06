@@ -7,7 +7,7 @@ from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
 from .selectors import alumnos_de_materia
 from .serializer import AlumnoMateriaSerializer, MateriaSerializer, InscripcionSerializer
-from aula_virtual.helpers import verificar_profesor_materia
+from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -88,7 +88,11 @@ class MateriaViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(profesor__isnull=True)
 
         if disponibles_estudiante:
-            queryset = queryset.exclude(inscripciones__estudiante_id=disponibles_estudiante)
+            # Disponible = sin inscripción vigente: una BAJA se puede volver a inscribir
+            vigentes = Inscripcion.objects.filter(estudiante_id=disponibles_estudiante).exclude(
+                estado=Inscripcion.EstadoInscripcion.BAJA
+            )
+            queryset = queryset.exclude(id__in=vigentes.values('materia_id'))
 
         return queryset
     
@@ -159,6 +163,12 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # Los listados no muestran las bajas: la materia ya no es del estudiante. Solo un
+        # administrador puede pedirlas con ?incluir_baja=true
+        if self.action == 'list' and not (
+            self.request.query_params.get('incluir_baja') == 'true' and es_admin(self.request.user)
+        ):
+            queryset = queryset.exclude(estado=Inscripcion.EstadoInscripcion.BAJA)
         materia_id = self.request.query_params.get('materia')
         estudiante_id = self.request.query_params.get('estudiante')
 
@@ -194,6 +204,11 @@ class InscripcionViewSet(viewsets.ModelViewSet):
                     materia_id=m_id,
                     defaults={'estado': Inscripcion.EstadoInscripcion.CURSANDO}
                 )
+                if not created and obj.estado == Inscripcion.EstadoInscripcion.BAJA:
+                    # Se reactiva la misma fila: no se duplica la inscripción
+                    obj.estado = Inscripcion.EstadoInscripcion.CURSANDO
+                    obj.save(update_fields=['estado'])
+                    created = True
                 if created:
                     inscripciones_creadas.append(obj)
 
@@ -215,17 +230,19 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
         if tiene_notas:
             return Response(
-                {"error": "No se puede desinscribir al estudiante porque ya tiene notas cargadas en esta materia."},
+                {"detail": "No se puede desinscribir al estudiante porque ya tiene notas cargadas en esta materia."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         inscripcion = Inscripcion.objects.filter(
-            estudiante_id=estudiante_id, 
+            estudiante_id=estudiante_id,
             materia_id=materia_id
-        ).first()
+        ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).first()
 
         if inscripcion:
-            inscripcion.delete()
+            # La baja conserva la fila: el historial y las notas no se pierden
+            inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
+            inscripcion.save(update_fields=['estado'])
             return Response({"message": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
-        
-        return Response({"error": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)

@@ -2,6 +2,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
 # Los helpers de rol viven en core/roles.py; se reexportan para no romper los imports existentes
+from core.roles import tiene_inscripcion_activa
 from core.roles import es_admin, es_estudiante, es_profesor, es_profesor_de_materia, obtener_persona_y_rol  # noqa: F401
 
 
@@ -28,7 +29,7 @@ def verificar_estudiante_materia(user, materia):
     if es_admin(user):
         return
     persona, rol = obtener_persona_y_rol(user)
-    if rol != 'estudiante' or not materia.estudiantes.filter(id=getattr(persona, 'id', None)).exists():
+    if rol != 'estudiante' or not tiene_inscripcion_activa(persona, materia):
         raise PermissionDenied("Debes estar inscripto como estudiante en esta materia.")
 
 

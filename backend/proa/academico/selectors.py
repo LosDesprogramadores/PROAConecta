@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from .models import Inscripcion
+from .models import Inscripcion, Materia
 
 
 def alumnos_de_materia(materia, estado=None, search=None):
@@ -20,3 +20,9 @@ def alumnos_de_materia(materia, estado=None, search=None):
         )
 
     return inscripciones.order_by('estudiante__apellido', 'estudiante__nombre', 'id')
+
+
+def materias_con_acceso(persona):
+    # Materias a las que un estudiante tiene acceso: toda inscripción menos BAJA (LIBRE incluida)
+    inscripciones = Inscripcion.objects.filter(estudiante=persona).exclude(estado=Inscripcion.EstadoInscripcion.BAJA)
+    return Materia.objects.filter(id__in=inscripciones.values('materia_id'))

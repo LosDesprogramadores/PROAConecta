@@ -1,4 +1,6 @@
 from rest_framework.exceptions import ValidationError
+from academico.selectors import alumnos_de_materia
+from usuario.models import Persona
 from .models import Actividad, Entrega, Nota
 from .helpers import verificar_profesor_materia, obtener_persona_y_rol, validar_rango_nota, calcular_promedio, verificar_estudiante_materia
 
@@ -11,7 +13,7 @@ def calificar_o_rectificar_estudiante(profesor_user, actividad_id: int, estudian
     verificar_profesor_materia(profesor_user, actividad.materia)
     profesor, _ = obtener_persona_y_rol(profesor_user)
 
-    if not actividad.materia.estudiantes.filter(id=estudiante_id).exists():
+    if not alumnos_de_materia(actividad.materia).filter(estudiante_id=estudiante_id).exists():
         raise ValidationError({'estudiante_id': 'El estudiante no está matriculado en esta materia.'})
 
     nota_val = validar_rango_nota(calificacion)
@@ -113,7 +115,10 @@ def obtener_rendimiento_curso_profesor(user, materia) -> dict:
     persona, rol = obtener_persona_y_rol(user)
     verificar_profesor_materia(user, materia)
 
-    estudiantes = materia.estudiantes.filter(fecha_baja__isnull=True).order_by('apellido', 'nombre')
+    # Los alumnos en BAJA no cuentan; LIBRE sí
+    estudiantes = Persona.objects.filter(
+        id__in=alumnos_de_materia(materia).values('estudiante_id'), fecha_baja__isnull=True
+    ).order_by('apellido', 'nombre')
     actividades = Actividad.objects.filter(
         materia=materia,
         fecha_baja__isnull=True

@@ -37,7 +37,7 @@ class MateriaSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    total_estudiantes = serializers.IntegerField(source='inscripciones.count', read_only=True)
+    total_estudiantes = serializers.SerializerMethodField()
 
     class Meta:
         model = Materia
@@ -46,6 +46,10 @@ class MateriaSerializer(serializers.ModelSerializer):
             'anio', 'curso', 'profesor', 'profesor_detalle',
             'total_estudiantes', 'activo', 'fecha_creacion', 'fecha_actualizacion','discord_webhook_url'
         ]
+
+    def get_total_estudiantes(self, obj):
+        # Las bajas no cuentan como estudiantes de la materia
+        return obj.inscripciones.exclude(estado=Inscripcion.EstadoInscripcion.BAJA).count()
 
     def validate_profesor(self, value):
         if value:
