@@ -1,9 +1,11 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { filter, switchMap } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 
 @Component( {
@@ -16,6 +18,7 @@ export class Materia implements OnInit {
   private materiaService = inject( MateriaService );
   private fb = inject( FormBuilder );
   private toastService = inject( ToastService );
+  private confirmDialog = inject( ConfirmDialogService );
 
   materias = signal<IMateria[]>( [] );
   isModalOpen = signal<boolean>( false );
@@ -45,6 +48,7 @@ export class Materia implements OnInit {
       },
       error: ( err ) => {
         console.error( 'Error al cargar materias:', err );
+        this.toastService.error( this.toastService.readable_message_extraction( err ) );
         this.isLoading.set( false );
       }
     } );
@@ -96,7 +100,10 @@ export class Materia implements OnInit {
           );
           this.closeModal();
         },
-        error: ( err ) => console.error( 'Error al actualizar materia:', err )
+        error: ( err ) => {
+          console.error( 'Error al actualizar materia:', err );
+          this.toastService.error( this.toastService.readable_message_extraction( err ) );
+        }
       } );
     } else {
       const nuevaMateria: IMateria = { ...formValues };
@@ -105,20 +112,33 @@ export class Materia implements OnInit {
           this.materias.update( lista => [ ...lista, res ] );
           this.closeModal();
         },
-        error: ( err ) => console.error( 'Error al registrar materia:', err )
+        error: ( err ) => {
+          console.error( 'Error al registrar materia:', err );
+          this.toastService.error( this.toastService.readable_message_extraction( err ) );
+        }
       } );
     }
   }
 
   eliminar( id: number | undefined ): void {
     if ( !id ) return;
-    if ( !confirm( '¿Estás seguro de eliminar esta materia?' ) ) return;
 
-    this.materiaService.eliminarMateria( id ).subscribe( {
+    this.confirmDialog.confirmar( {
+      titulo: 'Eliminar materia',
+      mensaje: '¿Estás seguro de eliminar esta materia?',
+      textoConfirmar: 'Sí, eliminar'
+    } ).pipe(
+      filter( confirmado => confirmado ),
+      switchMap( () => this.materiaService.eliminarMateria( id ) )
+    ).subscribe( {
       next: () => {
         this.materias.update( lista => lista.filter( item => item.id !== id ) );
+        this.toastService.success( 'Materia eliminada correctamente.' );
       },
-      error: ( err ) => console.error( 'Error al eliminar materia:', err )
+      error: ( err ) => {
+        console.error( 'Error al eliminar materia:', err );
+        this.toastService.error( this.toastService.readable_message_extraction( err ) );
+      }
     } );
   }
 
