@@ -65,7 +65,6 @@ export class ActividadEstudiante implements OnInit {
 
     const idEncontrado =
       this.obtenerParametroDeRuta('id') || this.obtenerParametroDeRuta('materiaId');
-    console.log(idEncontrado);
     if (idEncontrado) {
       const idNum = Number(idEncontrado);
       this.materiaId.set(idNum);

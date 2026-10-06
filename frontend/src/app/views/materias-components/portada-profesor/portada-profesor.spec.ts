@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/auth/auth.model';
 import { MateriaService } from '../../../services/materia.service';
+import { ToastService } from '../../../services/toast.service';
 import { PortadaProfesor } from './portada-profesor';
 
 const materia = { id: 7, titulo: 'Matemática I', descripcion: 'Descripción original', anio: 1, curso: 'A', profesor_detalle: null };
@@ -84,10 +85,11 @@ describe('PortadaProfesor', () => {
   });
 
   it('does not add a unit without a name', () => {
-    vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    const warning = vi.spyOn(TestBed.inject(ToastService), 'warning').mockImplementation(() => undefined);
     const antes = component.datosActuales.unidades.length;
     component.abrirFormularioUnidad();
     component.guardarUnidad();
     expect(component.datosActuales.unidades.length).toBe(antes);
+    expect(warning).toHaveBeenCalledWith('El nombre de la unidad es requerido');
   });
 });

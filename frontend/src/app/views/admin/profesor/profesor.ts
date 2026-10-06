@@ -130,7 +130,6 @@ export class Profesor implements OnInit {
     if (this.isEditing() && this.selectedId()) {
       this.profesorService.actualizarProfesor(this.selectedId()!, formValues).subscribe({
         next: (res: Persona) => {
-          console.log('Profesor actualizado con éxito:', res);
           this.toastService.success('Profesor actualizado con éxito.');
           this.profesores.update(lista => lista.map(p => p.id === res.id ? res : p));
           this.closeModal();
@@ -150,7 +149,6 @@ export class Profesor implements OnInit {
 
       this.profesorService.crearProfesores(nuevoProfesor).subscribe({
         next: (res: Persona) => {
-          console.log('Profesor creado con éxito:', res);
           this.toastService.success("Profesor se creo correctamente.")
           // Jump to the last page: that is where the new row appears.
           this.cargarProfesores(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
@@ -175,7 +173,6 @@ export class Profesor implements OnInit {
 
     this.profesorService.eliminarProfesor(id).subscribe({
       next: (res) => {
-        console.log('Profesor eliminado con éxito:', res);
         this.toastService.success("Profesor eliminado correctamente.");
         this.cargarProfesores();
         this.closeModal();
@@ -190,7 +187,6 @@ export class Profesor implements OnInit {
   asignar(profesor: Persona): void {
     this.profesorSeleccionado.set(null);
     this.materiasProfesorSeleccionado.set([]);
-    console.log('Asignando materias al profesor:', profesor);
     this.profesorParaAsignar.set(profesor);
     this.selectedMateriaIds.set([]);
     this.isLoadingMaterias.set(true);
@@ -213,8 +209,6 @@ export class Profesor implements OnInit {
 
 
   consultar(profesor: Persona): void {
-    console.log('1. Click en Consultar. Objeto recibido:', profesor);
-
     const actual = this.profesorSeleccionado();
     if (actual && actual.id === profesor.id) {
 
@@ -223,13 +217,11 @@ export class Profesor implements OnInit {
 
     this.profesorSeleccionado.set(profesor);
     this.isLoadingConsulta.set(true);
-    console.log('3. Señal profesorSeleccionado actualizada a:', this.profesorSeleccionado());
 
     this.materiasProfesorSeleccionado.set([]);
 
     this.materiaService.obtenerMateriasPorProfesor(profesor.id).subscribe({
       next: (materias) => {
-        console.log('4. Materias recibidas con éxito:', materias);
         this.materiasProfesorSeleccionado.set(materias);
         this.isLoadingConsulta.set(false);
       },
@@ -252,7 +244,6 @@ export class Profesor implements OnInit {
     if (!profesor || ids.length === 0) return;
     this.materiaService.asignarProfesorAMaterias(profesor.id, ids).subscribe({
       next: (res) => {
-        console.log('Asignación completada:', res);
         this.toastService.success("Las materias si asignaron correctamente")
         this.cerrarModalAsignar();
 

@@ -11,6 +11,7 @@ import { IMateria } from '../../../model/materia.model';
 import { UnidadesMaterial } from '../portada/unidades-material/unidades-material';
 import { ProximasEntregas } from '../../dashboard-components/estudiante-dashboard/proximas-entregas/proximas-entregas';
 import { MateriaService } from '../../../services/materia.service';
+import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/auth/auth.model';
 
@@ -28,6 +29,7 @@ export class PortadaProfesor implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private materiaService = inject(MateriaService);
+  private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private fb = inject(NonNullableFormBuilder);
 
@@ -217,7 +219,7 @@ export class PortadaProfesor implements OnInit {
     const { nombre, descripcion } = this.formularioUnidad.getRawValue();
     if (!nombre.trim()) {
       this.formularioUnidad.controls.nombre.markAsTouched();
-      alert('El nombre de la unidad es requerido');
+      this.toastService.warning('El nombre de la unidad es requerido');
       return;
     }
 

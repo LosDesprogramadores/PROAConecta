@@ -46,7 +46,6 @@ export class Notificacion implements OnInit {
       next: (data) => {
         this.notificaciones = data;
         this.cargando = false;
-        console.log('Notificaciones cargadas desde el backend:', data);
       },
       error: (err) => {
         console.error('Error al cargar notificaciones:', err);

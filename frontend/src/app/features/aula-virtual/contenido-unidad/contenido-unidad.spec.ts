@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContenidoUnidad, UnidadMateria } from '../../../model/unidad-contenido.model';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { ToastService } from '../../../services/toast.service';
 import { ContenidoUnidadComponent } from './contenido-unidad';
 
 const visible: ContenidoUnidad = {
@@ -67,7 +68,7 @@ describe('ContenidoUnidadComponent (characterization)', () => {
     eliminados = [];
     fixture.componentInstance.contenidoGuardado.subscribe((c) => guardados.push(c));
     fixture.componentInstance.contenidoEliminado.subscribe((id) => eliminados.push(id));
-    vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    vi.spyOn(TestBed.inject(ToastService), 'warning').mockImplementation(() => undefined);
     fixture.detectChanges();
   }
 
@@ -141,7 +142,7 @@ describe('ContenidoUnidadComponent (characterization)', () => {
     enviarFormulario();
 
     expect(guardados).toEqual([]);
-    expect(window.alert).toHaveBeenCalledTimes(3);
+    expect(TestBed.inject(ToastService).warning).toHaveBeenCalledTimes(3);
     expect(dom().querySelector('form')).not.toBeNull();
   });
 

@@ -132,7 +132,6 @@ export class Estudiante implements OnInit {
     if (this.isEditing() && this.selectedId()) {
       this.estudianteService.actualizarEstudiante(this.selectedId()!, formValues).subscribe({
         next: (res: Persona) => {
-          console.log('Estudiante actualizado con éxito:', res);
           this.toastService.success('Estudiante actualizado con éxito.');
           this.estudiantes.update(lista => lista.map(e => e.id === res.id ? res : e));
           this.closeModal();
@@ -151,7 +150,6 @@ export class Estudiante implements OnInit {
 
       this.estudianteService.crearEstudiates(nuevoEstudiante).subscribe({
         next: (res: Persona) => {
-          console.log('Estudiante creado con éxito:', res);
           this.toastService.success(`Estudiante ${res.nombre} ${res.apellido} se creó con éxito.`);
           // Jump to the last page: that is where the new row appears.
           this.cargarEstudiantes(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
@@ -175,16 +173,14 @@ export class Estudiante implements OnInit {
 confirmarEliminacion(): void {
   const estudianteId = this.estudianteAEliminar();
   if (!estudianteId) return;
-  console.log("Estudiante eliminado " + estudianteId)
   this.estudianteService.eliminarEstudiante(estudianteId).subscribe({
     next: () => {
-      console.log('Estudiante eliminado con éxito');
       this.toastService.success('Estudiante eliminado con éxito.');
       this.cargarEstudiantes();
       this.cancelarEliminacion();
     },
     error: (err) => {
-      console.log("Error al eliminar el estudiante:", err)
+      console.error("Error al eliminar el estudiante:", err)
       this.toastService.error(this.toastService.readable_message_extraction(err), "");
       this.cancelarEliminacion();
     }
@@ -198,7 +194,6 @@ cancelarEliminacion(): void {
 
   inscribir(estudiante: Persona): void {
     this.ocultarModalConsultar();
-    console.log('Iniciando proceso de inscripción para el estudiante:', estudiante);
     this.estudianteParaInscribir.set(estudiante);
     this.selectedMateriaIds.set([]);
     this.isLoadingMaterias.set(true);
@@ -251,7 +246,6 @@ cancelarEliminacion(): void {
 
     this.materiaService.inscribirEstudianteEnMaterias(estudiante.id, ids).subscribe({
       next: (res) => {
-        console.log('Inscripción realizada con éxito:', res);
         this.toastService.success(`Se inscribió a ${estudiante.nombre} en ${ids.length} materias.`);
         this.cerrarModalInscribir();
       },
