@@ -1,3 +1,5 @@
+import { RespuestaPaginada } from '../core/models/api-response.interface';
+
 export interface INotificacion {
   id?: string;
   _id?: string;
@@ -7,6 +9,15 @@ export interface INotificacion {
   alcance: string;
   fecha_desde?: string;
   fecha_hasta?: string;
-  leida: boolean; 
-  materia_id?: string | null;
+  /** Creation date set by the server (ISO 8601, UTC). */
+  fecha_creacion?: string;
+  leida: boolean;
+  materia_id?: string | number | null;
+  materia_nombre?: string | null;
+  autor?: string | null;
+}
+
+/** Paginated envelope of `GET /api/notificaciones/?page=` (adds the unread counter). */
+export interface RespuestaNotificaciones extends RespuestaPaginada<INotificacion> {
+  no_leidas: number;
 }

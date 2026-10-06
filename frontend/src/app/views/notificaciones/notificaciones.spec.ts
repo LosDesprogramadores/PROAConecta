@@ -1,23 +1,121 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { environment } from '../../../environments/environment';
+import { INotificacion } from '../../model/notificacion.model';
+import { NotificacionesEstadoService } from '../../services/notificaciones-estado.service';
 import { NotificacionesComponent } from './notificaciones';
 
+const base = `${environment.apiUrl}notificaciones/`;
+const noti = (id: string, leida = false): INotificacion => ({
+  id,
+  titulo: `Aviso ${id}`,
+  mensaje: 'texto',
+  alcance: 'AMBOS',
+  leida,
+  fecha_creacion: '2026-10-08T13:00:00Z',
+});
+
 describe('NotificacionesComponent', () => {
-  let component: NotificacionesComponent;
   let fixture: ComponentFixture<NotificacionesComponent>;
+  let http: HttpTestingController;
+  let nuevas$: Subject<INotificacion>;
+  const estado = {
+    noLeidas: signal(2),
+    nuevas: () => nuevas$.asObservable(),
+    marcarLeida: (n: INotificacion) => marcar(n),
+  };
+  let marcar: (n: INotificacion) => Subject<void>;
+
+  const texto = () => fixture.nativeElement.textContent as string;
+  const lista = (results: INotificacion[], count = results.length) =>
+    http.expectOne((r) => r.url === base).flush({ count, next: null, previous: null, results, no_leidas: 2 });
 
   beforeEach(async () => {
+    nuevas$ = new Subject<INotificacion>();
+    marcar = () => {
+      const s = new Subject<void>();
+      queueMicrotask(() => s.next());
+      return s;
+    };
     await TestBed.configureTestingModule({
-      imports: [NotificacionesComponent]
-    })
-    .compileComponents();
+      imports: [NotificacionesComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: NotificacionesEstadoService, useValue: estado },
+      ],
+    }).compileComponents();
 
+    http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(NotificacionesComponent);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('shows the loading state, then the real list', async () => {
+    expect(texto()).toContain('Cargando notificaciones');
+    lista([noti('1'), noti('2', true)]);
+    fixture.detectChanges();
+    expect(texto()).toContain('Aviso 1');
+    expect(texto()).toContain('Aviso 2');
+  });
+
+  it('asks the server for page 1 with a page size', () => {
+    const req = http.expectOne((r) => r.url === base);
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('page_size')).toBe('10');
+    req.flush({ count: 0, next: null, previous: null, results: [], no_leidas: 0 });
+  });
+
+  it('shows the empty state', () => {
+    lista([]);
+    fixture.detectChanges();
+    expect(texto()).toContain('No tienes notificaciones.');
+  });
+
+  it('shows the error state and retries', () => {
+    http.expectOne((r) => r.url === base).flush({}, { status: 500, statusText: 'Error' });
+    fixture.detectChanges();
+    expect(texto()).toContain('No se pudieron cargar las notificaciones.');
+
+    (fixture.nativeElement.querySelector('button') as HTMLButtonElement).click();
+    lista([noti('1')]);
+    fixture.detectChanges();
+    expect(texto()).toContain('Aviso 1');
+  });
+
+  it('offers "Marcar como leída" only for unread items and marks locally', async () => {
+    lista([noti('1'), noti('2', true)]);
+    fixture.detectChanges();
+    const botones = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    expect(botones.filter((b) => b.textContent?.includes('Marcar como leída')).length).toBe(1);
+
+    botones[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.notificaciones()[0].leida).toBe(true);
+  });
+
+  it('prepends a live notification on the first page', () => {
+    lista([noti('1')]);
+    nuevas$.next(noti('9'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.notificaciones().map((n) => n.id)).toEqual(['9', '1']);
+    expect(fixture.componentInstance.total()).toBe(2);
+  });
+
+  it('shows the paginator only when there is more than one page and loads the chosen page', () => {
+    lista([noti('1')], 25);
+    fixture.detectChanges();
+    expect(texto()).toContain('Página 1 de 3');
+
+    fixture.componentInstance.cargar(2);
+    const req = http.expectOne((r) => r.url === base);
+    expect(req.request.params.get('page')).toBe('2');
+    req.flush({ count: 25, next: null, previous: null, results: [noti('11')], no_leidas: 2 });
+    expect(fixture.componentInstance.pagina()).toBe(2);
   });
 });
