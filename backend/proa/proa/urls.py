@@ -27,9 +27,6 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-from django.conf import settings
-from django.conf.urls.static import static
-
 
 
 urlpatterns = [
@@ -48,5 +45,5 @@ urlpatterns = [
     path('api/notificaciones/', include('notificacion.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Los archivos subidos no se sirven por /media/ ni siquiera con DEBUG: se descargan con autorización
+# desde /api/archivos/<tipo>/<id>/ (aula_virtual/descargas.py), que el frontend de desarrollo también usa.

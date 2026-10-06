@@ -3,12 +3,32 @@ from .notificaciones import avisar_nueva_actividad
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+from django.urls import reverse
 from rest_framework import serializers
 from .models import Unidad, Material, Actividad, Entrega, Nota
 from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
 
 MENSAJE_UNIDAD_DUPLICADA = 'Ya existe una unidad con ese título en esta materia.'
 MENSAJE_ACTIVIDAD_FIJA = 'No se puede cambiar la actividad de una entrega existente.'
+
+
+class RutaDeDescargaMixin:
+    """Devuelve en el campo de archivo la ruta de descarga autorizada en lugar de la URL de ``/media/``.
+
+    Es una ruta relativa a la raíz del sitio (``/api/archivos/<tipo>/<id>/``): el frontend la resuelve
+    contra su URL de API y la pide con el token. La subida sigue recibiendo el archivo en ese mismo campo.
+    """
+
+    campo_archivo = 'archivo'
+    tipo_archivo = ''
+
+    def to_representation(self, instance):
+        datos = super().to_representation(instance)
+        if getattr(instance, self.campo_archivo):
+            datos[self.campo_archivo] = reverse('aula_virtual:descarga-archivo', args=[self.tipo_archivo, instance.pk])
+        else:
+            datos[self.campo_archivo] = None
+        return datos
 
 
 class UnidadSerializer(serializers.ModelSerializer):
@@ -50,7 +70,9 @@ class UnidadSerializer(serializers.ModelSerializer):
         return self._guardar_sin_duplicar(lambda: super(UnidadSerializer, self).update(instance, validated_data))
 
 
-class MaterialSerializer(serializers.ModelSerializer):
+class MaterialSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
+    tipo_archivo = 'material'
+
     class Meta:
         model = Material
         fields = [
@@ -100,7 +122,9 @@ class MaterialSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class ActividadSerializer(serializers.ModelSerializer):
+class ActividadSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
+    campo_archivo = 'archivo_adjunto'
+    tipo_archivo = 'actividad'
     materia_titulo = serializers.CharField(source='materia.titulo', read_only=True)
     unidad_titulo = serializers.CharField(source='unidad.titulo', read_only=True, default=None)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
@@ -185,7 +209,8 @@ class NotaSerializer(serializers.ModelSerializer):
         return f"{obj.profesor.nombre} {obj.profesor.apellido}".strip() if obj.profesor else None
 
 
-class EntregaSerializer(serializers.ModelSerializer):
+class EntregaSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
+    tipo_archivo = 'entrega'
     nota = NotaSerializer(read_only=True)
     estudiante_nombre = serializers.SerializerMethodField()
 

@@ -9,12 +9,13 @@ import { ToastService } from '../../../../services/toast.service';
 import { Toast } from '../../../../shared/toast/toast'; 
 
 import { Modal } from '../../../../shared/modal/modal';
+import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
 export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
 
 @Component({
   selector: 'app-actividad-estudiante',
   standalone: true,
-  imports: [Modal, CommonModule, RouterModule, FormsModule, Toast],
+  imports: [Modal, CommonModule, RouterModule, FormsModule, Toast, ArchivoProtegidoDirective],
   templateUrl: './actividad-estudiante.html',
   styleUrl: './actividad-estudiante.css',
 })

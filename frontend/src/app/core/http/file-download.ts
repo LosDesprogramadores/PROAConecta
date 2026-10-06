@@ -3,9 +3,25 @@ import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angula
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
+
 export type ParametrosDescarga = Record<string, string | number | boolean | null | undefined>;
 
 const NOMBRE_RESPALDO = 'descarga';
+const RUTA_ARCHIVOS = /^\/?api\/archivos\//;
+
+/** True for the authorized download route the API returns for uploaded files (`/api/archivos/<tipo>/<id>/`). */
+export function esRutaDeArchivo(valor: string | null | undefined): boolean {
+  return !!valor && (RUTA_ARCHIVOS.test(valor) || valor.startsWith(`${environment.apiUrl}archivos/`));
+}
+
+/**
+ * Resolves the site-relative route the API returns into the URL the HTTP client must call, so that the
+ * auth interceptor adds the token (it only does so for URLs under `environment.apiUrl`).
+ */
+export function urlDeArchivo(ruta: string): string {
+  return RUTA_ARCHIVOS.test(ruta) ? `${environment.apiUrl}${ruta.replace(/^\/?api\//, '')}` : ruta;
+}
 
 /** Reads the file name from a Content-Disposition header (RFC 6266, quoted or filename*=UTF-8). */
 export function nombreDesdeContentDisposition(cabecera: string | null): string | null {

@@ -142,7 +142,7 @@
                         <div class="flex items-center gap-2.5">
                             <span>{{ m.tipo === 'VIDEO' ? '🎥' : m.tipo === 'DOCUMENTO' ? '📄' : '🔗' }}</span>
 
-                            <a [href]="m.archivo || m.enlace" target="_blank"
+                            <a [href]="m.archivo || m.enlace" [appArchivoProtegido]="m.archivo" target="_blank"
                                 class="text-xs md:text-sm font-medium text-slate-700 hover:text-blue-600 hover:underline">
                                 {{ m.titulo }}
                             </a>
