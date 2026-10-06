@@ -53,7 +53,8 @@ def test_editar_y_borrar_requieren_administrador(api_as, estudiante, profesor, a
 def test_ids_invalidos_dan_400_sin_insertar(api_as, admin, campo):
     respuesta = api_as(admin).post(URL, {**CUERPO, campo: 'abc'}, format='json')
     assert respuesta.status_code == 400
-    assert 'detail' in respuesta.json()
+    # Error de validación: la clave es el campo
+    assert campo in respuesta.json()
     assert _coleccion().count_documents({}) == 0
 
 

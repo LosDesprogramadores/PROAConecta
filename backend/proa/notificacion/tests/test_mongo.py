@@ -120,7 +120,7 @@ def test_listado_con_mongo_caido_devuelve_503(cliente, monkeypatch):
         raise PyMongoError('sin conexión')
 
     monkeypatch.setattr(mongo, 'obtener_coleccion', falla)
-    monkeypatch.setattr('notificacion.views.obtener_coleccion', falla)
+    monkeypatch.setattr('notificacion.services.obtener_coleccion', falla)
     respuesta = cliente.get(URL)
     assert respuesta.status_code == 503
-    assert respuesta.json() == {'detail': 'Servicio de notificaciones no disponible'}
+    assert respuesta.json() == {'detail': 'Servicio de notificaciones no disponible.'}
