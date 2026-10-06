@@ -1,11 +1,14 @@
 from rest_framework import viewsets, permissions, filters, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.db import transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
-from .selectors import alumnos_de_materia
+from .selectors import alumnos_de_materia, materias_con_acceso
+from core.permissions import EsAdministrador
+from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin as _es_admin, obtener_persona_y_rol
 from .serializer import (
     AlumnoMateriaSerializer,
     AsignarProfesorSerializer,
@@ -19,6 +22,20 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
 
+
+
+def _entero_o_400(valor, campo):
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        raise ValidationError({campo: 'Debe ser un número entero.'})
+
+
+def _alcance(user):
+    # (persona, rol) con rol None para el administrador, que ve todo
+    if _es_admin(user):
+        return None, None
+    return obtener_persona_y_rol(user)
 
 
 @extend_schema_view(
@@ -52,9 +69,33 @@ from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendim
 class MateriaViewSet(viewsets.ModelViewSet):
     queryset = Materia.objects.select_related('profesor').all()
     serializer_class = MateriaSerializer
-    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['titulo', 'anio', 'curso']
+    # Las altas, ediciones, bajas y asignaciones son solo del administrador; la lectura se acota en get_queryset
+    acciones_de_administrador = {
+        'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor',
+    }
+
+    def get_permissions(self):
+        if self.action in self.acciones_de_administrador:
+            return [EsAdministrador()]
+        return [permissions.IsAuthenticated()]
+
+    # Contrato explícito: profesor ajeno o estudiante reciben 403 (alumnos-materia.md) y una inscripción en BAJA
+    # recibe 403 en mi-rendimiento (TSK140). El resto de las acciones de detalle responde 404 fuera de alcance
+    acciones_con_403_por_contrato = {'alumnos', 'mi_rendimiento'}
+
+    def _queryset_por_rol(self, queryset):
+        if self.action in self.acciones_con_403_por_contrato:
+            return queryset
+        persona, rol = _alcance(self.request.user)
+        if self.request.user.is_authenticated and not _es_admin(self.request.user):
+            if rol == ROL_PROFESOR:
+                return queryset.filter(profesor=persona)
+            if rol == ROL_ESTUDIANTE:
+                return queryset.filter(id__in=materias_con_acceso(persona).values('id'))
+            return queryset.none()
+        return queryset
 
     @action(detail=False, methods=['post'], url_path='asignar-profesor')
     def asignar_profesor(self, request):
@@ -72,7 +113,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     def get_queryset(self):
-        queryset = super().get_queryset()      
+        queryset = self._queryset_por_rol(super().get_queryset())
         profesor_id = self.request.query_params.get('profesor')
         excluir_profesor = self.request.query_params.get('excluir_profesor')
         disponibles_estudiante = self.request.query_params.get('disponibles_estudiante')
@@ -139,26 +180,48 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='por-estudiante/(?P<estudiante_id>[^/.]+)')
     def materias_por_estudiante(self, request, estudiante_id=None):
+        estudiante_id = _entero_o_400(estudiante_id, 'estudiante_id')
+        persona, rol = _alcance(request.user)
+        if rol == ROL_ESTUDIANTE and (persona is None or persona.id != estudiante_id):
+            raise PermissionDenied('Solo puedes consultar tus propias materias.')
         materias_activas_ids = Inscripcion.objects.filter(
             estudiante_id=estudiante_id
         ).exclude(
             estado=Inscripcion.EstadoInscripcion.BAJA
         ).values_list('materia_id', flat=True)
 
-        materias = Materia.objects.filter(id__in=materias_activas_ids)
-        
+        # Dentro del alcance del rol: el profesor solo ve la intersección con sus materias
+        materias = self._queryset_por_rol(Materia.objects.select_related('profesor')).filter(
+            id__in=materias_activas_ids
+        )
+
         serializer = self.get_serializer(materias, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class InscripcionViewSet(viewsets.ModelViewSet):
     queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer
-    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['fecha_inscripcion', 'estado']
+    acciones_de_administrador = {
+        'create', 'update', 'partial_update', 'destroy', 'inscribir_lote', 'desinscribir_estudiante',
+    }
+
+    def get_permissions(self):
+        if self.action in self.acciones_de_administrador:
+            return [EsAdministrador()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        persona, rol = _alcance(self.request.user)
+        if self.request.user.is_authenticated and not _es_admin(self.request.user):
+            if rol == ROL_PROFESOR:
+                queryset = queryset.filter(materia__profesor=persona)
+            elif rol == ROL_ESTUDIANTE:
+                queryset = queryset.filter(estudiante=persona)
+            else:
+                queryset = queryset.none()
         # Los listados no muestran las bajas: la materia ya no es del estudiante. Solo un
         # administrador puede pedirlas con ?incluir_baja=true
         if self.action == 'list' and not (
@@ -169,8 +232,11 @@ class InscripcionViewSet(viewsets.ModelViewSet):
         estudiante_id = self.request.query_params.get('estudiante')
 
         if materia_id:
-            queryset = queryset.filter(materia_id=materia_id)
+            queryset = queryset.filter(materia_id=_entero_o_400(materia_id, 'materia'))
         if estudiante_id:
+            estudiante_id = _entero_o_400(estudiante_id, 'estudiante')
+            if rol == ROL_ESTUDIANTE and (persona is None or persona.id != estudiante_id):
+                raise PermissionDenied('Solo puedes consultar tus propias inscripciones.')
             queryset = queryset.filter(estudiante_id=estudiante_id)
 
         return queryset

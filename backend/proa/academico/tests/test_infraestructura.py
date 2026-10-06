@@ -25,15 +25,13 @@ def test_estudiante_inscripto_ve_su_materia_en_el_listado(api_as, estudiante, ma
 
 
 @pytest.mark.django_db
-def test_estudiante_sin_inscripcion_ve_todas_las_materias(api_as, rol_estudiante, materia_con_inscripcion):
+def test_estudiante_sin_inscripcion_no_ve_materias_ajenas(api_as, rol_estudiante, materia_con_inscripcion):
     ajeno = UsuarioFactory(persona__rol=rol_estudiante)
 
     respuesta = api_as(ajeno).get('/api/materias/')
 
-    # HALLAZGO: MateriaViewSet no filtra por rol ni por inscripción, así que un estudiante
-    # sin inscripción ve materias ajenas. Documenta el comportamiento actual; cuando T011
-    # acote la lectura por rol, cambiar a `not in`
-    assert materia_con_inscripcion.id in [m['id'] for m in respuesta.data]
+    # La lectura está acotada por rol: un estudiante solo ve materias con inscripción activa
+    assert materia_con_inscripcion.id not in [m['id'] for m in respuesta.data]
 
 
 @pytest.mark.django_db

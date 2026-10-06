@@ -6,6 +6,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import secrets
 from django.core.mail import send_mail
 from django.conf import settings
+from core.privacidad import PrivacidadPersonaMixin
 from core.roles import es_admin
 
 
@@ -99,8 +100,10 @@ class RolSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'descripcion']
 
 
-class PersonaSerializer(SoloLecturaParaNoAdminMixin, serializers.ModelSerializer):
+class PersonaSerializer(PrivacidadPersonaMixin, SoloLecturaParaNoAdminMixin, serializers.ModelSerializer):
     campos_de_privilegio = ('rol', 'dni', 'email', 'fecha_baja')
+    # Lo que ve un no administrador de otra persona: sin DNI, email, teléfono ni fecha de nacimiento
+    campos_publicos = ('id', 'nombre', 'apellido', 'rol')
 
     class Meta:
         model = Persona
