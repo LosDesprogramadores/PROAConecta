@@ -407,20 +407,28 @@ class EntregaViewSet(viewsets.ModelViewSet):
             estado=Entrega.EstadoEntrega.ENTREGADO
         )
 
+    def update(self, request, *args, **kwargs):
+        # Antes de buscar el objeto y de validar el cuerpo: un profesor o administrador recibe 403 aunque
+        # mande un cuerpo inválido (put y patch pasan por acá)
+        if not es_estudiante(request.user):
+            raise PermissionDenied("Solo el estudiante dueño puede modificar el contenido de su entrega.")
+        return super().update(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         user = self.request.user
-        if es_estudiante(user):
-            actividad = serializer.instance.actividad
-            limite = actividad.fecha_limite
-            fuera_termino = bool(limite and timezone.now() > limite)
+        # El contenido de una entrega es del estudiante: el profesor la califica (/calificar) y el
+        # administrador la da de baja o la restaura, pero ninguno la edita (decisión D-1)
+        if not es_estudiante(user):
+            raise PermissionDenied("Solo el estudiante dueño puede modificar el contenido de su entrega.")
+        actividad = serializer.instance.actividad
+        limite = actividad.fecha_limite
+        fuera_termino = bool(limite and timezone.now() > limite)
 
-            serializer.save(
-                fecha_entrega=timezone.now(),
-                fuera_de_termino=serializer.instance.fuera_de_termino or fuera_termino,
-                estado=Entrega.EstadoEntrega.ENTREGADO
-            )
-        else:
-            serializer.save()
+        serializer.save(
+            fecha_entrega=timezone.now(),
+            fuera_de_termino=serializer.instance.fuera_de_termino or fuera_termino,
+            estado=Entrega.EstadoEntrega.ENTREGADO
+        )
 
     def perform_destroy(self, instance):
         user = self.request.user
