@@ -17,3 +17,4 @@ channels_redis>=4.0.0
 uvicorn[standard]>=0.20.0
 twilio==9.11.2
 requests==2.34.2
+reportlab==5.0.1
