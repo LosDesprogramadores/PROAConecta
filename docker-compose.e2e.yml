@@ -1,0 +1,82 @@
+# Stack for the end-to-end tests. It is an OVERRIDE of docker-compose.yml, always used with its own project name
+# so it never touches the development stack (containers, volumes and ports are separate):
+#
+#   docker compose -p proa-e2e -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+#   docker compose -p proa-e2e -f docker-compose.yml -f docker-compose.e2e.yml down -v
+#
+# Requires Docker Compose >= 2.24 (the !reset and !override tags).
+# Nothing here is a real secret and backend/.env is NOT read: every variable is inline.
+services:
+  db:
+    container_name: !reset null
+    restart: "no"
+
+  mongo:
+    container_name: !reset null
+    restart: "no"
+
+  redis:
+    container_name: !reset null
+    restart: "no"
+
+  # Test mail server: accepts any message on SMTP :1025 and exposes it on the HTTP API/UI :8025
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: "no"
+    ports:
+      - "18025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    container_name: !reset null
+    # backend/.env must not influence the run
+    env_file: !reset []
+    # The image code is used as built (no bind mount of ./backend) plus the E2E settings file
+    volumes: !override
+      - mediadata:/app/proa/media
+      - ./e2e/stack/settings_e2e.py:/e2e/settings_e2e.py:ro
+    # Nothing published: the browser reaches the API through nginx (frontend)
+    ports: !override []
+    environment:
+      # proa.settings.dev + a higher per-IP login throttle (see e2e/stack/settings_e2e.py)
+      - PYTHONPATH=/e2e
+      - DJANGO_SETTINGS_MODULE=settings_e2e
+      - DJANGO_SECRET_KEY=e2e-only-secret-key-not-a-real-secret
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:14200,http://127.0.0.1:14200
+      - DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:14200,http://127.0.0.1:14200
+      - E2E_LIMITE_INTENTOS_CUENTA=${E2E_LIMITE_INTENTOS_CUENTA:-30}
+      - SEED_DEMO_PASSWORD=${E2E_PASSWORD:-E2e-Demo-Pass-2026}
+      # Mail goes to Mailpit (no TLS, no credentials)
+      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      - EMAIL_HOST=mailpit
+      - EMAIL_PORT=1025
+      - EMAIL_USE_TLS=False
+      - DEFAULT_FROM_EMAIL=PROA Conecta <noreply@proa-e2e.test>
+      - FRONTEND_URL=http://localhost:14200
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput
+      && python manage.py seed_demo
+      && uvicorn proa.asgi:application --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/schema/')"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  frontend:
+    container_name: !reset null
+    restart: "no"
+    ports: !override
+      - "14200:80"
+    depends_on:
+      backend:
+        condition: service_healthy

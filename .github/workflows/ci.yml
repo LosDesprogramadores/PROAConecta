@@ -67,6 +67,53 @@ jobs:
       - name: Tests del frontend
         run: npx ng test --watch=false
 
+  # Recorridos críticos en un navegador real sobre el compose (docker-compose.e2e.yml: proyecto propio, Mailpit para
+  # el correo, datos de seed_demo). Solo en pull requests; si falla, el pull request no se puede fusionar.
+  e2e:
+    name: e2e
+    if: github.event_name == 'pull_request'
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COMPOSE: docker compose -p proa-e2e -f docker-compose.yml -f docker-compose.e2e.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      # Sin secretos: las variables del stack son valores de prueba escritos en docker-compose.e2e.yml
+      - name: Levantar el stack E2E
+        run: ${COMPOSE} up -d --build --wait --wait-timeout 300
+      - name: Instalar dependencias de e2e
+        working-directory: e2e
+        run: npm ci
+      - name: Instalar Chromium
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      # Obligatorio: sin continue-on-error
+      - name: Ejecutar los tests E2E
+        working-directory: e2e
+        run: npx playwright test
+      - name: Subir reporte y trazas
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-reporte
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Registros del stack
+        if: failure()
+        run: ${COMPOSE} logs --no-color --tail 200
+      - name: Bajar el stack
+        if: always()
+        run: ${COMPOSE} down -v
+
   secretos:
     name: secretos
     runs-on: ubuntu-latest
