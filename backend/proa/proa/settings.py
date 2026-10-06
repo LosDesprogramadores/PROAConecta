@@ -156,6 +156,10 @@ DATABASES = {
         ssl_require=os.getenv('DB_SSL', 'True').lower() in ('true', '1', 'yes'),
     )
 }
+# Correo y Discord salen en un hilo después del commit (integraciones/fondo.py). Con True corren en
+# línea: lo usan los tests para ser deterministas
+SEGUNDO_PLANO_SINCRONO = False
+
 # --- Discord
 DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
 

@@ -28,6 +28,9 @@ CACHES = {
 # Los correos quedan en django.core.mail.outbox
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
+# Los envíos en segundo plano corren en línea (un hilo suelto haría los tests no deterministas)
+SEGUNDO_PLANO_SINCRONO = True
+
 # Ninguna integración externa se llama desde los tests
 DISCORD_WEBHOOK_URL = None
 MONGO_URI = 'mongodb://localhost:27017'

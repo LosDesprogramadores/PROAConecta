@@ -14,10 +14,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from django.core.mail import send_mail
 from django.conf import settings
 from core.permissions import EsAdministrador
 from core.throttling import LimiteDeIntentosMixin
+from .correos import enviar_recuperacion
 from core.roles import ROL_ADMINISTRADOR, ROL_ESTUDIANTE, ROL_PROFESOR, obtener_persona_y_rol
 
 
@@ -223,26 +223,8 @@ class SolicitarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
             frontend_url = getattr(settings, 'FRONTEND_URL','http://localhost:4200')
             enlace = f"{frontend_url}/restablecer-password?uid={uid}&token={token}"
 
-            asunto = "PROA Conecta - Recuperación de contraseña"
-            cuerpo = f"""Hola {usuario.persona.nombre if usuario.persona else 'Usuario'},
-
-            Recibimos una solicitud para restablecer la contraseña de tu cuenta institucional en PROA Conecta.
-
-            Para crear una nueva clave, ingresá al siguiente enlace:
-            {enlace}
-
-            Este enlace es de uso único y tiene validez temporal. Si no solicitaste este cambio, podés desestimar este mensaje.
-
-            Atentamente,
-            Equipo PROA Conecta.
-            """
-            send_mail(
-                subject=asunto,
-                message=cuerpo,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False
-            )
+            # Se envía en segundo plano: la respuesta no espera al SMTP ni delata por la demora si el correo existe
+            enviar_recuperacion(usuario, enlace)
 
         return Response(
             {'mensaje': 'Si el correo ingresado se encuentra registrado, recibirás un enlace de restablecimiento a la brevedad.'},
