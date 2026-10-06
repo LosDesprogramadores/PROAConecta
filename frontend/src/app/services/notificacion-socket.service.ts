@@ -19,7 +19,7 @@ export class NotificacionSocketService {
       return;
     }
 
-    this.socket = new WebSocket(environment.socketUrl);
+    this.socket = new WebSocket(environment.wsUrl);
 
     this.socket.onmessage = (event) => {
       const data = JSON.parse(event.data);

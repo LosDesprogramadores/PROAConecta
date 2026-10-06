@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Anuncio } from '../model/anuncio.model';
 
 @Injectable({
@@ -8,7 +9,7 @@ import { Anuncio } from '../model/anuncio.model';
 })
 export class AnunciosService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8000/api/notificaciones/';
+  private readonly apiUrl = `${environment.apiUrl}notificaciones/`;
 
   /**
    * Obtiene el listado de anuncios/notificaciones desde MongoDB

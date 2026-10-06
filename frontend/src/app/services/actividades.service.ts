@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Actividad } from '../model/actividad-model';
 
 export interface NotaEntrega {
@@ -36,8 +37,8 @@ export interface CalificacionPayload {
 })
 export class ActividadesService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/actividades';
-  private entregasUrl = 'http://localhost:8000/api/entregas';
+  private apiUrl = `${environment.apiUrl}actividades`;
+  private entregasUrl = `${environment.apiUrl}entregas`;
 
   // 👈 Método general que reclaman los otros componentes del dashboard
   getActividades(): Observable<Actividad[]> {
@@ -49,7 +50,7 @@ export class ActividadesService {
   }
 
   getActividadById(id: number): Observable<Actividad> {
-    return this.http.get<Actividad>(`${this.apiUrl}/${id}`);
+    return this.http.get<Actividad>(`${this.apiUrl}/${id}/`);
   }
 
   crearActividad(datos: any): Observable<Actividad> {

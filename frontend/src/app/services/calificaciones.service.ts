@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface ActividadCalificacion {
   actividad_id: number;
@@ -30,7 +31,7 @@ export interface RendimientoEstudiante {
 export class CalificacionesService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:8000/api/materias';
+  private apiUrl = `${environment.apiUrl}materias`;
 
   obtenerMiRendimiento(materiaId: number): Observable<RendimientoEstudiante> {
     return this.http.get<RendimientoEstudiante>(
