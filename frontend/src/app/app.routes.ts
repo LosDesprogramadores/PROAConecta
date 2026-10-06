@@ -10,6 +10,9 @@ import { MateriasLayout } from './layouts/materias-layout/materias-layout';
 import { Portada } from './views/materias-components/portada/portada';
 import { PortadaProfesor } from './views/materias-components/portada-profesor/portada-profesor';
 import { authGuard } from './guards/auth.guard';
+import { roleGuard } from './guards/role-guard';
+import { UserRole } from './core/auth/auth.model';
+import { NotFound } from './views/not-found/not-found';
 import { DashboardAdmin } from './views/admin/dashboard-admin/dashboard-admin';
 import { Estudiante } from './views/admin/estudiante/estudiante';
 import { AnunciosMateriaComponent } from './views/materias-components/anuncios/anuncios';
@@ -36,6 +39,10 @@ import { rolRedirectGuard } from './guards/portada-redirect-guard';
 import { PortadaEstudiante } from './views/materias-components/materias-estudiante/portada-estudiante/portada-estudiante';
 import { MaterialEstudiante } from './views/materias-components/materias-estudiante/material-estudiante/material-estudiante';
 import { ActividadEstudiante } from './views/materias-components/materias-estudiante/actividad-estudiante/actividad-estudiante';
+
+const soloAdmin = roleGuard([UserRole.ADMIN]);
+const soloProfesor = roleGuard([UserRole.DOCENTE]);
+const soloEstudiante = roleGuard([UserRole.ESTUDIANTE]);
 
 export const routes: Routes = [
   {
@@ -71,6 +78,7 @@ export const routes: Routes = [
       },
       {
         path: 'estudiante',
+        canActivate: [soloEstudiante],
         children: [
           { path: 'welcome', component: Welcome },
           { path: 'anuncios', component: Anuncios },
@@ -79,12 +87,13 @@ export const routes: Routes = [
         ],
       },
 
-      { path: 'welcome', component: WelcomeProfesor },
-      { path: 'actividades', component: ActividadesDashboard },
-      { path: 'actividades/:id', component: ActividadDetalleComponent },
-      { path: 'actividades/nueva', component: ActividadForm },
-      { path: 'actividades/editar/:id', component: ActividadForm },
-      { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
+      { path: 'welcome', canActivate: [soloProfesor], component: WelcomeProfesor },
+      { path: 'actividades', canActivate: [soloProfesor], component: ActividadesDashboard },
+      // Static segments go before ':id', otherwise 'nueva' is captured as an id.
+      { path: 'actividades/nueva', canActivate: [soloProfesor], component: ActividadForm },
+      { path: 'actividades/editar/:id', canActivate: [soloProfesor], component: ActividadForm },
+      { path: 'actividades/:id', canActivate: [soloProfesor], component: ActividadDetalleComponent },
+      { path: 'actividades/:id/entregas', canActivate: [soloProfesor], component: ActividadEntregasComponent },
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'tablaGenerica', component: TablaGenerica },
@@ -106,6 +115,7 @@ export const routes: Routes = [
 
       {
         path: 'estudiante',
+        canActivate: [soloEstudiante],
         children: [
           { path: '', redirectTo: 'portada', pathMatch: 'full' },
           { path: 'portada', component: PortadaEstudiante },
@@ -118,13 +128,13 @@ export const routes: Routes = [
       // =========================
       // PROFESOR
       // =========================
-      { path: 'portada-profesor', component: PortadaProfesor },
+      { path: 'portada-profesor', canActivate: [soloProfesor], component: PortadaProfesor },
       { path: 'actividades', component: Actividades },
       { path: 'actividades/:id/detalle', component: ActividadDetalleComponent },
-      { path: 'actividades/nueva', component: ActividadForm },
-      { path: 'actividades/:id/editar', component: ActividadForm },
-      { path: 'actividades/:id/entregas', component: ActividadEntregasComponent },
-      { path: 'calificaciones-profesor', component: CalificacionesProfesor },
+      { path: 'actividades/nueva', canActivate: [soloProfesor], component: ActividadForm },
+      { path: 'actividades/:id/editar', canActivate: [soloProfesor], component: ActividadForm },
+      { path: 'actividades/:id/entregas', canActivate: [soloProfesor], component: ActividadEntregasComponent },
+      { path: 'calificaciones-profesor', canActivate: [soloProfesor], component: CalificacionesProfesor },
           { path: 'calificaciones', component: CalificacionesProfesor },
 
       {
@@ -137,6 +147,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard-admin',
+    canActivate: [authGuard, soloAdmin],
     component: DashboardAdmin,
     children: [
       { path: '', redirectTo: 'profesores', pathMatch: 'full' },
@@ -146,4 +157,5 @@ export const routes: Routes = [
       { path: 'notificaciones', component: Notificacion },
     ],
   },
+  { path: '**', component: NotFound },
 ];

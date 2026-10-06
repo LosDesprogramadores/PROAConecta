@@ -112,7 +112,8 @@ export class Actividades implements OnInit {
 
   entregarActividad(actividad: Actividad): void {
     const idMat = actividad.materia || this.materiaId();
-    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'entregar']);
+    // Students submit from the estudiante activities view (submission modal).
+    this.router.navigate(['/view-materia', idMat, 'estudiante', 'actividades']);
   }
 
   verEntregas(actividad: Actividad): void {
