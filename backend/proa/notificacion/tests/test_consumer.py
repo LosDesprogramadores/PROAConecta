@@ -184,3 +184,26 @@ async def test_crear_notificacion_personal_llega_solo_al_destinatario(estudiante
     await _no_recibe_nada(otro)
     await destinatario.disconnect()
     await otro.disconnect()
+
+
+async def test_desactivar_al_usuario_cierra_su_socket_abierto_con_4401(estudiante):
+    comunicador = await _conectar(estudiante)
+
+    def desactivar():
+        estudiante.activo = False
+        estudiante.save()
+
+    await sync_to_async(desactivar)()
+
+    salida = await comunicador.receive_output(timeout=1)
+    assert salida == {'type': 'websocket.close', 'code': 4401}
+
+
+async def test_cambiar_la_clave_no_cierra_el_socket_abierto(estudiante):
+    from usuario.services import revocar_sesiones
+
+    comunicador = await _conectar(estudiante)
+    await sync_to_async(revocar_sesiones)(estudiante)
+
+    await _no_recibe_nada(comunicador)
+    await comunicador.disconnect()

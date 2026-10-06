@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
@@ -40,12 +40,25 @@ class Persona(models.Model):
     )
 
     def soft_delete(self):
-        self.fecha_baja = timezone.now().date()
-        self.save(update_fields=['fecha_baja'])
+        # La baja desactiva la cuenta y revoca sus sesiones: el access ya emitido deja de valer
+        # (is_active=False) y el refresh queda en la blacklist
+        with transaction.atomic():
+            self.fecha_baja = timezone.now().date()
+            self.save(update_fields=['fecha_baja'])
+            usuario = Usuario.objects.filter(persona=self).first()
+            if usuario is not None:
+                usuario.activo = False
+                usuario.save()
 
     def restore(self):
-        self.fecha_baja = None
-        self.save(update_fields=['fecha_baja'])
+        with transaction.atomic():
+            self.fecha_baja = None
+            self.save(update_fields=['fecha_baja'])
+            usuario = Usuario.objects.filter(persona=self).first()
+            if usuario is not None:
+                usuario.activo = True
+                usuario.is_active = True
+                usuario.save()
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
@@ -96,6 +109,18 @@ class Usuario(AbstractUser):
         null=True,
         blank=True
     )
+
+    def save(self, *args, **kwargs):
+        # Una cuenta desactivada no puede usar su access (simplejwt valida is_active) ni renovar su refresh
+        if not self.activo:
+            self.is_active = False
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = {*kwargs['update_fields'], 'is_active'}
+        super().save(*args, **kwargs)
+        if not self.activo:
+            from .services import revocar_sesiones
+
+            revocar_sesiones(self, cerrar_sockets=True)
 
     def __str__(self):
             if self.persona:
