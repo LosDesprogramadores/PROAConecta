@@ -9,10 +9,11 @@ import { ToastService } from '../../../services/toast.service';
 import { MaterialesService } from '../../../services/materiales.service';
 import { Material as MaterialModel } from '../../../model/unidad-material.model';
 
+import { Modal } from '../../../shared/modal/modal';
 @Component({
   selector: 'app-material',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [Modal, CommonModule, FormsModule],
   templateUrl: './material.html',
   styleUrl: './material.css',
 })

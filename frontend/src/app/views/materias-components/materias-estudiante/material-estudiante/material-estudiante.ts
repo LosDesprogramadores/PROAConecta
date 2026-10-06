@@ -6,10 +6,11 @@ import { MaterialesService } from '../../../../services/materiales.service';
 import { UnidadesService } from '../../../../services/unidades.service';
 import { Material, Unidad } from '../../../../model/unidad-material.model';
 
+import { Modal } from '../../../../shared/modal/modal';
 @Component({
   selector: 'app-material-estudiante',
   standalone: true,
-  imports: [CommonModule],
+  imports: [Modal, CommonModule],
   templateUrl: './material-estudiante.html',
   styleUrl: './material-estudiante.css',
 })

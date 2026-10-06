@@ -11,7 +11,7 @@ const FOCUSABLES = [
 
 /**
  * Keyboard behavior shared by every dialog:
- * - moves focus inside on open (`[data-autofocus]` first, then the first control),
+ * - moves focus inside on open (`[data-autofocus]` or `[autofocus]` first, then the first control),
  * - keeps Tab / Shift+Tab cycling inside the host,
  * - emits `escape` when Escape is pressed,
  * - returns focus to the element that had it before the dialog opened.
@@ -30,7 +30,7 @@ export class FocusTrap implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     const inicial =
-      this.host.querySelector<HTMLElement>('[data-autofocus]') ?? this.enfocables()[0] ?? this.host;
+      this.host.querySelector<HTMLElement>('[data-autofocus], [autofocus]') ?? this.enfocables()[0] ?? this.host;
     if (inicial === this.host && !this.host.hasAttribute('tabindex')) {
       this.host.setAttribute('tabindex', '-1');
     }

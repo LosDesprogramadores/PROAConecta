@@ -9,10 +9,11 @@ import { UnidadesService } from '../../../../services/unidades.service';
 import { MaterialesService } from '../../../../services/materiales.service';
 import { Unidad, Material } from '../../../../model/unidad-material.model';
 
+import { Modal } from '../../../../shared/modal/modal';
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule],
+  imports: [Modal, RouterModule, CommonModule, FormsModule],
   templateUrl: './unidades-material.html',
   styleUrl: './unidades-material.css',
 })

@@ -14,10 +14,11 @@ import { MateriaService } from '../../../services/materia.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/auth/auth.model';
 
+import { Modal } from '../../../shared/modal/modal';
 @Component({
   selector: 'app-portada-profesor',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, ProximasEntregas],
+  imports: [Modal, CommonModule, RouterModule, FormsModule, UnidadesMaterial, ProximasEntregas],
   templateUrl: './portada-profesor.html',
   styleUrls: ['./portada-profesor.css'],
 })

@@ -117,4 +117,28 @@ describe('UnidadesMaterial', () => {
     pending.error(new Error('boom'));
     expect(component.guardando()).toBe(false);
   });
+
+  it('opens the unit form in an accessible modal labelled by its title', () => {
+    component.abrirFormularioUnidad();
+    fixture.detectChanges();
+
+    const dialogo = fixture.nativeElement.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement;
+    expect(dialogo).not.toBeNull();
+    const titulo = fixture.nativeElement.querySelector(`#${dialogo.getAttribute('aria-labelledby')}`);
+    expect(titulo.textContent).toContain('Crear Nueva Unidad');
+  });
+
+  it('closes the unit form with Escape and without saving', () => {
+    component.abrirFormularioUnidad();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    expect(component.mostrarFormularioUnidad()).toBe(false);
+    expect(unidadesService.crearUnidad).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+  });
 });

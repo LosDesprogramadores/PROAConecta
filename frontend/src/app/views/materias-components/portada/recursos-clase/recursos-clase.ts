@@ -7,10 +7,11 @@ import { ToastService } from '../../../../services/toast.service';
 import { MaterialesService } from '../../../../services/materiales.service';
 import { Material } from '../../../../model/unidad-material.model';
 
+import { Modal } from '../../../../shared/modal/modal';
 @Component({
   selector: 'app-recursos-clase',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [Modal, CommonModule, FormsModule],
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })
