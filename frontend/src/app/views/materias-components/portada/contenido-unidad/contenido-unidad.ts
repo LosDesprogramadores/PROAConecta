@@ -1,6 +1,6 @@
 import { Component, Input, inject, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UnidadMateria, ContenidoUnidad } from '../../../../model/unidad-contenido.model';
 
 import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
@@ -8,12 +8,13 @@ import { filter } from 'rxjs';
 @Component({
   selector: 'app-contenido-unidad',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './contenido-unidad.html',
   styleUrl: './contenido-unidad.css',
 })
 export class ContenidoUnidadComponent {
   private confirmDialog = inject(ConfirmDialogService);
+  private fb = inject(NonNullableFormBuilder);
 
 
   @Input() unidad!: UnidadMateria;
@@ -38,15 +39,16 @@ export class ContenidoUnidadComponent {
   // CONTENIDO EN EDICIÓN / NUEVO
   // ==========================================
 
-  nuevoContenido: ContenidoUnidad = {
-    id: '',
+  readonly formulario = this.fb.group({
+    tipo: this.fb.control<ContenidoUnidad['tipo']>('documento'),
     titulo: '',
     descripcion: '',
-    tipo: 'documento',
     url: '',
-    fechaCreacion: new Date(),
     visible: true,
-  };
+  });
+
+  /** Content being edited: its id, creation date and owner survive the edit. */
+  private contenidoEnEdicion: ContenidoUnidad | null = null;
 
 
   // ==========================================
@@ -55,15 +57,9 @@ export class ContenidoUnidadComponent {
 
   mostrarFormularioNuevo() {
 
-    this.nuevoContenido = {
-      id: '',
-      titulo: '',
-      descripcion: '',
-      tipo: 'documento',
-      url: '',
-      fechaCreacion: new Date(),
-      visible: true,
-    };
+    this.formulario.reset();
+
+    this.contenidoEnEdicion = null;
 
     this.editandoId.set(null);
 
@@ -77,9 +73,15 @@ export class ContenidoUnidadComponent {
 
   editarContenido(contenido: ContenidoUnidad) {
 
-    this.nuevoContenido = {
-      ...contenido
-    };
+    this.formulario.setValue({
+      tipo: contenido.tipo,
+      titulo: contenido.titulo,
+      descripcion: contenido.descripcion ?? '',
+      url: contenido.url,
+      visible: contenido.visible ?? true,
+    });
+
+    this.contenidoEnEdicion = { ...contenido };
 
     this.editandoId.set(contenido.id);
 
@@ -96,6 +98,8 @@ export class ContenidoUnidadComponent {
     this.mostrarFormulario.set(false);
 
     this.editandoId.set(null);
+
+    this.contenidoEnEdicion = null;
   }
 
 
@@ -105,8 +109,10 @@ export class ContenidoUnidadComponent {
 
   guardarContenido() {
 
+    const valores = this.formulario.getRawValue();
+
     // Validar título
-    if (!this.nuevoContenido.titulo.trim()) {
+    if (!valores.titulo.trim()) {
 
       alert('El título es requerido');
 
@@ -115,7 +121,7 @@ export class ContenidoUnidadComponent {
 
 
     // Validar URL
-    if (!this.nuevoContenido.url.trim()) {
+    if (!valores.url.trim()) {
 
       alert('La URL es requerida');
 
@@ -126,7 +132,7 @@ export class ContenidoUnidadComponent {
     // Validar URL
     try {
 
-      new URL(this.nuevoContenido.url);
+      new URL(valores.url);
 
     } catch {
 
@@ -136,30 +142,27 @@ export class ContenidoUnidadComponent {
     }
 
 
-    // ==========================================
-    // NUEVO CONTENIDO
-    // ==========================================
-
-    if (!this.editandoId()) {
-
-      this.nuevoContenido.id = `contenido-${Date.now()}`;
-
-      this.nuevoContenido.fechaCreacion = new Date();
-
-      this.nuevoContenido.visible = true;
-    }
+    const contenido: ContenidoUnidad = this.editandoId() && this.contenidoEnEdicion
+      ? { ...this.contenidoEnEdicion, ...valores }
+      : {
+          ...valores,
+          // Nuevo contenido: id y fecha propios, siempre visible
+          id: `contenido-${Date.now()}`,
+          fechaCreacion: new Date(),
+          visible: true,
+        };
 
 
     // Emitir contenido a Portada
-    this.contenidoGuardado.emit({
-      ...this.nuevoContenido
-    });
+    this.contenidoGuardado.emit(contenido);
 
 
     // Cerrar formulario
     this.mostrarFormulario.set(false);
 
     this.editandoId.set(null);
+
+    this.contenidoEnEdicion = null;
   }
 
 
@@ -269,7 +272,7 @@ export class ContenidoUnidadComponent {
 
     };
 
-    return ayudas[this.nuevoContenido.tipo] || '';
+    return ayudas[this.formulario.controls.tipo.value] || '';
   }
 
 
@@ -297,6 +300,6 @@ export class ContenidoUnidadComponent {
 
     };
 
-    return ayudas[this.nuevoContenido.tipo] || [];
+    return ayudas[this.formulario.controls.tipo.value] || [];
   }
 }

@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
@@ -14,7 +14,7 @@ import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegi
 @Component({
   selector: 'app-recursos-clase',
   standalone: true,
-  imports: [Modal, CommonModule, FormsModule, ArchivoProtegidoDirective],
+  imports: [Modal, CommonModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })
@@ -26,6 +26,7 @@ export class RecursosClaseComponent implements OnInit {
   private confirmDialog = inject(ConfirmDialogService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  private fb = inject(NonNullableFormBuilder);
 
   recursos = signal<Material[]>([]);
   cargando = signal(false);
@@ -40,10 +41,12 @@ export class RecursosClaseComponent implements OnInit {
 
   recursoEditandoId: number | string | null = null;
 
-  nuevoTipoRecurso = 'DOCUMENTO';
-  nuevoTituloRecurso = '';
-  nuevoUrlRecurso = '';
-  nuevoMaterialVisible = true;
+  readonly formulario = this.fb.group({
+    tipo: 'DOCUMENTO',
+    titulo: '',
+    url: '',
+    visible: true,
+  });
 
   archivoSeleccionado: File | null = null;
 
@@ -97,10 +100,7 @@ export class RecursosClaseComponent implements OnInit {
   abrirFormularioRecurso(): void {
     this.recursoEditandoId = null;
 
-    this.nuevoTipoRecurso = 'DOCUMENTO';
-    this.nuevoTituloRecurso = '';
-    this.nuevoUrlRecurso = '';
-    this.nuevoMaterialVisible = true;
+    this.formulario.reset();
 
     this.archivoSeleccionado = null;
 
@@ -114,10 +114,12 @@ export class RecursosClaseComponent implements OnInit {
   prepararEditarRecurso(material: Material): void {
     this.recursoEditandoId = material.id ?? null;
 
-    this.nuevoTipoRecurso = material.tipo || 'DOCUMENTO';
-    this.nuevoTituloRecurso = material.titulo || '';
-    this.nuevoUrlRecurso = material.enlace || '';
-    this.nuevoMaterialVisible = material.visible ?? true;
+    this.formulario.setValue({
+      tipo: material.tipo || 'DOCUMENTO',
+      titulo: material.titulo || '',
+      url: material.enlace || '',
+      visible: material.visible ?? true,
+    });
 
     this.archivoSeleccionado = null;
 
@@ -146,10 +148,7 @@ export class RecursosClaseComponent implements OnInit {
     this.recursoEditandoId = null;
     this.archivoSeleccionado = null;
 
-    this.nuevoTipoRecurso = 'DOCUMENTO';
-    this.nuevoTituloRecurso = '';
-    this.nuevoUrlRecurso = '';
-    this.nuevoMaterialVisible = true;
+    this.formulario.reset();
   }
 
   // ==============================
@@ -162,12 +161,14 @@ export class RecursosClaseComponent implements OnInit {
       return;
     }
 
-    if (!this.nuevoTituloRecurso.trim()) {
+    const valores = this.formulario.getRawValue();
+
+    if (!valores.titulo.trim()) {
       this.toastService.error('El título es requerido');
       return;
     }
 
-    const url = this.nuevoUrlRecurso.trim();
+    const url = valores.url.trim();
 
     if (!url && !this.archivoSeleccionado) {
       this.toastService.error('Debes ingresar una URL o seleccionar un archivo');
@@ -183,10 +184,10 @@ export class RecursosClaseComponent implements OnInit {
     const payload: Partial<Material> = {
       materia: this.materiaId,
       unidad: null,
-      tipo: this.nuevoTipoRecurso.toUpperCase(),
-      titulo: this.nuevoTituloRecurso.trim(),
+      tipo: valores.tipo.toUpperCase(),
+      titulo: valores.titulo.trim(),
       enlace: urlFormateada || undefined,
-      visible: this.nuevoMaterialVisible,
+      visible: valores.visible,
     };
 
     // ==============================

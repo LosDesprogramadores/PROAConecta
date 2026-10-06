@@ -229,35 +229,35 @@
     <app-modal [titulo]="unidadEditandoId ? '✏️ Editar Unidad' : '➕ Crear Nueva Unidad'" ancho="md" (cerrar)="cancelarFormularioUnidad()">
             
 
-            <form (ngSubmit)="guardarUnidad()" class="space-y-4">
+            <form [formGroup]="formularioUnidad" (ngSubmit)="guardarUnidad()" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="md:col-span-3">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
+                        <label for="unidad-titulo" class="block text-xs font-semibold text-slate-600 mb-1">
                             Nombre / Título de la Unidad *
                         </label>
-                        <input type="text" [(ngModel)]="nuevoNombreUnidad" name="titulo"
+                        <input id="unidad-titulo" type="text" formControlName="titulo"
                             placeholder="Ej: Unidad 1: Introducción a la programación"
                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required autofocus />
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">N° de Orden</label>
-                        <input type="number" [(ngModel)]="nuevoOrdenUnidad" name="orden" min="1"
+                        <label for="unidad-orden" class="block text-xs font-semibold text-slate-600 mb-1">N° de Orden</label>
+                        <input id="unidad-orden" type="number" formControlName="orden" min="1"
                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción (Opcional)</label>
-                    <textarea [(ngModel)]="nuevoDescripcionUnidad" name="descripcion" rows="3"
+                    <label for="unidad-descripcion" class="block text-xs font-semibold text-slate-600 mb-1">Descripción (Opcional)</label>
+                    <textarea id="unidad-descripcion" formControlName="descripcion" rows="3"
                         placeholder="Breve explicación de los temas que cubre esta unidad..."
                         class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
 
                 <div>
                     <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" [(ngModel)]="visible" name="visible"
+                        <input type="checkbox" formControlName="visible"
                             class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
                         <span class="text-sm font-medium text-slate-700">
                             Visible para los estudiantes
@@ -285,10 +285,10 @@
     <app-modal [titulo]="recursoEditandoId ? '✏️ Editar Recurso' : '📚 Agregar Recurso'" ancho="sm" (cerrar)="cancelarFormularioRecurso()">
             
 
-            <form (ngSubmit)="guardarRecurso()" class="space-y-4">
+            <form [formGroup]="formularioRecurso" (ngSubmit)="guardarRecurso()" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Recurso</label>
-                    <select [(ngModel)]="nuevoTipoRecurso" name="tipo"
+                    <label for="unidad-recurso-tipo" class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Recurso</label>
+                    <select id="unidad-recurso-tipo" formControlName="tipo"
                         class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="DOCUMENTO">📄 Documento (Drive / PDF)</option>
                         <option value="VIDEO">🎥 Video (YouTube / Vimeo)</option>
@@ -297,29 +297,29 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Título *</label>
-                    <input type="text" [(ngModel)]="nuevoTituloRecurso" name="titulo"
+                    <label for="unidad-recurso-titulo" class="block text-xs font-semibold text-slate-600 mb-1">Título *</label>
+                    <input id="unidad-recurso-titulo" type="text" formControlName="titulo"
                         placeholder="Ej: Guía Práctica N° 1"
                         class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required autofocus />
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">URL / Enlace Web</label>
-                    <input type="url" [(ngModel)]="nuevoUrlRecurso" name="url" placeholder="https://..."
+                    <label for="unidad-recurso-url" class="block text-xs font-semibold text-slate-600 mb-1">URL / Enlace Web</label>
+                    <input id="unidad-recurso-url" type="url" formControlName="url" placeholder="https://..."
                         class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <!-- SUBIDA DE ARCHIVO ADJUNTO -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">O Subir Archivo Adjunto</label>
-                    <input type="file" (change)="onArchivoSeleccionado($event)"
+                    <label for="unidad-recurso-archivo" class="block text-xs font-semibold text-slate-600 mb-1">O Subir Archivo Adjunto</label>
+                    <input id="unidad-recurso-archivo" type="file" (change)="onArchivoSeleccionado($event)"
                         class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                 </div>
 
                 <div>
                     <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" [(ngModel)]="nuevoMaterialVisible" name="materialVisible"
+                        <input type="checkbox" formControlName="visible"
                             class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
                         <span class="text-sm text-slate-700">Hacer visible para los alumnos</span>
                     </label>

@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { finalize, filter } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -15,7 +15,7 @@ import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegi
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
-  imports: [Modal, RouterModule, CommonModule, FormsModule, ArchivoProtegidoDirective],
+  imports: [Modal, RouterModule, CommonModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './unidades-material.html',
   styleUrl: './unidades-material.css',
 })
@@ -26,6 +26,7 @@ export class UnidadesMaterial implements OnInit {
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private fb = inject(NonNullableFormBuilder);
 
   unidades = signal<Unidad[]>([]);
   esDocente = signal<boolean>(false);
@@ -38,21 +39,25 @@ export class UnidadesMaterial implements OnInit {
 
   // ESTADO DE UNIDADES
   unidadEditandoId: string | number | null = null;
-  nuevoNombreUnidad = '';
-  nuevoDescripcionUnidad = '';
-  nuevoOrdenUnidad: number = 1;
+  readonly formularioUnidad = this.fb.group({
+    titulo: '',
+    orden: 1,
+    descripcion: '',
+    visible: true,
+  });
   materiaId: string | number = '';
-  visible = true;
 
   // ESTADO DE RECURSOS / MATERIALES
   mostrarFormularioRecurso = signal<boolean>(false);
   unidadSeleccionadaId = signal<string | number | null>(null);
   recursoEditandoId: string | number | null = null;
   archivoSeleccionado: File | null = null;
-  nuevoTipoRecurso = 'DOCUMENTO';
-  nuevoTituloRecurso = '';
-  nuevoUrlRecurso = '';
-  nuevoMaterialVisible = true;
+  readonly formularioRecurso = this.fb.group({
+    tipo: 'DOCUMENTO',
+    titulo: '',
+    url: '',
+    visible: true,
+  });
 
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
@@ -123,41 +128,38 @@ export class UnidadesMaterial implements OnInit {
 
   abrirFormularioUnidad() {
     this.unidadEditandoId = null;
-    this.nuevoNombreUnidad = '';
-    this.nuevoDescripcionUnidad = '';
-    this.nuevoOrdenUnidad = 1;
-    this.visible = true;
+    this.formularioUnidad.reset();
     this.mostrarFormularioUnidad.set(true);
   }
 
   prepararEditarUnidad(unidad: Unidad, event: Event) {
     event.stopPropagation();
     this.unidadEditandoId = unidad.id ?? null;
-    this.nuevoNombreUnidad = unidad.titulo;
-    this.nuevoDescripcionUnidad = unidad.descripcion || '';
-    this.nuevoOrdenUnidad = unidad.orden ?? 1;
-    this.visible = unidad.visible ?? true;
+    this.formularioUnidad.setValue({
+      titulo: unidad.titulo,
+      orden: unidad.orden ?? 1,
+      descripcion: unidad.descripcion || '',
+      visible: unidad.visible ?? true,
+    });
     this.mostrarFormularioUnidad.set(true);
   }
 
   cancelarFormularioUnidad() {
     this.mostrarFormularioUnidad.set(false);
     this.unidadEditandoId = null;
-    this.nuevoNombreUnidad = '';
-    this.nuevoDescripcionUnidad = '';
-    this.nuevoOrdenUnidad = 1;
-    this.visible = true;
+    this.formularioUnidad.reset();
   }
 
   guardarUnidad() {
-    if (this.guardando() || !this.nuevoNombreUnidad.trim()) return;
+    const valores = this.formularioUnidad.getRawValue();
+    if (this.guardando() || !valores.titulo.trim()) return;
 
     const payload = {
       materia: this.materiaId,
-      titulo: this.nuevoNombreUnidad,
-      descripcion: this.nuevoDescripcionUnidad,
-      orden: Number(this.nuevoOrdenUnidad) || 1,
-      visible: this.visible,
+      titulo: valores.titulo,
+      descripcion: valores.descripcion,
+      orden: Number(valores.orden) || 1,
+      visible: valores.visible,
     };
 
     this.guardando.set(true);
@@ -221,10 +223,7 @@ export class UnidadesMaterial implements OnInit {
     if (event) event.stopPropagation();
     this.unidadSeleccionadaId.set(unidadId);
     this.recursoEditandoId = null;
-    this.nuevoTipoRecurso = 'DOCUMENTO';
-    this.nuevoTituloRecurso = '';
-    this.nuevoUrlRecurso = '';
-    this.nuevoMaterialVisible = true;
+    this.formularioRecurso.reset();
     this.archivoSeleccionado = null;
     this.mostrarFormularioRecurso.set(true);
   }
@@ -233,10 +232,12 @@ export class UnidadesMaterial implements OnInit {
     if (event) event.stopPropagation();
     this.recursoEditandoId = material.id ?? null;
     this.unidadSeleccionadaId.set(material.unidad ?? null);
-    this.nuevoTipoRecurso = material.tipo || 'DOCUMENTO';
-    this.nuevoTituloRecurso = material.titulo || '';
-    this.nuevoUrlRecurso = material.enlace || '';
-    this.nuevoMaterialVisible = material.visible ?? true;
+    this.formularioRecurso.setValue({
+      tipo: material.tipo || 'DOCUMENTO',
+      titulo: material.titulo || '',
+      url: material.enlace || '',
+      visible: material.visible ?? true,
+    });
     this.archivoSeleccionado = null;
     this.mostrarFormularioRecurso.set(true);
   }
@@ -257,9 +258,10 @@ export class UnidadesMaterial implements OnInit {
 
   guardarRecurso() {
     const unidadId = this.unidadSeleccionadaId();
-    if (this.guardando() || !this.nuevoTituloRecurso.trim()) return;
+    const valores = this.formularioRecurso.getRawValue();
+    if (this.guardando() || !valores.titulo.trim()) return;
 
-    let urlFormateada = this.nuevoUrlRecurso.trim();
+    let urlFormateada = valores.url.trim();
     if (urlFormateada && !/^https?:\/\//i.test(urlFormateada)) {
       urlFormateada = `https://${urlFormateada}`;
     }
@@ -267,10 +269,10 @@ export class UnidadesMaterial implements OnInit {
     const payload: Partial<Material> = {
       materia: this.materiaId,
       unidad: unidadId || undefined,
-      tipo: this.nuevoTipoRecurso.toUpperCase(),
-      titulo: this.nuevoTituloRecurso,
+      tipo: valores.tipo.toUpperCase(),
+      titulo: valores.titulo,
       enlace: urlFormateada || undefined,
-      visible: this.nuevoMaterialVisible,
+      visible: valores.visible,
     };
 
     this.guardando.set(true);
