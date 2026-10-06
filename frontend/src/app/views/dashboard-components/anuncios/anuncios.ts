@@ -8,7 +8,7 @@ import { Modal } from '../../../shared/modal/modal';
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [Modal, CommonModule, SidebarMaterias],
+  imports: [Modal, CommonModule],
   templateUrl: './anuncios.html',
   styleUrls: ['./anuncios.css']
 })
