@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from academico.selectors import materias_con_acceso
 from .services import calificar_o_rectificar_estudiante
 
 from .models import Unidad, Material, Actividad, Nota, Entrega
@@ -52,7 +53,7 @@ class UnidadViewSet(viewsets.ModelViewSet):
             return qs.filter(materia__profesor=persona)
 
         if es_estudiante(user):
-            return qs.filter(materia__estudiantes=persona, visible=True)
+            return qs.filter(materia__in=materias_con_acceso(persona), visible=True)
 
         return Unidad.objects.none()
 
@@ -152,7 +153,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
         if es_estudiante(usuario_actual):
             return materiales.filter(
-                materia__estudiantes=persona,
+                materia__in=materias_con_acceso(persona),
                 visible=True
             ).filter(
                 Q(unidad__isnull=True) | Q(unidad__visible=True, unidad__fecha_baja__isnull=True)
@@ -244,7 +245,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
         if es_estudiante(user):
             return qs.filter(
-                materia__estudiantes=persona,
+                materia__in=materias_con_acceso(persona),
                 estado=Actividad.EstadoActividad.PUBLICADA,
             ).filter(
                 Q(unidad__isnull=True) | Q(unidad__visible=True, unidad__fecha_baja__isnull=True)
@@ -354,7 +355,8 @@ class EntregaViewSet(viewsets.ModelViewSet):
         if es_profesor(user):
             return qs.filter(actividad__materia__profesor=persona)
         if es_estudiante(user):
-            return qs.filter(estudiante=persona)
+            # Una inscripción en BAJA saca a la materia de las entregas del estudiante
+            return qs.filter(estudiante=persona, actividad__materia__in=materias_con_acceso(persona))
 
         return Entrega.objects.none()
 
@@ -394,6 +396,9 @@ class EntregaViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user = self.request.user
         persona, _ = obtener_persona_y_rol(user)
+        # Una entrega corregida tiene nota asentada: solo el administrador puede darla de baja
+        if instance.estado == Entrega.EstadoEntrega.CORREGIDO and not es_admin(user):
+            raise PermissionDenied("No se puede eliminar una entrega que ya fue corregida.")
         if es_profesor(user):
             verificar_profesor_materia(user, instance.actividad.materia)
         elif es_estudiante(user) and instance.estudiante != persona:

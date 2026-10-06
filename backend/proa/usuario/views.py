@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from academico.models import Materia, Inscripcion
+from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -16,6 +17,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
 from core.permissions import EsAdministrador
+from core.roles import ROL_ADMINISTRADOR, ROL_ESTUDIANTE, ROL_PROFESOR, obtener_persona_y_rol
 
 
 
@@ -50,34 +52,55 @@ class PersonaViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         persona = self.get_object()
-        rol_nombre = persona.rol.nombre 
-                
-        if rol_nombre == "Profesor":
-            tiene_materias = Materia.objects.filter(profesor=persona).exists()
+        rol_nombre = persona.rol.nombre.strip().lower() if persona.rol else None
+        mi_persona, _ = obtener_persona_y_rol(request.user)
 
-            if tiene_materias:
-                return Response(
-                    {'detail': 'No se puede eliminar un profesor con materias asignadas.'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        elif rol_nombre == "Estudiante":
-          tiene_inscripciones = Inscripcion.objects.filter(
-            estudiante=persona
-          ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).exists()
-
-        if tiene_inscripciones:
+        if mi_persona is not None and persona.pk == mi_persona.pk:
             return Response(
-                {'detail': 'No se puede eliminar un estudiante que tiene materias o inscripciones activas.'}, 
+                {'detail': 'No se puede eliminar tu propia cuenta.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        persona.fecha_baja = timezone.now().date()
-        persona.save()
-        if rol_nombre == 'Profesor':
-               return Response({'detail': 'Profesor {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'.format(persona=persona)}, status=status.HTTP_200_OK)
-        elif rol_nombre == 'Estudiante':
-               return Response({'detail': 'Estudiante {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'.format(persona=persona)}, status=status.HTTP_200_OK)
-        
+
+        if rol_nombre == ROL_PROFESOR and Materia.objects.filter(profesor=persona).exists():
+            return Response(
+                {'detail': 'No se puede eliminar un profesor con materias asignadas.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if rol_nombre == ROL_ESTUDIANTE and Inscripcion.objects.filter(
+            estudiante=persona
+        ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).exists():
+            return Response(
+                {'detail': 'No se puede eliminar un estudiante que tiene materias o inscripciones activas.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Dos bajas simultáneas de los dos últimos administradores: se bloquean los
+            # administradores activos restantes para que la verificación y la baja sean atómicas
+            if rol_nombre == ROL_ADMINISTRADOR and not self._quedan_administradores_activos(excluyendo=persona):
+                return Response(
+                    {'detail': 'No se puede eliminar al último administrador activo.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            persona.soft_delete()
+
+        if rol_nombre == ROL_PROFESOR:
+            return Response({'detail': f'Profesor {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'}, status=status.HTTP_200_OK)
+        if rol_nombre == ROL_ESTUDIANTE:
+            return Response({'detail': f'Estudiante {persona.apellido}, {persona.nombre} se ha eliminado correctamente.'}, status=status.HTTP_200_OK)
+
         return Response({'detail': 'Registro eliminado correctamente.'}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _quedan_administradores_activos(excluyendo):
+        # Activo: persona sin baja y con cuenta de usuario habilitada
+        restantes = Persona.objects.select_for_update(of=('self',)).filter(
+            rol__nombre__iexact=ROL_ADMINISTRADOR,
+            fecha_baja__isnull=True,
+            usuario__activo=True,
+        ).exclude(pk=excluyendo.pk)
+        return len(restantes) > 0
 
     @action(detail=True, methods=['post'])
     def restaurar(self, request, pk=None):

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from usuario.models import Persona
+from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR
 from .models import Materia, Inscripcion
 
 # Información básica de la persona para mostrar en la lista sea profesor o Estudiante
@@ -37,7 +38,7 @@ class MateriaSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    total_estudiantes = serializers.IntegerField(source='inscripciones.count', read_only=True)
+    total_estudiantes = serializers.SerializerMethodField()
 
     class Meta:
         model = Materia
@@ -46,6 +47,10 @@ class MateriaSerializer(serializers.ModelSerializer):
             'anio', 'curso', 'profesor', 'profesor_detalle',
             'total_estudiantes', 'activo', 'fecha_creacion', 'fecha_actualizacion','discord_webhook_url'
         ]
+
+    def get_total_estudiantes(self, obj):
+        # Las bajas no cuentan como estudiantes de la materia
+        return obj.inscripciones.exclude(estado=Inscripcion.EstadoInscripcion.BAJA).count()
 
     def validate_profesor(self, value):
         if value:
@@ -97,3 +102,90 @@ class InscripcionSerializer(serializers.ModelSerializer):
         if self.instance is None and Inscripcion.objects.filter(materia=materia, estudiante=estudiante).exists():
             raise serializers.ValidationError("El estudiante ya se encuentra inscripto en esta materia.")
         return attrs
+
+# Entrada de los endpoints en lote: validan existencia, rol y duplicados antes de tocar la base
+def _ids_de_materias_validos(valor):
+    repetidos = sorted({m for m in valor if valor.count(m) > 1})
+    if repetidos:
+        raise serializers.ValidationError(
+            f'No se pueden repetir materias: {", ".join(map(str, repetidos))}.'
+        )
+    existentes = set(Materia.objects.filter(id__in=valor).values_list('id', flat=True))
+    faltantes = [m for m in valor if m not in existentes]
+    if faltantes:
+        raise serializers.ValidationError(
+            f'No existen materias con id: {", ".join(map(str, faltantes))}.'
+        )
+    return valor
+
+
+def _persona_con_rol(valor, rol, etiqueta):
+    nombre_rol = valor.rol.nombre.strip().lower() if valor.rol else None
+    if nombre_rol != rol:
+        raise serializers.ValidationError(f"{valor} no posee el rol de '{etiqueta}'.")
+    if valor.fecha_baja is not None:
+        raise serializers.ValidationError(f'{valor} está dado de baja.')
+    return valor
+
+
+class _MateriaIdsField(serializers.ListField):
+    def __init__(self, **kwargs):
+        super().__init__(
+            child=serializers.IntegerField(
+                min_value=1,
+                error_messages={'invalid': 'Cada id de materia debe ser un número entero.'},
+            ),
+            allow_empty=False,
+            error_messages={
+                'required': 'Debes enviar un array materia_ids con al menos un ID.',
+                'null': 'Debes enviar un array materia_ids con al menos un ID.',
+                'not_a_list': 'Debes enviar un array materia_ids con al menos un ID.',
+                'empty': 'Debes enviar un array materia_ids con al menos un ID.',
+            },
+            **kwargs,
+        )
+
+
+def _persona_field(etiqueta):
+    return serializers.PrimaryKeyRelatedField(
+        queryset=Persona.objects.select_related('rol'),
+        error_messages={
+            'required': 'Este campo es obligatorio.',
+            'does_not_exist': f'No existe {etiqueta} con id {{pk_value}}.',
+            'incorrect_type': 'El id debe ser un número entero.',
+        },
+    )
+
+
+class AsignarProfesorSerializer(serializers.Serializer):
+    profesor_id = _persona_field('un profesor')
+    materia_ids = _MateriaIdsField()
+
+    def validate_profesor_id(self, value):
+        return _persona_con_rol(value, ROL_PROFESOR, 'Profesor')
+
+    def validate_materia_ids(self, value):
+        return _ids_de_materias_validos(value)
+
+
+class InscribirLoteSerializer(serializers.Serializer):
+    estudiante_id = _persona_field('un estudiante')
+    materia_ids = _MateriaIdsField()
+
+    def validate_estudiante_id(self, value):
+        return _persona_con_rol(value, ROL_ESTUDIANTE, 'Estudiante')
+
+    def validate_materia_ids(self, value):
+        return _ids_de_materias_validos(value)
+
+
+class DesinscribirSerializer(serializers.Serializer):
+    estudiante_id = _persona_field('un estudiante')
+    materia_id = serializers.PrimaryKeyRelatedField(
+        queryset=Materia.objects.all(),
+        error_messages={
+            'required': 'Este campo es obligatorio.',
+            'does_not_exist': 'No existe una materia con id {pk_value}.',
+            'incorrect_type': 'El id debe ser un número entero.',
+        },
+    )

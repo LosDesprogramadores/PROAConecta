@@ -8,8 +8,9 @@ class DNIBackend(ModelBackend):
         if dni is None or password is None:
             return None
 
+        # Una persona dada de baja no puede iniciar sesión
         try:
-            persona = Persona.objects.select_related('usuario').get(dni=dni)
+            persona = Persona.objects.select_related('usuario').get(dni=dni, fecha_baja__isnull=True)
         except Persona.DoesNotExist:
             return None
 

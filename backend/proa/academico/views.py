@@ -6,8 +6,15 @@ from django.db import transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
 from .selectors import alumnos_de_materia
-from .serializer import AlumnoMateriaSerializer, MateriaSerializer, InscripcionSerializer
-from aula_virtual.helpers import verificar_profesor_materia
+from .serializer import (
+    AlumnoMateriaSerializer,
+    AsignarProfesorSerializer,
+    DesinscribirSerializer,
+    InscribirLoteSerializer,
+    InscripcionSerializer,
+    MateriaSerializer,
+)
+from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -51,27 +58,16 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='asignar-profesor')
     def asignar_profesor(self, request):
-        profesor_id = request.data.get('profesor_id') or request.data.get('profesor')
-        materia_ids = request.data.get('materia_ids') or request.data.get('materias', [])
+        entrada = AsignarProfesorSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        profesor = entrada.validated_data['profesor_id']
+        materia_ids = entrada.validated_data['materia_ids']
 
-        if not profesor_id:
-            return Response(
-                {'error': 'El campo profesor_id es obligatorio.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not isinstance(materia_ids, list) or len(materia_ids) == 0:
-            return Response(
-                {'error': 'Debes enviar un array materia_ids con al menos un ID.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        Materia.objects.filter(profesor_id=profesor_id)
-        actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor_id=profesor_id)
+        actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor=profesor)
 
         return Response({
             'mensaje': f'Se asignó el profesor a {actualizadas} materias correctamente.',
-            'profesor_id': profesor_id,
+            'profesor_id': profesor.id,
             'materia_ids': materia_ids
         }, status=status.HTTP_200_OK)
 
@@ -88,7 +84,11 @@ class MateriaViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(profesor__isnull=True)
 
         if disponibles_estudiante:
-            queryset = queryset.exclude(inscripciones__estudiante_id=disponibles_estudiante)
+            # Disponible = sin inscripción vigente: una BAJA se puede volver a inscribir
+            vigentes = Inscripcion.objects.filter(estudiante_id=disponibles_estudiante).exclude(
+                estado=Inscripcion.EstadoInscripcion.BAJA
+            )
+            queryset = queryset.exclude(id__in=vigentes.values('materia_id'))
 
         return queryset
     
@@ -159,6 +159,12 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # Los listados no muestran las bajas: la materia ya no es del estudiante. Solo un
+        # administrador puede pedirlas con ?incluir_baja=true
+        if self.action == 'list' and not (
+            self.request.query_params.get('incluir_baja') == 'true' and es_admin(self.request.user)
+        ):
+            queryset = queryset.exclude(estado=Inscripcion.EstadoInscripcion.BAJA)
         materia_id = self.request.query_params.get('materia')
         estudiante_id = self.request.query_params.get('estudiante')
 
@@ -171,20 +177,10 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='inscribir')
     def inscribir_lote(self, request):
-        estudiante_id = request.data.get('estudiante_id')
-        materia_ids = request.data.get('materia_ids', [])
-
-        if not estudiante_id:
-            return Response(
-                {'error': 'El campo estudiante_id es obligatorio.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not isinstance(materia_ids, list) or len(materia_ids) == 0:
-            return Response(
-                {'error': 'Debes enviar un array materia_ids con al menos un ID.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        entrada = InscribirLoteSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        estudiante_id = entrada.validated_data['estudiante_id'].id
+        materia_ids = entrada.validated_data['materia_ids']
 
         inscripciones_creadas = []
         with transaction.atomic():
@@ -194,6 +190,11 @@ class InscripcionViewSet(viewsets.ModelViewSet):
                     materia_id=m_id,
                     defaults={'estado': Inscripcion.EstadoInscripcion.CURSANDO}
                 )
+                if not created and obj.estado == Inscripcion.EstadoInscripcion.BAJA:
+                    # Se reactiva la misma fila: no se duplica la inscripción
+                    obj.estado = Inscripcion.EstadoInscripcion.CURSANDO
+                    obj.save(update_fields=['estado'])
+                    created = True
                 if created:
                     inscripciones_creadas.append(obj)
 
@@ -205,8 +206,10 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='desinscribir')
     def desinscribir_estudiante(self, request):
-        estudiante_id = request.data.get('estudiante_id')
-        materia_id = request.data.get('materia_id')
+        entrada = DesinscribirSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        estudiante_id = entrada.validated_data['estudiante_id'].id
+        materia_id = entrada.validated_data['materia_id'].id
 
         tiene_notas = Nota.objects.filter(
             entrega__estudiante_id=estudiante_id,
@@ -215,17 +218,19 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
         if tiene_notas:
             return Response(
-                {"error": "No se puede desinscribir al estudiante porque ya tiene notas cargadas en esta materia."},
+                {"detail": "No se puede desinscribir al estudiante porque ya tiene notas cargadas en esta materia."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         inscripcion = Inscripcion.objects.filter(
-            estudiante_id=estudiante_id, 
+            estudiante_id=estudiante_id,
             materia_id=materia_id
-        ).first()
+        ).exclude(estado=Inscripcion.EstadoInscripcion.BAJA).first()
 
         if inscripcion:
-            inscripcion.delete()
+            # La baja conserva la fila: el historial y las notas no se pierden
+            inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
+            inscripcion.save(update_fields=['estado'])
             return Response({"message": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
-        
-        return Response({"error": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)
