@@ -32,7 +32,7 @@
             }
           }
 
-          @if (isMateriaRoute() && !esEstudiante()) {
+          @if (isMateriaRoute()) {
             @for (link of navLinksMateria; track link.path) {
               <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
                 class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">

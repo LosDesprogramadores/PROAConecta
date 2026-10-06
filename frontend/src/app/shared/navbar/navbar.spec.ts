@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, filter, map } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -142,5 +142,80 @@ describe('Navbar notifications (logged in)', () => {
       },
     });
     expect(fixture.componentInstance.unreadMessages()).toBe(3);
+  });
+});
+
+describe('Navbar section links inside a materia (desktop)', () => {
+  const vacio = { count: 0, next: null, previous: null, results: [] };
+
+  async function abrirMateria(rolId: UserRole): Promise<HTMLAnchorElement[]> {
+    await TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: '**', children: [] }]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AuthService,
+          useValue: {
+            token: signal('jwt'),
+            currentUser: signal({ id: 1, rolId, persona: { id: 5, nombre: 'Ana', apellido: 'P' } }),
+          },
+        },
+        {
+          provide: NotificacionSocketService,
+          useValue: { eventos: () => new Subject<EventoSocket>(), escucharNotificaciones: () => new Subject() },
+        },
+      ],
+    }).compileComponents();
+    await TestBed.inject(Router).navigateByUrl('/view-materia/7/anuncios');
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(Navbar);
+    fixture.detectChanges();
+    http.match(() => true).forEach((req) => req.flush({ ...vacio, no_leidas: 0, no_leidos: 0 }));
+    fixture.detectChanges();
+    // The first "lg:flex" group is the desktop center nav; the mobile menu is a separate block
+    const escritorio = (fixture.nativeElement as HTMLElement).querySelector('header nav div.hidden.lg\\:flex');
+    return Array.from(escritorio!.querySelectorAll('a'));
+  }
+
+  const etiquetas = (links: HTMLAnchorElement[]) => links.map((a) => a.textContent!.trim());
+  const rutas = (links: HTMLAnchorElement[]) => links.map((a) => a.getAttribute('href'));
+
+  it('shows the student their section links, pointing to the student routes, without duplicates', async () => {
+    const links = await abrirMateria(UserRole.ESTUDIANTE);
+
+    expect(etiquetas(links)).toEqual(['Anuncios', 'Material', 'Actividades', 'Calificaciones', 'Mensajes']);
+    expect(rutas(links).slice(0, 4)).toEqual([
+      '/view-materia/7/anuncios',
+      '/view-materia/7/estudiante/material',
+      '/view-materia/7/estudiante/actividades',
+      '/view-materia/7/estudiante/calificaciones',
+    ]);
+    expect(new Set(etiquetas(links)).size).toBe(links.length);
+  });
+
+  it('keeps the professor links unchanged', async () => {
+    const links = await abrirMateria(UserRole.DOCENTE);
+
+    expect(etiquetas(links)).toEqual(['Anuncios', 'Material', 'Actividades', 'Calificaciones', 'Alumnos', 'Mensajes']);
+    expect(rutas(links).slice(0, 4)).toEqual([
+      '/view-materia/7/anuncios',
+      '/view-materia/7/material',
+      '/view-materia/7/actividades',
+      '/view-materia/7/calificaciones',
+    ]);
+  });
+
+  it('keeps the administrator links unchanged', async () => {
+    const links = await abrirMateria(UserRole.ADMIN);
+
+    expect(etiquetas(links)).toEqual(['Anuncios', 'Material', 'Actividades', 'Calificaciones']);
+    expect(rutas(links)).toEqual([
+      '/view-materia/7/anuncios',
+      '/view-materia/7/material',
+      '/view-materia/7/actividades',
+      '/view-materia/7/calificaciones',
+    ]);
   });
 });

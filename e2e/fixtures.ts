@@ -35,19 +35,6 @@ export async function abrirMateria(page: Page, titulo: string): Promise<void> {
   await expect(page).toHaveURL(/\/view-materia\/\d+\//);
 }
 
-// TODO: navega por URL por el bug conocido "estudiante sin links de secciones en escritorio"; reemplazar por
-// clic en los links reales de la barra cuando se corrija.
-/**
- * Opens a section ("anuncios", "calificaciones"...) of the materia the page is currently on, by URL.
- * A student who enters a materia from the panel gets no section links in the navbar (the navbar computes them
- * once and the route is not known yet), so the section is opened through its route instead of the menu.
- */
-export async function irASeccion(page: Page, seccion: string): Promise<void> {
-  const id = /\/view-materia\/(\d+)\//.exec(page.url())?.[1];
-  expect(id, 'the page must be inside a materia').toBeTruthy();
-  await page.goto(`/view-materia/${id}/${seccion}`);
-}
-
 interface MensajeMailpit {
   ID: string;
   Subject: string;

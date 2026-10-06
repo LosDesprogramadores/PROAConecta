@@ -1,4 +1,4 @@
-import { abrirMateria, contextoComo, expect, irASeccion, test } from '../fixtures';
+import { abrirMateria, contextoComo, expect, test } from '../fixtures';
 
 // The second test needs the announcement published by the first: they run in order and retry together
 test.describe.configure({ mode: 'serial' });
@@ -31,7 +31,7 @@ test.describe('announcements', () => {
     await page.goto('/dashboard/estudiante/welcome');
     await page.getByRole('link', { name: /Matemática/ }).click();
     await expect(page).toHaveURL(/\/view-materia\/\d+\//);
-    await irASeccion(page, 'anuncios');
+    await page.getByRole('link', { name: 'Anuncios' }).click();
 
     await expect(page.getByRole('heading', { name: titulo })).toBeVisible();
     // Students cannot publish
