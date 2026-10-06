@@ -42,7 +42,7 @@ def clave_secreta(debug, entorno=None):
         return clave or CLAVE_SECRETA_DESARROLLO
     if not clave:
         raise ImproperlyConfigured(
-            'DJANGO_SECRET_KEY no está definida y DJANGO_DEBUG no es "True": definí una clave secreta '
+            'DJANGO_SECRET_KEY no está definida y se usa proa.settings.prod: definí una clave secreta '
             'larga y aleatoria en el entorno (ver backend/.env.example).'
         )
     if clave == CLAVE_SECRETA_DESARROLLO or clave.startswith('django-insecure-'):

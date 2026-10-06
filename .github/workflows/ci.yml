@@ -30,9 +30,16 @@ jobs:
           cache-dependency-path: backend/requirements*.txt
       - name: Instalar dependencias
         run: pip install -r ../requirements-dev.txt
-      # settings_test usa SQLite en memoria y no necesita .env ni servicios externos
+      # settings.test usa SQLite en memoria y no necesita .env ni servicios externos
       - name: Migraciones al día
-        run: python manage.py makemigrations --check --dry-run --settings=proa.settings_test
+        run: python manage.py makemigrations --check --dry-run --settings=proa.settings.test
+      # Clave generada en cada corrida y sin secretos de GitHub. Las advertencias W004 (HSTS) y W008 (redirect a
+      # https) quedan pendientes a propósito: el TLS lo termina el proxy; solo se falla ante errores
+      - name: Check de despliegue (settings.prod)
+        run: |
+          DJANGO_SECRET_KEY="$(python -c 'import secrets;print(secrets.token_urlsafe(50))')" \
+          DJANGO_ALLOWED_HOSTS=ejemplo.com \
+          python manage.py check --deploy --settings=proa.settings.prod --fail-level ERROR
       - name: Tests con cobertura
         run: pytest --cov --cov-report=term-missing
 

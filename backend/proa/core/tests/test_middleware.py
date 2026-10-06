@@ -57,19 +57,3 @@ def test_sin_debug_no_hay_cabeceras(admin):
 
     assert 'X-Query-Count' not in respuesta
     assert 'X-Response-Time-ms' not in respuesta
-
-
-def test_el_middleware_solo_se_agrega_a_settings_con_debug():
-    import importlib
-    import os
-    from unittest import mock
-
-    from proa import settings as modulo
-
-    with mock.patch.dict(os.environ, {'DJANGO_DEBUG': 'True'}):
-        con_debug = importlib.reload(modulo)
-        assert 'core.middleware.MedicionMiddleware' in con_debug.MIDDLEWARE
-    with mock.patch.dict(os.environ, {'DJANGO_DEBUG': 'False'}):
-        sin_debug = importlib.reload(modulo)
-        assert 'core.middleware.MedicionMiddleware' not in sin_debug.MIDDLEWARE
-    importlib.reload(modulo)
