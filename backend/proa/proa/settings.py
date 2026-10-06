@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     'corsheaders',   
     'channels',
     'notificacion',
+    'mensajeria',
+    'auditoria',
 ]
 
 MIDDLEWARE = [
@@ -106,6 +108,7 @@ REST_FRAMEWORK = {
         'recuperacion_confirmar': '5/hour',
         'login_dni': '10/hour',
         'recuperacion_email': '3/hour',
+        'mensajes': '30/min',
     },
 }
 

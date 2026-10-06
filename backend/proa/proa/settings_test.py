@@ -46,5 +46,6 @@ REST_FRAMEWORK = {
         'recuperacion_confirmar': '10000/hour',
         'login_dni': '10000/hour',
         'recuperacion_email': '10000/hour',
+        'mensajes': '10000/min',
     },
 }
