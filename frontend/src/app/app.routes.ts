@@ -135,6 +135,11 @@ export const routes: Routes = [
       { path: 'actividades/:id/editar', canActivate: [soloProfesor], component: ActividadForm },
       { path: 'actividades/:id/entregas', canActivate: [soloProfesor], component: ActividadEntregasComponent },
       { path: 'calificaciones-profesor', canActivate: [soloProfesor], component: CalificacionesProfesor },
+      {
+        path: 'alumnos',
+        canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ADMIN])],
+        loadComponent: () => import('./views/materias-components/alumnos/alumnos').then((m) => m.Alumnos),
+      },
           { path: 'calificaciones', component: CalificacionesProfesor },
 
       {

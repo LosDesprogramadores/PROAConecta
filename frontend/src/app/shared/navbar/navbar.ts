@@ -207,7 +207,7 @@ export class Navbar implements OnInit, OnDestroy {
       ];
     }
 
-    return [
+    const links: NavLink[] = [
       {
         label: 'Anuncios',
         path: `/view-materia/${materiaId}/anuncios`,
@@ -225,6 +225,12 @@ export class Navbar implements OnInit, OnDestroy {
         path: `/view-materia/${materiaId}/calificaciones`,
       },
     ];
+
+    if (user?.rolId === UserRole.DOCENTE) {
+      links.push({ label: 'Alumnos', path: `/view-materia/${materiaId}/alumnos` });
+    }
+
+    return links;
   }
 
   toggleMobileMenu(): void {

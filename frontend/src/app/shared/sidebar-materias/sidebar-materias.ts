@@ -87,6 +87,10 @@ export class SidebarMaterias implements OnInit {
             label: 'Calificaciones',
             path: `/view-materia/${this.materiaId}/calificaciones-profesor`,
           },
+          {
+            label: 'Alumnos',
+            path: `/view-materia/${this.materiaId}/alumnos`,
+          },
         ];
         break;
 

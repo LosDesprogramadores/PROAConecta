@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { IMateria } from '../model/materia.model';
+import { EstadoInscripcion, IAlumnoMateria, IMateria } from '../model/materia.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -79,4 +79,9 @@ export class MateriaService {
     });
   }
 
+  /** Students enrolled in a subject. Without `estado` the backend excludes BAJA. */
+  obtenerAlumnos(materiaId: number, estado?: EstadoInscripcion): Observable<IAlumnoMateria[]> {
+    const params = estado ? new HttpParams().set('estado', estado) : undefined;
+    return this.http.get<IAlumnoMateria[]>(`${this.baseUrl}${materiaId}/alumnos/`, { params });
+  }
 }

@@ -38,3 +38,14 @@ export interface IInscripcion {
   estado: EstadoInscripcion;
   fecha_inscripcion: string;
 }
+
+/** Element of GET /api/materias/{id}/alumnos/ (no sensitive personal data). */
+export interface IAlumnoMateria {
+  inscripcion_id: number;
+  persona_id: number;
+  apellido: string;
+  nombre: string;
+  email: string;
+  estado: EstadoInscripcion;
+  fecha_inscripcion: string;
+}
