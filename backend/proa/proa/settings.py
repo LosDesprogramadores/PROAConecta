@@ -17,6 +17,8 @@ import dj_database_url
 from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
 
+from proa.entorno import clave_secreta, hosts_permitidos, origenes_cors, origenes_csrf
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,10 +34,11 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("KEY_SECRET")
-
+# DJANGO_SECRET_KEY es obligatoria con DEBUG desactivado (KEY_SECRET sigue valiendo como alias de transición)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG") == "True"
+
+SECRET_KEY = clave_secreta(DEBUG)
 
 
 
@@ -196,21 +199,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 PASSWORD_RESET_TIMEOUT = 900
 
-ALLOWED_HOSTS = [
-   '127.0.0.1',
-    'localhost',
-    '0.0.0.0',
-    'testserver'
-]
-
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
-
+# Hosts y orígenes salen del entorno (listas separadas por comas). Con DEBUG hay valores locales por defecto;
+# sin DEBUG, si faltan, la lista queda vacía y Django rechaza todos los pedidos (falla cerrada)
+ALLOWED_HOSTS = hosts_permitidos(DEBUG)
+CORS_ALLOWED_ORIGINS = origenes_cors(DEBUG)
+CSRF_TRUSTED_ORIGINS = origenes_csrf(DEBUG)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -235,6 +228,14 @@ CORS_ALLOW_METHODS = [
 
 X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
+
+if not DEBUG:
+    # El backend va detrás de nginx, que reenvía el esquema original en X-Forwarded-Proto
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # SECURE_SSL_REDIRECT queda desactivado a propósito: forzar https rompería el compose local (http en :80)
+
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Internationalization
