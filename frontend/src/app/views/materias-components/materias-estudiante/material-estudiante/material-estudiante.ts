@@ -7,10 +7,11 @@ import { UnidadesService } from '../../../../services/unidades.service';
 import { Material, Unidad } from '../../../../model/unidad-material.model';
 
 import { Modal } from '../../../../shared/modal/modal';
+import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
 @Component({
   selector: 'app-material-estudiante',
   standalone: true,
-  imports: [Modal, CommonModule],
+  imports: [Modal, CommonModule, ArchivoProtegidoDirective],
   templateUrl: './material-estudiante.html',
   styleUrl: './material-estudiante.css',
 })

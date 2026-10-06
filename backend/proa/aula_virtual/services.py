@@ -1,4 +1,5 @@
 from rest_framework.exceptions import ValidationError
+from auditoria.bitacora import registrar_evento
 from academico.selectors import alumnos_de_materia
 from usuario.models import Persona
 from .models import Actividad, Entrega, Nota
@@ -37,7 +38,8 @@ def calificar_o_rectificar_estudiante(profesor_user, actividad_id: int, estudian
         )
 
     # Asentar o actualizar la nota 
-    nota, _ = Nota.objects.update_or_create(
+    calificacion_previa = Nota.objects.filter(entrega=entrega).values_list('calificacion', flat=True).first()
+    nota, creada = Nota.objects.update_or_create(
         entrega=entrega,
         defaults={
             'calificacion': nota_val,
@@ -49,6 +51,15 @@ def calificar_o_rectificar_estudiante(profesor_user, actividad_id: int, estudian
     if entrega.estado != Entrega.EstadoEntrega.CORREGIDO:
         entrega.estado = Entrega.EstadoEntrega.CORREGIDO
         entrega.save(update_fields=['estado'])
+
+    # Solo la calificación (ni la devolución escrita ni datos del estudiante)
+    datos = {'despues': {'calificacion': f'{nota.calificacion:.2f}'}}
+    if not creada:
+        datos['antes'] = {'calificacion': f'{calificacion_previa:.2f}'}
+    registrar_evento(
+        'NOTA_CREADA' if creada else 'NOTA_MODIFICADA', profesor_user, 'nota', datos,
+        entidad_id=nota.pk, materia_id=actividad.materia_id,
+    )
 
     return nota
 

@@ -7,11 +7,12 @@ import { ActividadesService, Entrega } from '../../../services/actividades.servi
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
 import { NOTA_MAXIMA, NOTA_MINIMA, NOTA_PASO, validarNota } from '../../../shared/utils/notas';
+import { ArchivoProtegidoDirective } from '../../../core/http/archivo-protegido.directive';
 
 @Component({
   selector: 'app-actividad-entregas',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, Modal],
+  imports: [CommonModule, RouterModule, FormsModule, Modal, ArchivoProtegidoDirective],
   templateUrl: './actividad-entregas.html',
 })
 export class ActividadEntregasComponent implements OnInit {

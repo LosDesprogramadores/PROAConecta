@@ -11,10 +11,11 @@ import { Unidad, Material } from '../../../../model/unidad-material.model';
 
 import { Modal } from '../../../../shared/modal/modal';
 import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
+import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
-  imports: [Modal, RouterModule, CommonModule, FormsModule],
+  imports: [Modal, RouterModule, CommonModule, FormsModule, ArchivoProtegidoDirective],
   templateUrl: './unidades-material.html',
   styleUrl: './unidades-material.css',
 })

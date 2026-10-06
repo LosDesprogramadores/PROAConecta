@@ -10,10 +10,11 @@ import { Material } from '../../../../model/unidad-material.model';
 import { Modal } from '../../../../shared/modal/modal';
 import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
 import { filter } from 'rxjs';
+import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
 @Component({
   selector: 'app-recursos-clase',
   standalone: true,
-  imports: [Modal, CommonModule, FormsModule],
+  imports: [Modal, CommonModule, FormsModule, ArchivoProtegidoDirective],
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })

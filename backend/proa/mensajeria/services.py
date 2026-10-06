@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404
 
 from academico.models import Materia
 from academico.selectors import alumnos_de_materia
+from auditoria.bitacora import registrar_evento
 from core.roles import (
     es_admin,
     es_estudiante,
@@ -80,6 +81,12 @@ def enviar(remitente, materia_id, destinatario_id, asunto, cuerpo) -> dict:
         'fecha_baja': None,
     }
     repositorio.crear(documento)  # agrega _id al documento
+    # Sin asunto ni cuerpo: solo quién escribió, a quién y el id del mensaje
+    registrar_evento(
+        'MENSAJE_ENVIADO', remitente, 'mensaje',
+        {'despues': {'mensaje_id': str(documento['_id']), 'destinatario_id': destinatario.pk}},
+        materia_id=materia.pk,
+    )
     return documento
 
 

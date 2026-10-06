@@ -248,7 +248,7 @@
                 <div class="space-y-1">
                     <span class="text-xs font-bold text-slate-500 uppercase">Archivo adjunto:</span>
                     <div>
-                        <a [href]="miEntregaActual()?.archivo" target="_blank"
+                        <a [href]="miEntregaActual()?.archivo" [appArchivoProtegido]="miEntregaActual()?.archivo" target="_blank"
                             class="inline-flex items-center gap-2 text-sm text-primary font-semibold bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition">
                             📄 Descargar archivo subido
                         </a>
@@ -302,7 +302,7 @@
                             <span class="text-base">📄</span>
                             <span class="text-xs font-medium text-slate-700 truncate">Archivo adjuntado
                                 previamente</span>
-                            <a [href]="miEntregaActual()?.archivo" target="_blank"
+                            <a [href]="miEntregaActual()?.archivo" [appArchivoProtegido]="miEntregaActual()?.archivo" target="_blank"
                                 class="text-xs text-primary underline font-medium hover:text-primary/80 shrink-0">
                                 Ver
                             </a>

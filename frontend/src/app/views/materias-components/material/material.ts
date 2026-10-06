@@ -12,10 +12,11 @@ import { Material as MaterialModel } from '../../../model/unidad-material.model'
 import { Modal } from '../../../shared/modal/modal';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { filter } from 'rxjs';
+import { ArchivoProtegidoDirective } from '../../../core/http/archivo-protegido.directive';
 @Component({
   selector: 'app-material',
   standalone: true,
-  imports: [Modal, CommonModule, FormsModule],
+  imports: [Modal, CommonModule, FormsModule, ArchivoProtegidoDirective],
   templateUrl: './material.html',
   styleUrl: './material.css',
 })

@@ -1,8 +1,18 @@
-from .settings import *  # noqa: F401,F403
+import os
+
+# Antes de importar settings: sin DJANGO_DEBUG (CI, sin .env) la clave es obligatoria
+os.environ.setdefault('DJANGO_SECRET_KEY', 'clave-solo-para-tests-no-usar-en-produccion-0123456789')
+
+from .settings import *  # noqa: F401,F403,E402
 
 # Solo para tests: nunca usar estos valores fuera de la suite
 SECRET_KEY = 'clave-solo-para-tests-no-usar-en-produccion-0123456789'
 DEBUG = False
+
+# Los tests corren con DEBUG False: los hosts y orígenes locales se fijan acá y no dependen del entorno
+ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
+CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:4200']
 
 # Base en memoria, sin Postgres
 DATABASES = {
