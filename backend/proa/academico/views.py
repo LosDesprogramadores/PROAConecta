@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.db import transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
-from .selectors import alumnos_de_materia, materias_con_acceso
+from .selectors import alumnos_de_materia, materias_con_acceso, materias_con_resumen
 from core.permissions import EsAdministrador
 from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin as _es_admin, obtener_persona_y_rol
 from .serializer import (
@@ -67,7 +67,7 @@ def _alcance(user):
     )
 )
 class MateriaViewSet(viewsets.ModelViewSet):
-    queryset = Materia.objects.select_related('profesor').all()
+    queryset = materias_con_resumen()
     serializer_class = MateriaSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['titulo', 'anio', 'curso']
@@ -191,7 +191,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
         ).values_list('materia_id', flat=True)
 
         # Dentro del alcance del rol: el profesor solo ve la intersección con sus materias
-        materias = self._queryset_por_rol(Materia.objects.select_related('profesor')).filter(
+        materias = self._queryset_por_rol(materias_con_resumen()).filter(
             id__in=materias_activas_ids
         )
 
@@ -199,7 +199,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class InscripcionViewSet(viewsets.ModelViewSet):
-    queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
+    queryset = Inscripcion.objects.select_related('materia__profesor', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['fecha_inscripcion', 'estado']

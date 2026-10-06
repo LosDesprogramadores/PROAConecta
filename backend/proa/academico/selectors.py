@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Count, Q
 
 from .models import Inscripcion, Materia
 
@@ -26,3 +26,14 @@ def materias_con_acceso(persona):
     # Materias a las que un estudiante tiene acceso: toda inscripción menos BAJA (LIBRE incluida)
     inscripciones = Inscripcion.objects.filter(estudiante=persona).exclude(estado=Inscripcion.EstadoInscripcion.BAJA)
     return Materia.objects.filter(id__in=inscripciones.values('materia_id'))
+
+
+def materias_con_resumen():
+    # Materias listas para serializar sin consultas por fila: el profesor y su rol llegan con un JOIN y
+    # total_estudiantes se calcula en la misma consulta (la baja no cuenta; LIBRE sí)
+    return Materia.objects.select_related('profesor__rol').annotate(
+        total_estudiantes=Count(
+            'inscripciones',
+            filter=~Q(inscripciones__estado=Inscripcion.EstadoInscripcion.BAJA),
+        )
+    )

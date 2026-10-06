@@ -60,7 +60,10 @@ class MateriaSerializer(serializers.ModelSerializer):
         return datos
 
     def get_total_estudiantes(self, obj):
-        # Las bajas no cuentan como estudiantes de la materia
+        # El listado ya trae la cuenta anotada (selectors.materias_con_resumen); las respuestas de
+        # alta y edición no pasan por ahí y la calculan acá. Las bajas no cuentan como estudiantes
+        if hasattr(obj, 'total_estudiantes'):
+            return obj.total_estudiantes
         return obj.inscripciones.exclude(estado=Inscripcion.EstadoInscripcion.BAJA).count()
 
     def validate_profesor(self, value):

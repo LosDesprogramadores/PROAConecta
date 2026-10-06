@@ -75,6 +75,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
+# Medición de consultas y tiempos (core/middleware.py): solo en desarrollo
+if DEBUG:
+    MIDDLEWARE.insert(0, 'core.middleware.MedicionMiddleware')
+
 AUTHENTICATION_BACKENDS = [
     'usuario.backends.DNIBackend',
     'django.contrib.auth.backends.ModelBackend',
@@ -205,6 +209,9 @@ CORS_ALLOW_HEADERS = list(default_headers) +[
     'content-type',
     'x-csrftoken',
 ]
+
+# El navegador solo deja leer estas cabeceras de medición si se exponen (solo existen con DEBUG)
+CORS_EXPOSE_HEADERS = ['X-Query-Count', 'X-Response-Time-ms']
 
 CORS_ALLOW_METHODS = [
     'GET',

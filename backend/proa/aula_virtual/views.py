@@ -1,6 +1,6 @@
 from django.db import IntegrityError, transaction
 from .notificaciones import avisar_nueva_actividad
-from django.db.models import Q
+from django.db.models import Count, Q
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -225,9 +225,12 @@ class ActividadViewSet(viewsets.ModelViewSet):
         if en_papelera and es_estudiante(user):
             return Actividad.objects.none()
 
+        # cantidad_entregas se calcula en la misma consulta (sin las entregas dadas de baja)
         qs = Actividad.objects.filter(
             fecha_baja__isnull=not en_papelera
-        ).select_related('materia', 'unidad')
+        ).select_related('materia', 'unidad').annotate(
+            cantidad_entregas=Count('entregas', filter=Q(entregas__fecha_baja__isnull=True))
+        )
 
         if materia_id:
             qs = qs.filter(materia_id=materia_id)
