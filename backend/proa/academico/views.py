@@ -1,10 +1,13 @@
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.db import transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
-from .serializer import MateriaSerializer, InscripcionSerializer
+from .selectors import alumnos_de_materia
+from .serializer import AlumnoMateriaSerializer, MateriaSerializer, InscripcionSerializer
+from aula_virtual.helpers import verificar_profesor_materia
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -120,6 +123,19 @@ class MateriaViewSet(viewsets.ModelViewSet):
         materia = self.get_object()
         data = obtener_rendimiento_curso_profesor(request.user, materia)
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='alumnos')
+    def alumnos(self, request, pk=None):
+        materia = self.get_object()
+        # Solo el administrador o el profesor titular conocen el listado
+        verificar_profesor_materia(request.user, materia)
+
+        estado = request.query_params.get('estado')
+        if estado and estado not in Inscripcion.EstadoInscripcion.values:
+            raise ValidationError({'estado': f'Estado inválido. Valores permitidos: {", ".join(Inscripcion.EstadoInscripcion.values)}.'})
+
+        inscripciones = alumnos_de_materia(materia, estado=estado, search=request.query_params.get('search'))
+        return Response(AlumnoMateriaSerializer(inscripciones, many=True).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='por-estudiante/(?P<estudiante_id>[^/.]+)')
     def materias_por_estudiante(self, request, estudiante_id=None):

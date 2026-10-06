@@ -31,6 +31,14 @@ class Unidad(ContenidoSoftDelete):
         verbose_name = 'Unidad'
         verbose_name_plural = 'Unidades'
         ordering = ['orden']
+        # El título se compara exactamente (distingue mayúsculas) a propósito
+        constraints = [
+            models.UniqueConstraint(
+                fields=['materia', 'titulo'],
+                condition=models.Q(fecha_baja__isnull=True),
+                name='unique_unidad_titulo_materia'
+            )
+        ]
 
     def __str__(self):
         return f'{self.titulo} ({self.materia.titulo})'

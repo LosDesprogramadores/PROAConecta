@@ -1,23 +1,120 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
+import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { UnidadesMaterial } from './unidades-material';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { ToastService } from '../../../../services/toast.service';
+import { UnidadesService } from '../../../../services/unidades.service';
+import { MaterialesService } from '../../../../services/materiales.service';
 
 describe('UnidadesMaterial', () => {
   let component: UnidadesMaterial;
   let fixture: ComponentFixture<UnidadesMaterial>;
+  let unidadesService: { obtenerUnidadesPorMateria: any; crearUnidad: any; actualizarUnidad: any };
+  let materialesService: {
+    crearMaterial: any;
+    actualizarMaterial: any;
+    obtenerMaterialesPorUnidad: any;
+  };
+  let toast: { success: any; error: any };
 
   beforeEach(async () => {
+    unidadesService = {
+      obtenerUnidadesPorMateria: vi.fn().mockReturnValue(of([])),
+      crearUnidad: vi.fn(),
+      actualizarUnidad: vi.fn(),
+    };
+    materialesService = {
+      crearMaterial: vi.fn(),
+      actualizarMaterial: vi.fn(),
+      obtenerMaterialesPorUnidad: vi.fn().mockReturnValue(of([])),
+    };
+    toast = { success: vi.fn(), error: vi.fn() };
+
     await TestBed.configureTestingModule({
-      imports: [UnidadesMaterial]
-    })
-    .compileComponents();
+      imports: [UnidadesMaterial],
+      providers: [
+        { provide: UnidadesService, useValue: unidadesService },
+        { provide: MaterialesService, useValue: materialesService },
+        { provide: ToastService, useValue: toast },
+        { provide: AuthService, useValue: { currentUser: () => ({ rolNombre: 'Profesor' }) } },
+        {
+          provide: ActivatedRoute,
+          useValue: { pathFromRoot: [{ snapshot: { paramMap: new Map([['id', '1']]) } }] },
+        },
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(UnidadesMaterial);
     component = fixture.componentInstance;
+    fixture.detectChanges();
     await fixture.whenStable();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('calls crearUnidad only once when guardarUnidad is invoked twice while pending', () => {
+    const pending = new Subject<unknown>();
+    unidadesService.crearUnidad.mockReturnValue(pending);
+    component.nuevoNombreUnidad = 'Unidad 1';
+
+    component.guardarUnidad();
+    component.guardarUnidad();
+
+    expect(unidadesService.crearUnidad).toHaveBeenCalledTimes(1);
+    expect(component.guardando()).toBe(true);
+
+    pending.next({});
+    pending.complete();
+    expect(component.guardando()).toBe(false);
+  });
+
+  it('disables the save button and shows "Guardando..." while pending', () => {
+    unidadesService.crearUnidad.mockReturnValue(new Subject<unknown>());
+    component.abrirFormularioUnidad();
+    component.nuevoNombreUnidad = 'Unidad 1';
+    fixture.detectChanges();
+
+    component.guardarUnidad();
+    fixture.detectChanges();
+
+    const submit = fixture.nativeElement.querySelector(
+      'form button[type="submit"]',
+    ) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    expect(submit.textContent).toContain('Guardando...');
+  });
+
+  it('re-enables saving after an error', () => {
+    unidadesService.crearUnidad.mockReturnValueOnce(throwError(() => new Error('boom')));
+    component.nuevoNombreUnidad = 'Unidad 1';
+
+    component.guardarUnidad();
+
+    expect(component.guardando()).toBe(false);
+    expect(toast.error).toHaveBeenCalled();
+
+    unidadesService.crearUnidad.mockReturnValueOnce(of({}));
+    component.guardarUnidad();
+    expect(unidadesService.crearUnidad).toHaveBeenCalledTimes(2);
+  });
+
+  it('calls crearMaterial only once when guardarRecurso is invoked twice while pending', () => {
+    const pending = new Subject<unknown>();
+    materialesService.crearMaterial.mockReturnValue(pending);
+    component.nuevoTituloRecurso = 'Guia 1';
+
+    component.guardarRecurso();
+    component.guardarRecurso();
+
+    expect(materialesService.crearMaterial).toHaveBeenCalledTimes(1);
+    expect(component.guardando()).toBe(true);
+
+    pending.error(new Error('boom'));
+    expect(component.guardando()).toBe(false);
   });
 });

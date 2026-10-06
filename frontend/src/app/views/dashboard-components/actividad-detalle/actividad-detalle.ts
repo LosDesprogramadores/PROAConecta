@@ -1,3 +1,4 @@
+import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -14,6 +15,9 @@ export class ActividadDetalleComponent implements OnInit {
   private actividadesService = inject(ActividadesService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+
+  // Se calcula una sola vez: el componente se recrea en cada navegación.
+  protected readonly enMateria = estaEnVistaMateria(this.router.url);
 
   actividad = signal<Actividad | null>(null);
   cargando = signal(false);

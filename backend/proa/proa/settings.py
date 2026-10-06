@@ -134,7 +134,8 @@ DATABASES = {
     "default": dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=True,
+        # DB_SSL=False en el compose local (Postgres sin TLS); por defecto sigue exigiendo SSL (base en la nube)
+        ssl_require=os.getenv('DB_SSL', 'True').lower() in ('true', '1', 'yes'),
     )
 }
 # --- Discord
@@ -235,11 +236,22 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f"PROA Conecta <{EMAIL_HOST
 # URL base del cliente frontend 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:4200')
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+# Con REDIS_URL (compose) los WebSockets funcionan entre procesos; sin ella queda en memoria
+REDIS_URL = os.getenv('REDIS_URL')
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        }
     }
-}
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
 
 
 

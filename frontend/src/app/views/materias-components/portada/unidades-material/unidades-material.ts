@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { UnidadesService } from '../../../../services/unidades.service';
@@ -26,6 +27,7 @@ export class UnidadesMaterial implements OnInit {
   esDocente = signal<boolean>(false);
   unidadExpandida = signal<string | number | null>(null);
   mostrarFormularioUnidad = signal(false);
+  guardando = signal(false);
 
   // CONTROL DE DESCRIPCIONES EXPANDIDAS
   descripcionesExpandidas = signal<Set<string | number>>(new Set());
@@ -144,7 +146,7 @@ export class UnidadesMaterial implements OnInit {
   }
 
   guardarUnidad() {
-    if (!this.nuevoNombreUnidad.trim()) return;
+    if (this.guardando() || !this.nuevoNombreUnidad.trim()) return;
 
     const payload = {
       materia: this.materiaId,
@@ -154,24 +156,32 @@ export class UnidadesMaterial implements OnInit {
       visible: this.visible,
     };
 
+    this.guardando.set(true);
+
     if (this.unidadEditandoId) {
-      this.unidadesService.actualizarUnidad(this.unidadEditandoId, payload).subscribe({
-        next: () => {
-          this.toastService.success('Unidad actualizada correctamente');
-          this.cargarUnidades();
-          this.cancelarFormularioUnidad();
-        },
-        error: () => this.toastService.error('Error al actualizar la unidad'),
-      });
+      this.unidadesService
+        .actualizarUnidad(this.unidadEditandoId, payload)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => {
+            this.toastService.success('Unidad actualizada correctamente');
+            this.cargarUnidades();
+            this.cancelarFormularioUnidad();
+          },
+          error: () => this.toastService.error('Error al actualizar la unidad'),
+        });
     } else {
-      this.unidadesService.crearUnidad(payload).subscribe({
-        next: () => {
-          this.toastService.success('Unidad creada correctamente');
-          this.cargarUnidades();
-          this.cancelarFormularioUnidad();
-        },
-        error: () => this.toastService.error('Error al crear la unidad'),
-      });
+      this.unidadesService
+        .crearUnidad(payload)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => {
+            this.toastService.success('Unidad creada correctamente');
+            this.cargarUnidades();
+            this.cancelarFormularioUnidad();
+          },
+          error: () => this.toastService.error('Error al crear la unidad'),
+        });
     }
   }
 
@@ -243,7 +253,7 @@ export class UnidadesMaterial implements OnInit {
 
   guardarRecurso() {
     const unidadId = this.unidadSeleccionadaId();
-    if (!this.nuevoTituloRecurso.trim()) return;
+    if (this.guardando() || !this.nuevoTituloRecurso.trim()) return;
 
     let urlFormateada = this.nuevoUrlRecurso.trim();
     if (urlFormateada && !/^https?:\/\//i.test(urlFormateada)) {
@@ -259,9 +269,12 @@ export class UnidadesMaterial implements OnInit {
       visible: this.nuevoMaterialVisible,
     };
 
+    this.guardando.set(true);
+
     if (this.recursoEditandoId) {
       this.materialesService
         .actualizarMaterial(this.recursoEditandoId, payload, this.archivoSeleccionado || undefined)
+        .pipe(finalize(() => this.guardando.set(false)))
         .subscribe({
           next: () => {
             this.toastService.success('Recurso actualizado correctamente');
@@ -273,6 +286,7 @@ export class UnidadesMaterial implements OnInit {
     } else {
       this.materialesService
         .crearMaterial(payload as Material, this.archivoSeleccionado || undefined)
+        .pipe(finalize(() => this.guardando.set(false)))
         .subscribe({
           next: () => {
             this.toastService.success('Recurso agregado correctamente');

@@ -1,9 +1,11 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from .notificaciones import avisar_nueva_actividad
 from django.utils import timezone
 from rest_framework import serializers
 from .models import Unidad, Material, Actividad, Entrega, Nota
 from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
+
+MENSAJE_UNIDAD_DUPLICADA = 'Ya existe una unidad con ese título en esta materia.'
 
 
 class UnidadSerializer(serializers.ModelSerializer):
@@ -17,8 +19,32 @@ class UnidadSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and 'materia' in attrs:
             verificar_profesor_materia(request.user, attrs['materia'])
-        
+
+        # No puede haber dos unidades activas con el mismo título en la materia (doble clic en Guardar)
+        materia = attrs.get('materia', getattr(self.instance, 'materia', None))
+        titulo = attrs.get('titulo', getattr(self.instance, 'titulo', None))
+        if materia is not None and titulo is not None:
+            duplicadas = Unidad.objects.filter(materia=materia, titulo=titulo, fecha_baja__isnull=True)
+            if self.instance is not None:
+                duplicadas = duplicadas.exclude(pk=self.instance.pk)
+            if duplicadas.exists():
+                raise serializers.ValidationError({'titulo': MENSAJE_UNIDAD_DUPLICADA})
+
         return attrs
+
+    def _guardar_sin_duplicar(self, guardar):
+        # Dos envíos simultáneos pueden pasar validate(): la restricción de la base es la última barrera
+        try:
+            with transaction.atomic():
+                return guardar()
+        except IntegrityError:
+            raise serializers.ValidationError({'titulo': MENSAJE_UNIDAD_DUPLICADA})
+
+    def create(self, validated_data):
+        return self._guardar_sin_duplicar(lambda: super(UnidadSerializer, self).create(validated_data))
+
+    def update(self, instance, validated_data):
+        return self._guardar_sin_duplicar(lambda: super(UnidadSerializer, self).update(instance, validated_data))
 
 
 class MaterialSerializer(serializers.ModelSerializer):
