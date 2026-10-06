@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { NotificacionService } from '../../../services/notificaciones.service';
 import { INotificacion } from '../../../model/notificacion.model';
 import { CommonModule } from '@angular/common';
@@ -24,6 +24,8 @@ export class Notificacion implements OnInit {
   editandoId: string | null = null;
 
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+  private timerMensaje: ReturnType<typeof setTimeout> | null = null;
 
   readonly formulario = this.fb.group({
     titulo: ['', Validators.required],
@@ -34,7 +36,11 @@ export class Notificacion implements OnInit {
     fecha_hasta: ['', Validators.required],
   });
 
-  constructor(private notificacionService: NotificacionService) { }
+  constructor(private notificacionService: NotificacionService) {
+    this.destroyRef.onDestroy(() => {
+      if (this.timerMensaje) clearTimeout(this.timerMensaje);
+    });
+  }
 
   ngOnInit(): void {
     this.cargarNotificaciones();
@@ -152,12 +158,21 @@ guardarNotificacion(): void {
   private mostrarExito(msg: string): void {
     this.mensajeExito = msg;
     this.mensajeError = '';
-    setTimeout(() => { this.mensajeExito = ''; }, 4000);
+    this.programarLimpiezaMensajes();
   }
 
   private mostrarError(msg: string): void {
     this.mensajeError = msg;
     this.mensajeExito = '';
-    setTimeout(() => { this.mensajeError = ''; }, 4000);
+    this.programarLimpiezaMensajes();
+  }
+
+  /** Clears both banners after 4s; the pending timer is dropped when the view is destroyed. */
+  private programarLimpiezaMensajes(): void {
+    if (this.timerMensaje) clearTimeout(this.timerMensaje);
+    this.timerMensaje = setTimeout(() => {
+      this.mensajeExito = '';
+      this.mensajeError = '';
+    }, 4000);
   }
 }

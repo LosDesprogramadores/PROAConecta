@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, computed, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ActividadesService } from '../../../services/actividades.service';
@@ -22,6 +23,7 @@ export class Actividades implements OnInit {
   private toastService = inject(ToastService);
   private actividadesService = inject(ActividadesService);
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private router = inject(Router);
 
   currentUser = this.authService.currentUser;
@@ -67,7 +69,7 @@ export class Actividades implements OnInit {
   });
 
   ngOnInit(): void {
-    this.route.parent?.params.subscribe(params => {
+    this.route.parent?.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const id = params['id'] || this.route.snapshot.queryParams['materiaId'];
       if (id) {
         this.materiaId.set(Number(id));

@@ -1,8 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
-import { throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { RestablecerPassword } from './restablecer-password';
@@ -54,5 +54,32 @@ describe('RestablecerPassword error messages', () => {
     );
     component.onSubmit();
     expect(component.errorMessage()).toBe('La contraseña es demasiado común.');
+  });
+
+  describe('redirect timer', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('does not navigate to login if the view is destroyed before the delay', () => {
+      vi.useFakeTimers();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      auth.confirmarRecuperacion.mockReturnValue(of({}));
+      component.onSubmit();
+
+      fixture.destroy();
+      vi.advanceTimersByTime(3000);
+
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('navigates to login after the delay while the view is alive', () => {
+      vi.useFakeTimers();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      auth.confirmarRecuperacion.mockReturnValue(of({}));
+      component.onSubmit();
+
+      vi.advanceTimersByTime(3000);
+
+      expect(navigate).toHaveBeenCalledWith(['/login']);
+    });
   });
 });

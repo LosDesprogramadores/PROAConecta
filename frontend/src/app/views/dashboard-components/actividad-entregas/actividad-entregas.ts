@@ -1,6 +1,7 @@
 import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ActividadesService, Entrega } from '../../../services/actividades.service'; // ajustá la ruta
@@ -17,6 +18,7 @@ import { ArchivoProtegidoDirective } from '../../../core/http/archivo-protegido.
 })
 export class ActividadEntregasComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private actividadesService = inject(ActividadesService);
   private toastService = inject(ToastService);
@@ -45,7 +47,7 @@ export class ActividadEntregasComponent implements OnInit {
   errorModal = signal('');
 
   ngOnInit(): void {
-    this.route.parent?.paramMap.subscribe(params => {
+    this.route.parent?.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const matId = params.get('id');
       if (matId) {
         this.materiaId.set(Number(matId));

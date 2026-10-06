@@ -1,6 +1,7 @@
 import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ActividadesService } from '../../../services/actividades.service';
 import { Actividad } from '../../../model/actividad-model';
@@ -14,6 +15,7 @@ import { Actividad } from '../../../model/actividad-model';
 export class ActividadDetalleComponent implements OnInit {
   private actividadesService = inject(ActividadesService);
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private router = inject(Router);
 
   // Se calcula una sola vez: el componente se recrea en cada navegación.
@@ -25,14 +27,14 @@ export class ActividadDetalleComponent implements OnInit {
   materiaId = signal<number | null>(null);
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const id = params.get('id');
       if (id) {
         this.cargarActividad(Number(id));
       }
     });
 
-    this.route.parent?.paramMap.subscribe(params => {
+    this.route.parent?.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const matId = params.get('id');
       if (matId) {
         this.materiaId.set(Number(matId));

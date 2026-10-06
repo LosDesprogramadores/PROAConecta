@@ -1,7 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { Subject } from 'rxjs';
 
 import { DashboardLayout } from './dashboard-layout';
 
@@ -23,5 +25,15 @@ describe('DashboardLayout', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('unsubscribes from router events when destroyed', () => {
+    // Router.events is a Subject; its observer count must drop when the layout goes away.
+    const subject = TestBed.inject(Router).events as unknown as Subject<unknown>;
+    const antes = subject.observers.length;
+
+    fixture.destroy();
+
+    expect(subject.observers.length).toBe(antes - 1);
   });
 });

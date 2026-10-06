@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/auth/auth.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
+import { crearRutaFalsa } from '../../../testing/ruta-falsa';
 import { PortadaProfesor } from './portada-profesor';
 
 const materia = { id: 7, titulo: 'Matemática I', descripcion: 'Descripción original', anio: 1, curso: 'A', profesor_detalle: null };
@@ -91,5 +92,31 @@ describe('PortadaProfesor', () => {
     component.guardarUnidad();
     expect(component.datosActuales.unidades.length).toBe(antes);
     expect(warning).toHaveBeenCalledWith('El nombre de la unidad es requerido');
+  });
+});
+
+describe('PortadaProfesor subscription cleanup', () => {
+  it('stops listening to the route params once the view is destroyed', () => {
+    const ruta = crearRutaFalsa({ id: '7' });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [PortadaProfesor],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        importProvidersFrom(CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory })),
+        { provide: MateriaService, useValue: { obtenerMateriaPorId: vi.fn(() => of(materia)) } },
+        { provide: AuthService, useValue: { currentUser: signal({ rolId: UserRole.DOCENTE }) } },
+        ruta.provider,
+      ],
+    });
+    const fixture = TestBed.createComponent(PortadaProfesor);
+    fixture.detectChanges();
+    expect(ruta.observado()).toBe(true);
+
+    fixture.destroy();
+
+    expect(ruta.observado()).toBe(false);
   });
 });
