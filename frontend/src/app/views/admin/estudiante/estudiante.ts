@@ -12,12 +12,14 @@ import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { Toast } from '../../../shared/toast/toast';
 import { IColumnaTabla } from '../../../model/tabla.model';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
+import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
+import { environment } from '../../../../environments/environment';
 
 
 
 @Component({
   selector: 'app-estudiante',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica],
+  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica, ExportarListado],
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })
@@ -26,6 +28,8 @@ export class Estudiante implements OnInit {
   private estudianteService = inject(EstudianteService)
   private materiaService = inject(MateriaService)
   private toastService = inject(ToastService)
+  protected readonly urlExportarPersonas = `${environment.apiUrl}personas/exportar/`;
+  protected readonly rolEstudiante = RolId.ESTUDIANTE;
   estudiantes = signal<Persona[]>([])
 
   isModalOpen = signal<boolean>(false);

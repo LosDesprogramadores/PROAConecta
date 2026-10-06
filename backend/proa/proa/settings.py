@@ -221,7 +221,8 @@ CORS_ALLOW_HEADERS = list(default_headers) +[
 ]
 
 # El navegador solo deja leer estas cabeceras de medición si se exponen (solo existen con DEBUG)
-CORS_EXPOSE_HEADERS = ['X-Query-Count', 'X-Response-Time-ms']
+# Content-Disposition: sin esto el navegador no deja leer el nombre del archivo en las descargas entre orígenes
+CORS_EXPOSE_HEADERS = ['X-Query-Count', 'X-Response-Time-ms', 'Content-Disposition']
 
 CORS_ALLOW_METHODS = [
     'GET',

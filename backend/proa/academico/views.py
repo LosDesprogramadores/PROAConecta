@@ -19,6 +19,7 @@ from .serializer import (
 )
 from aula_virtual.helpers import es_admin, verificar_profesor_materia
 from core.exceptions import ErrorSerializer
+from core.exportaciones import exportar_tabla, formato_solicitado
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
@@ -78,6 +79,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
     # Las altas, ediciones, bajas y asignaciones son solo del administrador; la lectura se acota en get_queryset
     acciones_de_administrador = {
         'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor', 'restaurar',
+        'exportar',
     }
 
     def get_permissions(self):
@@ -148,6 +150,26 @@ class MateriaViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
         instance.soft_delete()
+
+    @extend_schema(
+        parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],
+        responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer},
+    )
+    @action(detail=False, methods=['get'], url_path='exportar')
+    def exportar(self, request):
+        formato = formato_solicitado(request)
+        # Mismos filtros y orden que el listado; total_estudiantes ya excluye la baja y cuenta LIBRE
+        materias = self.filter_queryset(self.get_queryset())
+        columnas = ['nombre', 'curso', 'anio', 'profesor', 'inscriptos_activos']
+        filas = (
+            [
+                m.titulo, m.curso, m.anio,
+                f'{m.profesor.apellido}, {m.profesor.nombre}' if m.profesor else '',
+                m.total_estudiantes,
+            ]
+            for m in materias
+        )
+        return exportar_tabla(formato, 'materias', 'Materias', columnas, filas)
 
     @action(detail=True, methods=['post'], url_path='restaurar')
     def restaurar(self, request, pk=None):

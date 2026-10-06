@@ -9,16 +9,20 @@ import { MateriaService } from '../../../services/materia.service';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
+import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
+import { environment } from '../../../../environments/environment';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 
 
 @Component({
   selector: 'app-profesor',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica],
+  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica, ExportarListado],
   templateUrl: './profesor.html',
   styleUrl: './profesor.css',
 })
 export class Profesor implements OnInit {
+  protected readonly urlExportarPersonas = `${environment.apiUrl}personas/exportar/`;
+  protected readonly rolProfesor = RolId.PROFESOR;
   private fb = inject(FormBuilder);
   private materiaService = inject(MateriaService);
   private profesorService = inject(ProfesorService)

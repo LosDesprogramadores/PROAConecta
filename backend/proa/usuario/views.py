@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login
 from rest_framework import viewsets, status, generics, permissions, serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Rol, Persona
@@ -10,6 +11,9 @@ from rest_framework.decorators import action
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from academico.models import Materia, Inscripcion
 from django.db import transaction
+from django.db.models import Q
+from django.utils.text import slugify
+from drf_spectacular.types import OpenApiTypes
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -17,6 +21,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
 from core.exceptions import ErrorSerializer
+from core.exportaciones import exportar_tabla, formato_solicitado
 from core.permissions import EsAdministrador
 from core.throttling import LimiteDeIntentosMixin
 from .correos import enviar_recuperacion
@@ -54,6 +59,14 @@ class RolViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return [IsAuthenticated()]
         return [EsAdministrador()]
+
+RECURSO_POR_ROL = {ROL_ESTUDIANTE: 'estudiantes', ROL_PROFESOR: 'profesores'}
+
+
+def _activo(persona):
+    usuario = getattr(persona, 'usuario', None)
+    return 'Sí' if usuario is None or usuario.activo else 'No'
+
 
 class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.filter(fecha_baja__isnull=True)
@@ -117,6 +130,54 @@ class PersonaViewSet(viewsets.ModelViewSet):
             usuario__activo=True,
         ).exclude(pk=excluyendo.pk)
         return len(restantes) > 0
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter('rol', str, description='Id o nombre del rol (opcional)'),
+            OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf'),
+            OpenApiParameter('search', str, description='Nombre, apellido, DNI o correo'),
+        ],
+        responses={200: OpenApiTypes.BINARY, 400: ErrorSerializer},
+    )
+    @action(detail=False, methods=['get'], url_path='exportar')
+    def exportar(self, request):
+        formato = formato_solicitado(request)
+        personas = self.get_queryset().select_related('rol', 'usuario').order_by('apellido', 'nombre', 'id')
+
+        rol = request.query_params.get('rol')
+        recurso = 'personas'
+        if rol:
+            rol_obj = (Rol.objects.filter(pk=rol) if rol.isdigit() else Rol.objects.filter(nombre__iexact=rol)).first()
+            if rol_obj is None:
+                raise ValidationError({'detail': 'El rol indicado no existe.'})
+            personas = personas.filter(rol=rol_obj)
+            recurso = RECURSO_POR_ROL.get(rol_obj.nombre.strip().lower(), slugify(rol_obj.nombre))
+
+        busqueda = request.query_params.get('search')
+        if busqueda:
+            personas = personas.filter(
+                Q(nombre__icontains=busqueda) | Q(apellido__icontains=busqueda)
+                | Q(dni__icontains=busqueda) | Q(email__icontains=busqueda)
+            )
+
+        con_materias = recurso == 'profesores'
+        if con_materias:
+            personas = personas.prefetch_related('materias_a_cargo')
+
+        # El PDF no lleva DNI ni teléfono (contrato de exportaciones)
+        if formato == 'pdf':
+            columnas = ['apellido', 'nombre', 'email', 'activo']
+            filas = ([p.apellido, p.nombre, p.email, _activo(p)] for p in personas.iterator())
+        else:
+            columnas = ['dni', 'apellido', 'nombre', 'email', 'tel_contacto', 'activo', 'fecha_alta']
+            if con_materias:
+                columnas.append('materias_asignadas')
+            filas = (
+                [p.dni, p.apellido, p.nombre, p.email, p.tel_contacto, _activo(p), p.fecha_ingreso.isoformat()]
+                + (['; '.join(m.titulo for m in p.materias_a_cargo.all())] if con_materias else [])
+                for p in personas
+            )
+        return exportar_tabla(formato, recurso, recurso.capitalize(), columnas, filas)
 
     @action(detail=True, methods=['post'])
     def restaurar(self, request, pk=None):

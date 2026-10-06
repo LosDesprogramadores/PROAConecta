@@ -2,11 +2,13 @@ import { Component, input, Input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Modal } from '../../../shared/modal/modal';
 import { IColumnaTabla } from '../../../model/tabla.model';
+import { ParametrosDescarga } from '../../../core/http/file-download';
+import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
 
 @Component({
   selector: 'app-tabla-generica',
   standalone: true,
-  imports: [CommonModule, Modal],
+  imports: [CommonModule, Modal, ExportarListado],
   templateUrl: './tabla-generica.html',
   styleUrl: './tabla-generica.css',
 })
@@ -16,6 +18,11 @@ export class TablaGenerica {
   @Input() titulo: string = '';
   @Input() mensajeVacio: string = 'No hay registros para mostrar.';
   @Input() mostrarAcciones: boolean = true;
+
+  /** Export endpoint. When empty (default) the export buttons are not shown. */
+  @Input() exportarUrl: string = '';
+  @Input() exportarParams: ParametrosDescarga = {};
+  @Input() exportarRecurso: string = 'listado';
 
   @Input() modalTitulo: string = '¿Estás seguro?';
   @Input() modalMensaje: string = 'Esta acción eliminará el registro seleccionado de forma permanente.';

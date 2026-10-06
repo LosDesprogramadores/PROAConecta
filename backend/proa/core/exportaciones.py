@@ -32,6 +32,7 @@ MENSAJE_LIMITE = 'Hay demasiados registros para exportar. Refine los filtros.'
 
 # OWASP: una celda que empieza así se interpreta como fórmula en Excel y LibreOffice
 PREFIJOS_DE_FORMULA = ('=', '+', '-', '@', '\t', '\r')
+ESPACIOS_PREVIOS = ' \t\r\n\v\f'
 
 DIRECTORIO_FUENTES = Path(__file__).resolve().parent / 'static' / 'fonts'
 FUENTE = 'DejaVuSans'
@@ -42,13 +43,42 @@ def _celda_csv(valor):
     if valor is None:
         return ''
     # Solo los textos se neutralizan: un número negativo real (int, Decimal) no es una fórmula
-    if isinstance(valor, str) and valor.startswith(PREFIJOS_DE_FORMULA):
+    # El espacio o el salto de línea previos no la desactivan: Excel los ignora antes de evaluar
+    if isinstance(valor, str) and (
+        valor.startswith(PREFIJOS_DE_FORMULA) or valor.lstrip(ESPACIOS_PREVIOS).startswith(PREFIJOS_DE_FORMULA)
+    ):
         return f"'{valor}"
     return valor
 
 
 def nombre_archivo(recurso, ext):
     return f'{slugify(recurso)}-{timezone.localdate().isoformat()}.{ext}'
+
+
+def formato_solicitado(request, permitidos=('csv', 'pdf'), defecto='csv'):
+    """Lee ``?formato=``: vacío usa el defecto y cualquier valor fuera de los permitidos es 400."""
+    formato = (request.query_params.get('formato') or defecto).lower()
+    if formato not in permitidos:
+        raise ValidationError({'detail': 'Formato no soportado.'})
+    return formato
+
+
+def acotar_filas(filas):
+    """Materializa las filas con el mismo tope que el CSV: un PDF sin límite agota memoria y tiempo."""
+    acotadas = []
+    for fila in filas:
+        if len(acotadas) >= LIMITE_FILAS_CSV:
+            raise ValidationError({'detail': MENSAJE_LIMITE})
+        acotadas.append(fila)
+    return acotadas
+
+
+def exportar_tabla(formato, recurso, titulo, columnas, filas, horizontal=False):
+    """Responde la tabla como descarga en el formato pedido, con el nombre ``<recurso>-<fecha>.<ext>``."""
+    nombre = nombre_archivo(recurso, formato)
+    if formato == 'pdf':
+        return tabla_a_pdf(titulo, columnas, acotar_filas(filas), horizontal=horizontal, nombre=nombre)
+    return write_csv(nombre, columnas, filas)
 
 
 def _respuesta(contenido_tipo, nombre):

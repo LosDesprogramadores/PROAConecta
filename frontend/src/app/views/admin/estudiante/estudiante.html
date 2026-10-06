@@ -6,7 +6,9 @@
       <p class="text-sm text-slate-500 mt-1">Gestión integral de alumnos matriculados y datos de contacto</p>
     </div>
     
-    <button 
+    <div class="flex flex-wrap items-center gap-3">
+      <app-exportar-listado [url]="urlExportarPersonas" [params]="{ rol: rolEstudiante }" recurso="estudiantes" />
+      <button 
       (click)="openCreateModal()" 
       class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#155dfc] hover:bg-[#114cc9] text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition-all duration-200 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,6 +16,7 @@
       </svg>
       Nuevo Estudiante
     </button>
+    </div>
   </div>
 
   <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
