@@ -1,27 +1,8 @@
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
-def obtener_persona_y_rol(user):
-    persona = getattr(user, 'persona', None)
-    rol = None
-    if persona and persona.rol:
-        rol = persona.rol.nombre.strip().lower()
-    return persona, rol
-
-
-def es_admin(user) -> bool:
-    persona, _ = obtener_persona_y_rol(user)
-    return bool(user.is_staff or user.is_superuser or (persona and persona.rol_id == 1))
-
-
-def es_profesor(user) -> bool:
-    _, rol = obtener_persona_y_rol(user)
-    return rol == 'profesor'
-
-
-def es_estudiante(user) -> bool:
-    _, rol = obtener_persona_y_rol(user)
-    return rol == 'estudiante'
+# Los helpers de rol viven en core/roles.py; se reexportan para no romper los imports existentes
+from core.roles import es_admin, es_estudiante, es_profesor, es_profesor_de_materia, obtener_persona_y_rol  # noqa: F401
 
 
 def verificar_profesor_materia(user, materia):
