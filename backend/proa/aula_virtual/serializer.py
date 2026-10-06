@@ -5,6 +5,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from django.urls import reverse
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 from .models import Unidad, Material, Actividad, Entrega, Nota
 from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
 
@@ -254,7 +255,10 @@ class EntregaSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
                     raise serializers.ValidationError("El plazo límite de la actividad finalizó. No puedes modificar ni reemplazar los archivos.")
 
         else:
-            if user and not es_admin(user):
+            # Solo un estudiante inscripto entrega: ni el profesor ni el administrador crean entregas a su nombre
+            if user:
+                if es_admin(user):
+                    raise PermissionDenied("Solo un estudiante inscripto en la materia puede realizar entregas.")
                 verificar_estudiante_materia(user, actividad.materia)
 
             if plazo_vencido and not actividad.permitir_entrega_tardia:

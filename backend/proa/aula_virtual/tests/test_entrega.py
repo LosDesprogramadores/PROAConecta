@@ -191,3 +191,17 @@ def test_profesor_y_administrador_reciben_403_aunque_el_cuerpo_sea_invalido(api_
     assert respuesta.status_code == 403
     entrega.refresh_from_db()
     assert entrega.contenido_texto == 'Primera versión'
+def test_administrador_no_puede_crear_una_entrega(api_as, admin, actividad):
+    # Solo un estudiante inscripto entrega (V-26): la entrega no queda a nombre del administrador
+    respuesta = api_as(admin).post(URL, {'actividad': actividad.pk, 'contenido_texto': 'Entrega del admin'}, format='json')
+
+    assert respuesta.status_code == 403
+    assert not Entrega.objects.filter(actividad=actividad).exists()
+
+
+@pytest.mark.django_db
+def test_profesor_titular_no_puede_crear_una_entrega(api_as, profesor, actividad):
+    respuesta = api_as(profesor).post(URL, {'actividad': actividad.pk, 'contenido_texto': 'Entrega del profesor'}, format='json')
+
+    assert respuesta.status_code == 403
+    assert not Entrega.objects.filter(actividad=actividad).exists()
