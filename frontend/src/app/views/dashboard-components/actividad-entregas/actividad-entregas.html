@@ -99,8 +99,7 @@
           [step]="notaPaso"
           [attr.aria-invalid]="errorModal() ? 'true' : null"
           [attr.aria-describedby]="errorModal() ? 'nota-error' : null"
-          [ngModel]="nota()"
-          (ngModelChange)="nota.set($event)"
+          [formControl]="calificacion.controls.nota"
           class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" />
       </div>
 
@@ -109,8 +108,7 @@
         <textarea
           id="comentario"
           rows="4"
-          [ngModel]="comentario()"
-          (ngModelChange)="comentario.set($event)"
+          [formControl]="calificacion.controls.comentario"
           class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"></textarea>
       </div>
 

@@ -226,10 +226,10 @@
     <app-modal [titulo]="materialEditandoId ? '✏️ Editar' : '➕ Agregar'" ancho="sm" (cerrar)="cancelarFormulario()">
         
 
-        <form (ngSubmit)="guardarMaterial()" class="space-y-4">
+        <form [formGroup]="formulario" (ngSubmit)="guardarMaterial()" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo</label>
-            <select [(ngModel)]="nuevoTipo" name="tipo"
+            <label for="material-tipo" class="block text-xs font-semibold text-slate-600 mb-1">Tipo</label>
+            <select id="material-tipo" formControlName="tipo"
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="DOCUMENTO">📄 Documento</option>
               <option value="VIDEO">🎥 Video</option>
@@ -238,35 +238,35 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Título *</label>
-            <input type="text" [(ngModel)]="nuevoTitulo" name="titulo"
+            <label for="material-titulo" class="block text-xs font-semibold text-slate-600 mb-1">Título *</label>
+            <input id="material-titulo" type="text" formControlName="titulo"
               placeholder="Ej: Programa de la cursada"
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required autofocus />
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción (opcional)</label>
-            <textarea [(ngModel)]="nuevaDescripcion" name="descripcion" rows="3"
+            <label for="material-descripcion" class="block text-xs font-semibold text-slate-600 mb-1">Descripción (opcional)</label>
+            <textarea id="material-descripcion" formControlName="descripcion" rows="3"
               placeholder="De qué trata..."
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">URL</label>
-            <input type="url" [(ngModel)]="nuevoUrl" name="url" placeholder="https://..."
+            <label for="material-url" class="block text-xs font-semibold text-slate-600 mb-1">URL</label>
+            <input id="material-url" type="url" formControlName="url" placeholder="https://..."
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">O un archivo</label>
-            <input type="file" (change)="onArchivoSeleccionado($event)"
+            <label for="material-archivo" class="block text-xs font-semibold text-slate-600 mb-1">O un archivo</label>
+            <input id="material-archivo" type="file" (change)="onArchivoSeleccionado($event)"
               class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
           </div>
 
           <div>
             <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" [(ngModel)]="nuevoVisible" name="visible"
+              <input type="checkbox" formControlName="visible"
                 class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
               <span class="text-sm text-slate-700">Visible para los alumnos</span>
             </label>

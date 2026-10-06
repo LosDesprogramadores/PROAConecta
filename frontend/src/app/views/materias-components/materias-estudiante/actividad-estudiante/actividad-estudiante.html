@@ -260,7 +260,7 @@
 
             <!-- MODO FORMULARIO EDICIÓN / CREACIÓN -->
             @if (modoEdicion()) {
-            <form class="space-y-4">
+            <form [formGroup]="formEntrega" class="space-y-4">
 
                 @if (errorFormulario()) {
                 <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
@@ -270,21 +270,21 @@
 
                 <!-- CAMPO TEXTO -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    <label for="entrega-texto" class="block text-xs font-bold text-slate-700 uppercase mb-1">
                         Respuesta o comentario en texto
                     </label>
-                    <textarea rows="4" [ngModel]="contenidoTexto()" (ngModelChange)="contenidoTexto.set($event)"
-                        name="contenidoTexto" placeholder="Escribí aquí tu respuesta o detalles sobre el trabajo..."
+                    <textarea id="entrega-texto" rows="4" formControlName="contenidoTexto"
+                        placeholder="Escribí aquí tu respuesta o detalles sobre el trabajo..."
                         class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary">
                         </textarea>
                 </div>
 
                 <!-- CAMPO ENLACE -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    <label for="entrega-enlace" class="block text-xs font-bold text-slate-700 uppercase mb-1">
                         Enlace externo (Google Drive, GitHub, Figma, etc.)
                     </label>
-                    <input type="url" [ngModel]="enlaceUrl()" (ngModelChange)="enlaceUrl.set($event)" name="enlaceUrl"
+                    <input id="entrega-enlace" type="url" formControlName="enlaceUrl"
                         placeholder="https://..."
                         class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
                 </div>
