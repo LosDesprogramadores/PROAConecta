@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/materias/', include(anuncios_urlpatterns)),
     path('api/materias/', include(destinatarios_urlpatterns)),
     path('api/mensajes/', include('mensajeria.urls')),
+    path('api/auditoria/', include('auditoria.urls')),
     path('api/', include('academico.urls')),
     path('api/', include('aula_virtual.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

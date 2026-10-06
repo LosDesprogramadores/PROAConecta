@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'channels',
     'notificacion',
     'mensajeria',
+    'auditoria',
 ]
 
 MIDDLEWARE = [

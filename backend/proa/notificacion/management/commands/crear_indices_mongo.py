@@ -1,9 +1,9 @@
 from django.core.management.base import BaseCommand
 from pymongo import ASCENDING, DESCENDING
 
-from notificacion.mongo import COLECCION_MENSAJE, COLECCION_NOTIFICACION, obtener_coleccion
+from notificacion.mongo import COLECCION_BITACORA, COLECCION_MENSAJE, COLECCION_NOTIFICACION, obtener_coleccion
 
-# Colección -> índices (lista de claves). La colección bitacora suma los suyos con la app auditoria.
+# Colección -> índices (lista de claves)
 INDICES = {
     COLECCION_NOTIFICACION: [
         # Lo usa hoy el listado: find().sort('fecha_creacion', -1) sin filtro
@@ -22,6 +22,15 @@ INDICES = {
         # Contador de no leídos y listado de enviados: ambos filtran por fecha_baja
         [('destinatario_id', ASCENDING), ('leido', ASCENDING), ('fecha_baja', ASCENDING)],
         [('remitente_id', ASCENDING), ('fecha_baja', ASCENDING), ('fecha_creacion', DESCENDING)],
+    ],
+    COLECCION_BITACORA: [
+        # Listado general y por entidad / por actor (auditoria/bitacora.py)
+        [('fecha', DESCENDING)],
+        [('entidad', ASCENDING), ('entidad_id', ASCENDING), ('fecha', DESCENDING)],
+        [('actor_id', ASCENDING), ('fecha', DESCENDING)],
+        # Filtros por materia y por entidad_id solo (sin entidad)
+        [('materia_id', ASCENDING), ('fecha', DESCENDING)],
+        [('entidad_id', ASCENDING), ('fecha', DESCENDING)],
     ],
 }
 
