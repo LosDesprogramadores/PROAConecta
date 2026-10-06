@@ -2,7 +2,7 @@ import hashlib
 import math
 
 from rest_framework.exceptions import Throttled
-from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.throttling import ScopedRateThrottle, UserRateThrottle
 
 
 def normalizar_identificador(valor):
@@ -51,3 +51,9 @@ class LimiteDeIntentosMixin:
             wait=wait,
             detail=f'Demasiados intentos. Vuelva a intentarlo en {segundos} segundos.',
         )
+
+
+class MensajesThrottle(UserRateThrottle):
+    """Límite por usuario autenticado al enviar mensajes (scope ``mensajes``)."""
+
+    scope = 'mensajes'

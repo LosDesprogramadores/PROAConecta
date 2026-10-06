@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from mensajeria.urls import destinatarios_urlpatterns
 from notificacion.urls import anuncios_urlpatterns
 from notificacion.views import WsTicketView
 from rest_framework.decorators import api_view, permission_classes
@@ -35,6 +36,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('usuario.urls')), 
     path('api/materias/', include(anuncios_urlpatterns)),
+    path('api/materias/', include(destinatarios_urlpatterns)),
+    path('api/mensajes/', include('mensajeria.urls')),
     path('api/', include('academico.urls')),
     path('api/', include('aula_virtual.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -127,7 +127,7 @@ def test_materia_inexistente_o_dada_de_baja_responde_no_encontrada(materia_con_i
     with pytest.raises(Http404):
         services.enviar(profesor, 999999, estudiante.pk, 'A', 'B')
 
-    materia_con_inscripcion.fecha_baja = datetime.now(timezone.utc).date()
+    materia_con_inscripcion.fecha_baja = datetime.now(timezone.utc)
     materia_con_inscripcion.save()
     with pytest.raises(Http404):
         _enviar(profesor, estudiante, materia_con_inscripcion)
