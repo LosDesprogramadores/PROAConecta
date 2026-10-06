@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'corsheaders',   
     'channels',
     'notificacion',
+    'mensajeria',
 ]
 
 MIDDLEWARE = [

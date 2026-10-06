@@ -1,10 +1,9 @@
 from django.core.management.base import BaseCommand
 from pymongo import ASCENDING, DESCENDING
 
-from notificacion.mongo import COLECCION_NOTIFICACION, obtener_coleccion
+from notificacion.mongo import COLECCION_MENSAJE, COLECCION_NOTIFICACION, obtener_coleccion
 
-# Colección -> índices (lista de claves). Las colecciones mensaje y bitacora
-# suman los suyos cuando se creen sus apps.
+# Colección -> índices (lista de claves). La colección bitacora suma los suyos con la app auditoria.
 INDICES = {
     COLECCION_NOTIFICACION: [
         # Lo usa hoy el listado: find().sort('fecha_creacion', -1) sin filtro
@@ -14,6 +13,15 @@ INDICES = {
         [('materia_id', ASCENDING), ('fecha_creacion', DESCENDING)],
         [('alcance', ASCENDING), ('fecha_creacion', DESCENDING)],
         [('usuario_destino_id', ASCENDING), ('fecha_creacion', DESCENDING)],
+    ],
+    COLECCION_MENSAJE: [
+        # Bandeja de recibidos (por materia) y de enviados (mensajeria/repositorio.py)
+        [('materia_id', ASCENDING), ('destinatario_id', ASCENDING), ('fecha_creacion', DESCENDING)],
+        [('remitente_id', ASCENDING), ('fecha_creacion', DESCENDING)],
+        [('destinatario_id', ASCENDING), ('fecha_creacion', DESCENDING)],
+        # Contador de no leídos y listado de enviados: ambos filtran por fecha_baja
+        [('destinatario_id', ASCENDING), ('leido', ASCENDING), ('fecha_baja', ASCENDING)],
+        [('remitente_id', ASCENDING), ('fecha_baja', ASCENDING), ('fecha_creacion', DESCENDING)],
     ],
 }
 
