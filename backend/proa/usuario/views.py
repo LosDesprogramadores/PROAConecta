@@ -15,12 +15,14 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
+from core.permissions import EsAdministrador
 
 
 
 
 
 class UsuarioCreateView(generics.CreateAPIView):
+    permission_classes = [EsAdministrador]
     serializer_class = UsuarioSerializer
 
 class DNITokenObtainPairView(TokenObtainPairView):
@@ -30,10 +32,21 @@ class RolViewSet(viewsets.ModelViewSet):
     queryset = Rol.objects.all()
     serializer_class = RolSerializer
 
+    def get_permissions(self):
+        # Lectura para cualquier autenticado; altas, cambios y bajas solo administrador
+        if self.action in ('list', 'retrieve'):
+            return [IsAuthenticated()]
+        return [EsAdministrador()]
+
 class PersonaViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
     queryset = Persona.objects.filter(fecha_baja__isnull=True)
     serializer_class = PersonaSerializer
+
+    def get_permissions(self):
+        # Lectura para cualquier autenticado; altas, cambios, bajas y restauración solo administrador
+        if self.action in ('list', 'retrieve'):
+            return [IsAuthenticated()]
+        return [EsAdministrador()]
 
     def destroy(self, request, *args, **kwargs):
         persona = self.get_object()

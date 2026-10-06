@@ -37,8 +37,8 @@ def test_estudiante_sin_inscripcion_ve_todas_las_materias(api_as, rol_estudiante
 
 
 @pytest.mark.django_db
-def test_admin_es_reconocido_solo_por_rol_id_1(admin):
-    # Si es_admin deja de aceptar rol_id == 1 (T008), el fixture admin debe actualizarse
+def test_admin_es_reconocido_solo_por_nombre_de_rol(admin):
+    # es_admin resuelve el rol por nombre (core/roles.py), no por id
     assert not admin.is_staff and not admin.is_superuser
     assert es_admin(admin)
 

@@ -33,8 +33,8 @@ def api_as():
     return _api_as
 
 
-# Los roles ya existen por la migración usuario/0003_roles_iniciales (get_or_create por nombre, ids 1/2/3): aula_virtual/helpers.py
-# todavía compara rol_id == 1 para detectar al administrador
+# Los roles ya existen por la migración usuario/0003_roles_iniciales (get_or_create por nombre, ids 1/2/3).
+# core/roles.py resuelve el rol por nombre, así que los ids de estos fixtures no son parte del contrato
 @pytest.fixture
 def rol_administrador(db):
     return RolFactory(nombre='Administrador', id=1)
@@ -50,8 +50,8 @@ def rol_estudiante(db):
     return RolFactory(nombre='Estudiante', id=3)
 
 
-# Es administrador solo por rol_id == 1 (aula_virtual/helpers.py:14), sin is_staff ni
-# is_superuser, para ejercitar la misma regla que aplica el código hoy
+# Es administrador solo por el nombre del rol (core/roles.py), sin is_staff ni is_superuser,
+# para ejercitar la misma regla que aplica el código
 @pytest.fixture
 def admin(rol_administrador):
     return UsuarioFactory(persona__rol=rol_administrador)

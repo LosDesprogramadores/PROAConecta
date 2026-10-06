@@ -6,9 +6,25 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import secrets
 from django.core.mail import send_mail
 from django.conf import settings
+from core.roles import es_admin
 
 
-class UsuarioSerializer(serializers.ModelSerializer):
+class SoloLecturaParaNoAdminMixin:
+    # Los campos de privilegio solo los escribe un administrador. Sin request en el contexto
+    # se asume que no lo es (denegar por defecto)
+    campos_de_privilegio = ()
+
+    def get_fields(self):
+        campos = super().get_fields()
+        request = self.context.get('request')
+        if not (request and es_admin(request.user)):
+            for nombre in self.campos_de_privilegio:
+                campos[nombre].read_only = True
+        return campos
+
+
+class UsuarioSerializer(SoloLecturaParaNoAdminMixin, serializers.ModelSerializer):
+    campos_de_privilegio = ('activo',)
     persona_id = serializers.PrimaryKeyRelatedField(
         queryset=Persona.objects.all(),
         source='persona',
@@ -80,13 +96,19 @@ class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
-        fields = '__all__'
+        fields = ['id', 'nombre', 'descripcion']
 
 
-class  PersonaSerializer(serializers.ModelSerializer):
+class PersonaSerializer(SoloLecturaParaNoAdminMixin, serializers.ModelSerializer):
+    campos_de_privilegio = ('rol', 'dni', 'email', 'fecha_baja')
+
     class Meta:
         model = Persona
-        fields = '__all__'
+        fields = [
+            'id', 'rol', 'nombre', 'apellido', 'dni', 'fecha_nacimiento',
+            'tel_contacto', 'email', 'fecha_ingreso', 'fecha_baja',
+        ]
+        read_only_fields = ['id', 'fecha_ingreso']
 
     def create(self, validated_data):
         email = validated_data.get('email')
