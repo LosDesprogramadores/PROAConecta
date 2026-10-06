@@ -6,6 +6,8 @@ pytest-django==4.14.0
 pytest-asyncio==1.4.0
 factory-boy==3.3.3
 mongomock==4.3.0
+# Lee el texto de los PDF generados (tests de core/exportaciones.py)
+pypdf==6.19.0
 pytest-cov==7.1.0
 # channels.testing importa daphne al cargarse (WebsocketCommunicator)
 daphne>=4.0.0

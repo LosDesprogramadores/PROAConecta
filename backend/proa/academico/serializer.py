@@ -1,8 +1,11 @@
+from django.db import IntegrityError, transaction
 from rest_framework import serializers
 from usuario.models import Persona
 from core.privacidad import PrivacidadPersonaMixin
 from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin
 from .models import Materia, Inscripcion
+
+MENSAJE_MATERIA_DUPLICADA = 'Ya existe una materia con ese título, curso y año.'
 
 # Información básica de la persona para mostrar en la lista sea profesor o Estudiante
 class PersonaResumenSerializer(PrivacidadPersonaMixin, serializers.ModelSerializer):
@@ -60,8 +63,36 @@ class MateriaSerializer(serializers.ModelSerializer):
         return datos
 
     def get_total_estudiantes(self, obj):
-        # Las bajas no cuentan como estudiantes de la materia
+        # El listado ya trae la cuenta anotada (selectors.materias_con_resumen); las respuestas de
+        # alta y edición no pasan por ahí y la calculan acá. Las bajas no cuentan como estudiantes
+        if hasattr(obj, 'total_estudiantes'):
+            return obj.total_estudiantes
         return obj.inscripciones.exclude(estado=Inscripcion.EstadoInscripcion.BAJA).count()
+
+    def validate(self, attrs):
+        # La unicidad vale solo entre materias activas (restricción condicional): DRF no la valida sola
+        # y sin esto el duplicado llegaría a la base como un 500
+        datos = {c: attrs.get(c, getattr(self.instance, c, None)) for c in ('titulo', 'curso', 'anio')}
+        duplicadas = Materia.objects.filter(**datos)
+        if self.instance is not None:
+            duplicadas = duplicadas.exclude(pk=self.instance.pk)
+        if duplicadas.exists():
+            raise serializers.ValidationError({'detail': MENSAJE_MATERIA_DUPLICADA})
+        return attrs
+
+    def _sin_duplicar(self, guardar):
+        # validate() no cubre dos pedidos simultáneos: la restricción de la base es la última barrera
+        try:
+            with transaction.atomic():
+                return guardar()
+        except IntegrityError:
+            raise serializers.ValidationError({'detail': MENSAJE_MATERIA_DUPLICADA})
+
+    def create(self, validated_data):
+        return self._sin_duplicar(lambda: super(MateriaSerializer, self).create(validated_data))
+
+    def update(self, instance, validated_data):
+        return self._sin_duplicar(lambda: super(MateriaSerializer, self).update(instance, validated_data))
 
     def validate_profesor(self, value):
         if value:

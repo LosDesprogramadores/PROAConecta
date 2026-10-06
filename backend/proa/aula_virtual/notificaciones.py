@@ -1,9 +1,8 @@
-import logging
 import requests
 from django.conf import settings
 from django.utils import timezone
 
-logger = logging.getLogger(__name__)
+from integraciones.fondo import ejecutar_en_segundo_plano
 
 PREFIJO_WEBHOOK = 'https://discord.com/api/webhooks/'
 
@@ -13,10 +12,22 @@ def enviar_discord(webhook_url, titulo, descripcion='', color=0x2ECC71):
     if not webhook_url or not webhook_url.startswith(PREFIJO_WEBHOOK):
         return
     payload = {'embeds': [{'title': titulo, 'description': descripcion, 'color': color}]}
+    # Fuera del request (BE-10): una demora de Discord no hace lenta la respuesta
+    ejecutar_en_segundo_plano(
+        lambda: _publicar_en_webhook(webhook_url, payload),
+        descripcion='aviso a Discord',
+    )
+
+
+def _publicar_en_webhook(webhook_url, payload):
+    # El webhook es un secreto y viaja en la URL: ni el mensaje ni el traceback de requests
+    # (que la incluye) pueden llegar al log
     try:
-        requests.post(webhook_url, json=payload, timeout=3)
-    except requests.RequestException:
-        logger.exception('No se pudo enviar la notificación a Discord')
+        respuesta = requests.post(webhook_url, json=payload, timeout=3)
+    except requests.RequestException as error:
+        raise RuntimeError(f'Discord no respondió ({type(error).__name__})') from None
+    if respuesta.status_code >= 400:
+        raise RuntimeError(f'Discord rechazó el aviso (HTTP {respuesta.status_code})')
 
 
 def avisar_nueva_actividad(actividad):

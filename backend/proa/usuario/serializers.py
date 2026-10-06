@@ -4,10 +4,9 @@ from django.contrib.auth import authenticate
 from .models import Rol, Persona, Usuario
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import secrets
-from django.core.mail import send_mail
-from django.conf import settings
 from core.privacidad import PrivacidadPersonaMixin
 from core.roles import es_admin
+from .correos import enviar_credenciales
 
 
 class SoloLecturaParaNoAdminMixin:
@@ -114,9 +113,7 @@ class PersonaSerializer(PrivacidadPersonaMixin, SoloLecturaParaNoAdminMixin, ser
         read_only_fields = ['id', 'fecha_ingreso']
 
     def create(self, validated_data):
-        email = validated_data.get('email')
         dni = validated_data.get('dni')
-        nombre = validated_data.get('nombre')
         clave_temporal = secrets.token_urlsafe(8)
         
         with transaction.atomic():
@@ -129,28 +126,10 @@ class PersonaSerializer(PrivacidadPersonaMixin, SoloLecturaParaNoAdminMixin, ser
                 debe_cambiar_password=True
             )
 
-        asunto = "Bienvenido a PROA Conecta - Credenciales de acceso"
-        cuerpo = f"""Hola {nombre},
-
-            Has sido registrado en la plataforma educativa PROA Conecta.
-
-            Tus datos de acceso para iniciar sesión son:
-            - DNI (Usuario): {dni}
-            - Contraseña provisoria: {clave_temporal}
-
-            Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
-            {getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
-
-            Saludos cordiales,
-            Equipo Directivo PROA Conecta.
-            """
-        send_mail(
-            subject=asunto,
-            message=cuerpo,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False
-        )
+            # El correo sale después del commit y fuera del request: si falla, la cuenta queda creada
+            # y el administrador recibe un aviso (usuario/correos.py)
+            request = self.context.get('request')
+            enviar_credenciales(persona, clave_temporal, solicitante=getattr(request, 'user', None))
 
         return persona
 

@@ -6,6 +6,12 @@ from core.roles import tiene_inscripcion_activa
 from core.roles import es_admin, es_estudiante, es_profesor, es_profesor_de_materia, obtener_persona_y_rol  # noqa: F401
 
 
+# Escala de calificaciones: única fuente del rango. El formulario del profesor (min, max y step) debe
+# coincidir con estos valores (frontend: actividad-entregas, a cargo de Maxi en T062)
+NOTA_MINIMA = Decimal('1.00')
+NOTA_MAXIMA = Decimal('10.00')
+
+
 def verificar_profesor_materia(user, materia):
     if es_admin(user):
         return
@@ -20,8 +26,10 @@ def validar_rango_nota(valor):
     except (InvalidOperation, TypeError):
         raise ValidationError({'calificacion': 'La calificación debe ser un valor numérico válido.'})
 
-    if nota < Decimal('1.00') or nota > Decimal('10.00'):
-        raise ValidationError({'calificacion': 'La calificación debe estar comprendida entre 1.00 y 10.00.'})
+    if nota < NOTA_MINIMA or nota > NOTA_MAXIMA:
+        raise ValidationError({
+            'calificacion': f'La calificación debe estar comprendida entre {NOTA_MINIMA} y {NOTA_MAXIMA}.'
+        })
     
     return nota
 

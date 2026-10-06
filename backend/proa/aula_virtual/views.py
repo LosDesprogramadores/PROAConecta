@@ -1,7 +1,9 @@
 from django.db import IntegrityError, transaction
 from .notificaciones import avisar_nueva_actividad
-from django.db.models import Q
-from rest_framework import viewsets, filters, status
+from django.db.models import Count, Q
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, viewsets, filters, status
+from core.exceptions import ErrorSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -20,6 +22,8 @@ from .helpers import (
     obtener_persona_y_rol,
     verificar_profesor_materia,
     validar_rango_nota,
+    NOTA_MINIMA,
+    NOTA_MAXIMA,
 )
 
 
@@ -41,7 +45,9 @@ class UnidadViewSet(viewsets.ModelViewSet):
             return Unidad.objects.none()
 
         # Conmuta entre elementos activos o dados de baja
-        qs = Unidad.objects.filter(fecha_baja__isnull=not en_papelera).select_related('materia')
+        qs = Unidad.objects.filter(
+            fecha_baja__isnull=not en_papelera, materia__fecha_baja__isnull=True
+        ).select_related('materia')
 
         if materia_id:
             qs = qs.filter(materia_id=materia_id)
@@ -130,7 +136,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
         # Conmuta entre activos o dados de baja
         materiales = Material.objects.filter(
-            fecha_baja__isnull=not en_papelera
+            fecha_baja__isnull=not en_papelera, materia__fecha_baja__isnull=True
         ).select_related('materia', 'unidad')
 
         if tipo:
@@ -225,9 +231,12 @@ class ActividadViewSet(viewsets.ModelViewSet):
         if en_papelera and es_estudiante(user):
             return Actividad.objects.none()
 
+        # cantidad_entregas se calcula en la misma consulta (sin las entregas dadas de baja)
         qs = Actividad.objects.filter(
-            fecha_baja__isnull=not en_papelera
-        ).select_related('materia', 'unidad')
+            fecha_baja__isnull=not en_papelera, materia__fecha_baja__isnull=True
+        ).select_related('materia', 'unidad').annotate(
+            cantidad_entregas=Count('entregas', filter=Q(entregas__fecha_baja__isnull=True))
+        )
 
         if materia_id:
             qs = qs.filter(materia_id=materia_id)
@@ -310,6 +319,14 @@ class ActividadViewSet(viewsets.ModelViewSet):
         serializer = EntregaSerializer(entregas, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @extend_schema(
+        request=inline_serializer('CalificarEstudiante', {
+            'estudiante_id': serializers.IntegerField(),
+            'calificacion': serializers.DecimalField(max_digits=4, decimal_places=2, min_value=NOTA_MINIMA, max_value=NOTA_MAXIMA),
+            'descripcion': serializers.CharField(required=False, allow_blank=True),
+        }),
+        responses={200: NotaSerializer, 400: ErrorSerializer},
+    )
     @action(detail=True, methods=['post', 'put'], url_path='calificar-estudiante')
     def calificar_estudiante(self, request, pk=None):
         estudiante_id = request.data.get('estudiante_id')
@@ -343,7 +360,9 @@ class EntregaViewSet(viewsets.ModelViewSet):
         if en_papelera and es_estudiante(user):
             return Entrega.objects.none()
 
-        qs = Entrega.objects.filter(fecha_baja__isnull=not en_papelera).select_related(
+        qs = Entrega.objects.filter(
+            fecha_baja__isnull=not en_papelera, actividad__materia__fecha_baja__isnull=True
+        ).select_related(
             'actividad__materia', 'estudiante', 'nota__profesor'
         )
 
@@ -431,6 +450,13 @@ class EntregaViewSet(viewsets.ModelViewSet):
         entrega.restore()
         return Response({'mensaje': 'Entrega restaurada correctamente.'}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        request=inline_serializer('CalificarEntrega', {
+            'calificacion': serializers.DecimalField(max_digits=4, decimal_places=2, min_value=NOTA_MINIMA, max_value=NOTA_MAXIMA),
+            'descripcion': serializers.CharField(required=False, allow_blank=True),
+        }),
+        responses={200: NotaSerializer, 400: ErrorSerializer},
+    )
     @action(detail=True, methods=['post', 'put', 'patch'], url_path='calificar')
     def calificar(self, request, pk=None):
         """Asienta o modifica la calificación de una entrega existente."""

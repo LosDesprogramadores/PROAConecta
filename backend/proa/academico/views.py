@@ -1,12 +1,12 @@
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import viewsets, permissions, filters, serializers, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from aula_virtual.models import Nota
 from .models import Materia, Inscripcion
-from .selectors import alumnos_de_materia, materias_con_acceso
+from .selectors import alumnos_de_materia, materias_con_acceso, materias_con_resumen
 from core.permissions import EsAdministrador
 from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin as _es_admin, obtener_persona_y_rol
 from .serializer import (
@@ -18,10 +18,14 @@ from .serializer import (
     MateriaSerializer,
 )
 from aula_virtual.helpers import es_admin, verificar_profesor_materia
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from core.exceptions import ErrorSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendimiento_curso_profesor
 
+
+
+MENSAJE_LOTE = inline_serializer('MensajeLote', {'mensaje': serializers.CharField()})
 
 
 def _entero_o_400(valor, campo):
@@ -67,13 +71,13 @@ def _alcance(user):
     )
 )
 class MateriaViewSet(viewsets.ModelViewSet):
-    queryset = Materia.objects.select_related('profesor').all()
+    queryset = materias_con_resumen()
     serializer_class = MateriaSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['titulo', 'anio', 'curso']
     # Las altas, ediciones, bajas y asignaciones son solo del administrador; la lectura se acota en get_queryset
     acciones_de_administrador = {
-        'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor',
+        'create', 'update', 'partial_update', 'destroy', 'asignar_profesor', 'desasignar_profesor', 'restaurar',
     }
 
     def get_permissions(self):
@@ -97,6 +101,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
             return queryset.none()
         return queryset
 
+    @extend_schema(request=AsignarProfesorSerializer, responses={200: MENSAJE_LOTE, 400: ErrorSerializer})
     @action(detail=False, methods=['post'], url_path='asignar-profesor')
     def asignar_profesor(self, request):
         entrada = AsignarProfesorSerializer(data=request.data)
@@ -113,6 +118,13 @@ class MateriaViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     def get_queryset(self):
+        if self.action == 'restaurar':
+            return materias_con_resumen(en_papelera=True)
+        # La papelera es del administrador: otro rol recibe una lista vacía, como en el resto de la API
+        if self.action == 'list' and self.request.query_params.get('papelera') == 'true':
+            if not _es_admin(self.request.user):
+                return Materia.objects.none()
+            return materias_con_resumen(en_papelera=True)
         queryset = self._queryset_por_rol(super().get_queryset())
         profesor_id = self.request.query_params.get('profesor')
         excluir_profesor = self.request.query_params.get('excluir_profesor')
@@ -133,6 +145,25 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
         return queryset
     
+    def perform_destroy(self, instance):
+        # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'], url_path='restaurar')
+    def restaurar(self, request, pk=None):
+        materia = self.get_object()  # solo encuentra materias dadas de baja (get_queryset)
+        # Un profesor dado de baja mientras tanto no vuelve como titular
+        if materia.profesor_id and materia.profesor.fecha_baja is not None:
+            materia.profesor = None
+            materia.save(update_fields=['profesor'])
+        try:
+            with transaction.atomic():
+                materia.restore()
+        except IntegrityError:
+            # Mientras estuvo de baja se creó otra materia activa con el mismo título, curso y año
+            raise ValidationError({'detail': 'No se puede restaurar la materia: ya existe otra materia activa con el mismo título, curso y año.'})
+        return Response({'mensaje': f'Materia "{materia.titulo}" restaurada correctamente.'}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['patch'], url_path='desasignar-profesor')
     def desasignar_profesor(self, request, pk=None):
         try:
@@ -191,7 +222,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
         ).values_list('materia_id', flat=True)
 
         # Dentro del alcance del rol: el profesor solo ve la intersección con sus materias
-        materias = self._queryset_por_rol(Materia.objects.select_related('profesor')).filter(
+        materias = self._queryset_por_rol(materias_con_resumen()).filter(
             id__in=materias_activas_ids
         )
 
@@ -199,7 +230,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class InscripcionViewSet(viewsets.ModelViewSet):
-    queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
+    queryset = Inscripcion.objects.select_related('materia__profesor', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['fecha_inscripcion', 'estado']
@@ -213,7 +244,8 @@ class InscripcionViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Las inscripciones de una materia dada de baja se conservan, pero no se muestran
+        queryset = super().get_queryset().filter(materia__fecha_baja__isnull=True)
         persona, rol = _alcance(self.request.user)
         if self.request.user.is_authenticated and not _es_admin(self.request.user):
             if rol == ROL_PROFESOR:
@@ -241,6 +273,7 @@ class InscripcionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(request=InscribirLoteSerializer, responses={201: MENSAJE_LOTE, 400: ErrorSerializer})
     @action(detail=False, methods=['post'], url_path='inscribir')
     def inscribir_lote(self, request):
         entrada = InscribirLoteSerializer(data=request.data)
@@ -270,6 +303,7 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             'cantidad': len(inscripciones_creadas)
         }, status=status.HTTP_201_CREATED)
 
+    @extend_schema(request=DesinscribirSerializer, responses={200: MENSAJE_LOTE, 400: ErrorSerializer, 404: ErrorSerializer})
     @action(detail=False, methods=['post'], url_path='desinscribir')
     def desinscribir_estudiante(self, request):
         entrada = DesinscribirSerializer(data=request.data)
@@ -297,6 +331,6 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             # La baja conserva la fila: el historial y las notas no se pierden
             inscripcion.estado = Inscripcion.EstadoInscripcion.BAJA
             inscripcion.save(update_fields=['estado'])
-            return Response({"message": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
+            return Response({"mensaje": "Estudiante desinscripto correctamente."}, status=status.HTTP_200_OK)
 
         return Response({"detail": "No se encontró la inscripción para este estudiante."}, status=status.HTTP_404_NOT_FOUND)

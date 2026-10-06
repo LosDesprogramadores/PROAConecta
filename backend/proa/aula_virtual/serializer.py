@@ -1,6 +1,8 @@
 from django.db import IntegrityError, transaction
 from .notificaciones import avisar_nueva_actividad
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from .models import Unidad, Material, Actividad, Entrega, Nota
 from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
@@ -102,7 +104,7 @@ class ActividadSerializer(serializers.ModelSerializer):
     materia_titulo = serializers.CharField(source='materia.titulo', read_only=True)
     unidad_titulo = serializers.CharField(source='unidad.titulo', read_only=True, default=None)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    cantidad_entregas = serializers.IntegerField(source='entregas.count', read_only=True)
+    cantidad_entregas = serializers.SerializerMethodField()
 
     class Meta:
         model = Actividad
@@ -113,6 +115,14 @@ class ActividadSerializer(serializers.ModelSerializer):
                     'estado_display', 'cantidad_entregas', 'fecha_creacion', 'fecha_baja'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'fecha_baja']
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_cantidad_entregas(self, obj):
+        # El listado trae la cuenta anotada (ActividadViewSet.get_queryset); el alta y la edición la calculan acá.
+        # Las entregas dadas de baja no cuentan
+        if hasattr(obj, 'cantidad_entregas'):
+            return obj.cantidad_entregas
+        return obj.entregas.filter(fecha_baja__isnull=True).count()
 
     def validate(self, attrs):
         request = self.context.get('request')
