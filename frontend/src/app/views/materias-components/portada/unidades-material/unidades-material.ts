@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { finalize } from 'rxjs';
+import { finalize, filter } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { UnidadesService } from '../../../../services/unidades.service';
@@ -10,6 +10,7 @@ import { MaterialesService } from '../../../../services/materiales.service';
 import { Unidad, Material } from '../../../../model/unidad-material.model';
 
 import { Modal } from '../../../../shared/modal/modal';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
@@ -19,6 +20,7 @@ import { Modal } from '../../../../shared/modal/modal';
 })
 export class UnidadesMaterial implements OnInit {
   private unidadesService = inject(UnidadesService);
+  private confirmDialog = inject(ConfirmDialogService);
   private materialesService = inject(MaterialesService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
@@ -201,7 +203,7 @@ export class UnidadesMaterial implements OnInit {
   eliminarUnidad(unidadId: string | number, event: Event) {
     event.stopPropagation();
 
-    if (confirm('¿Estás seguro de eliminar esta unidad y sus contenidos?')) {
+    this.confirmDialog.confirmar('¿Estás seguro de eliminar esta unidad y sus contenidos?').pipe(filter(Boolean)).subscribe(() => {
       this.unidadesService.eliminarUnidad(unidadId).subscribe({
         next: () => {
           this.toastService.success('Unidad enviada a la papelera');
@@ -209,7 +211,7 @@ export class UnidadesMaterial implements OnInit {
         },
         error: () => this.toastService.error('Error al eliminar la unidad'),
       });
-    }
+    });
   }
 
   // --- LÓGICA DE RECURSOS / MATERIALES ---
@@ -316,7 +318,7 @@ export class UnidadesMaterial implements OnInit {
   }
 
   eliminarMaterial(materialId: number | string, unidad: Unidad): void {
-    if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
+    this.confirmDialog.confirmar('¿Estás seguro de que deseas eliminar este material?').pipe(filter(Boolean)).subscribe(() => {
 
     this.materialesService.eliminarMaterial(materialId).subscribe({
       next: () => {
@@ -326,6 +328,7 @@ export class UnidadesMaterial implements OnInit {
         this.toastService.success('Material eliminado correctamente');
       },
       error: () => this.toastService.error('Error al eliminar el material'),
+    });
     });
   }
 }

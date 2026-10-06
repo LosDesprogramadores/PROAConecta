@@ -10,6 +10,8 @@ import { MaterialesService } from '../../../services/materiales.service';
 import { Material as MaterialModel } from '../../../model/unidad-material.model';
 
 import { Modal } from '../../../shared/modal/modal';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { filter } from 'rxjs';
 @Component({
   selector: 'app-material',
   standalone: true,
@@ -19,6 +21,7 @@ import { Modal } from '../../../shared/modal/modal';
 })
 export class Material implements OnInit {
   private authService = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
   private materialesService = inject(MaterialesService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
@@ -196,14 +199,16 @@ export class Material implements OnInit {
 
   eliminarMaterial(material: MaterialModel): void {
     if (!material.id) return;
-    if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
+    const materialId = material.id;
+    this.confirmDialog.confirmar('¿Estás seguro de que deseas eliminar este material?').pipe(filter(Boolean)).subscribe(() => {
 
-    this.materialesService.eliminarMaterial(material.id).subscribe({
+    this.materialesService.eliminarMaterial(materialId).subscribe({
       next: () => {
-        this.todos.update(lista => lista.filter(m => m.id !== material.id));
+        this.todos.update(lista => lista.filter(m => m.id !== materialId));
         this.toastService.success('Material eliminado');
       },
       error: () => this.toastService.error('Error al eliminar el material'),
+    });
     });
   }
 }

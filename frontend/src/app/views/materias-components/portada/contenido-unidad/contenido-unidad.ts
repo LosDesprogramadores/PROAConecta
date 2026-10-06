@@ -1,8 +1,10 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, inject, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UnidadMateria, ContenidoUnidad } from '../../../../model/unidad-contenido.model';
 
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
+import { filter } from 'rxjs';
 @Component({
   selector: 'app-contenido-unidad',
   standalone: true,
@@ -11,6 +13,8 @@ import { UnidadMateria, ContenidoUnidad } from '../../../../model/unidad-conteni
   styleUrl: './contenido-unidad.css',
 })
 export class ContenidoUnidadComponent {
+  private confirmDialog = inject(ConfirmDialogService);
+
 
   @Input() unidad!: UnidadMateria;
 
@@ -180,10 +184,10 @@ export class ContenidoUnidadComponent {
 
   eliminarContenido(id: string) {
 
-    if (confirm('¿Eliminar este contenido?')) {
+    this.confirmDialog.confirmar('¿Eliminar este contenido?').pipe(filter(Boolean)).subscribe(() => {
 
       this.contenidoEliminado.emit(id);
-    }
+    });
   }
 
 
