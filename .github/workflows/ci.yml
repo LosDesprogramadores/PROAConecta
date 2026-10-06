@@ -53,6 +53,9 @@ jobs:
         run: npm ci
       - name: Compilar
         run: npx ng build --configuration production
+      # Obligatorio: sin continue-on-error. Vitest sobre jsdom, sin navegador ni modo watch
+      - name: Tests del frontend
+        run: npx ng test --watch=false
 
   secretos:
     name: secretos
