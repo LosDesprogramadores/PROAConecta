@@ -60,11 +60,13 @@ services:
         required: false
     # Lo definido acá pisa lo de backend/.env: apunta a los contenedores locales
     environment:
+      # Settings por entorno. Un despliegue real usa proa.settings.prod (DEBUG apagado, clave y hosts obligatorios)
+      - DJANGO_SETTINGS_MODULE=proa.settings.dev
       - DJANGO_DEBUG=True
-      # ATENCIÓN: este compose es solo para desarrollo local (fija DJANGO_DEBUG=True). La clave de abajo es
+      # ATENCIÓN: este compose es solo para desarrollo local (proa.settings.dev). La clave de abajo es
       # un valor de desarrollo, público en el repositorio: un despliegue de staging o producción debe
-      # definir su propia DJANGO_SECRET_KEY y nunca reutilizar este archivo tal cual. Con DJANGO_DEBUG
-      # distinto de True esta clave es rechazada y la app no arranca.
+      # definir su propia DJANGO_SECRET_KEY y nunca reutilizar este archivo tal cual. Con
+      # proa.settings.prod esta clave es rechazada y la app no arranca.
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-clave-de-desarrollo-del-compose-local-no-usar-en-produccion}
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend
       - DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200

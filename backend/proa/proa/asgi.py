@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
 import os
 
 # Los settings deben estar definidos antes de importar cualquier módulo que toque el ORM o la configuración
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proa.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proa.settings.prod')
 
 from django.core.asgi import get_asgi_application  # noqa: E402
 

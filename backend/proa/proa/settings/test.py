@@ -1,9 +1,7 @@
-import os
+"""Configuración de la suite de tests: SQLite en memoria, sin .env ni servicios externos (pytest.ini y CI)."""
+from datetime import timedelta
 
-# Antes de importar settings: sin DJANGO_DEBUG (CI, sin .env) la clave es obligatoria
-os.environ.setdefault('DJANGO_SECRET_KEY', 'clave-solo-para-tests-no-usar-en-produccion-0123456789')
-
-from .settings import *  # noqa: F401,F403,E402
+from .base import *  # noqa: F401,F403
 
 # Solo para tests: nunca usar estos valores fuera de la suite
 SECRET_KEY = 'clave-solo-para-tests-no-usar-en-produccion-0123456789'
@@ -14,7 +12,8 @@ ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
 CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 CSRF_TRUSTED_ORIGINS = ['http://localhost:4200']
 
-# Base en memoria, sin Postgres
+# Base en memoria, sin Postgres. Reemplaza por completo DATABASES de base: ni DATABASE_URL ni DB_SSL
+# de un backend/.env cargado por load_dotenv llegan a la suite (NUM_PROXIES y JWT se fijan más abajo)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -50,6 +49,7 @@ MONGO_DB_NAME = 'proa_test'
 # Los tests de límites las reemplazan por tasas bajas (usuario/tests/test_throttling.py)
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,  # noqa: F405
+    'NUM_PROXIES': 1,
     'DEFAULT_THROTTLE_RATES': {
         'login': '10000/min',
         'recuperacion': '10000/hour',
@@ -58,4 +58,11 @@ REST_FRAMEWORK = {
         'recuperacion_email': '10000/hour',
         'mensajes': '10000/min',
     },
+}
+
+# Duración de los tokens fija, independiente de ACCESS_TOKEN_MINUTES y REFRESH_TOKEN_DAYS
+SIMPLE_JWT = {
+    **SIMPLE_JWT,  # noqa: F405
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
