@@ -17,6 +17,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
 from core.permissions import EsAdministrador
+from core.throttling import LimiteDeIntentosMixin
 from core.roles import ROL_ADMINISTRADOR, ROL_ESTUDIANTE, ROL_PROFESOR, obtener_persona_y_rol
 
 
@@ -27,7 +28,9 @@ class UsuarioCreateView(generics.CreateAPIView):
     permission_classes = [EsAdministrador]
     serializer_class = UsuarioSerializer
 
-class DNITokenObtainPairView(TokenObtainPairView):
+class DNITokenObtainPairView(LimiteDeIntentosMixin, TokenObtainPairView):
+    throttle_scope = 'login'
+    throttle_identificador = ('dni', 'login_dni')
     serializer_class = DNITokenObtainPairSerializer
 
 class RolViewSet(viewsets.ModelViewSet):
@@ -198,13 +201,15 @@ class CambiarPasswordPrimerIngresoView(APIView):
         return Response({'mensaje': 'Contraseña actualizada con éxito.'},status=status.HTTP_200_OK)
 
 
-class SolicitarRecuperacionPasswordView(APIView):
+class SolicitarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
     """
     Recibe el email registrado al crear la persona y envia token seguro
     """
 
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
+    throttle_scope = 'recuperacion'
+    throttle_identificador = ('email', 'recuperacion_email')
 
     def post(self, request):
         email = request.data.get('email', '').strip().lower()
@@ -244,10 +249,11 @@ class SolicitarRecuperacionPasswordView(APIView):
             status=status.HTTP_200_OK
         )
 
-class ConfirmarRecuperacionPasswordView(APIView):
+class ConfirmarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
     """Valida el token de un solo uso recibido por email y actualiza la contraseña."""
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_scope = 'recuperacion_confirmar'
 
     def post(self, request):
         uidb64 = request.data.get('uid')

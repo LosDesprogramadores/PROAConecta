@@ -32,3 +32,16 @@ EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 DISCORD_WEBHOOK_URL = None
 MONGO_URI = 'mongodb://localhost:27017'
 MONGO_DB_NAME = 'proa_test'
+
+# Throttling: tasas altas para que las suites de autenticación no se bloqueen entre sí.
+# Los tests de límites las reemplazan por tasas bajas (usuario/tests/test_throttling.py)
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '10000/min',
+        'recuperacion': '10000/hour',
+        'recuperacion_confirmar': '10000/hour',
+        'login_dni': '10000/hour',
+        'recuperacion_email': '10000/hour',
+    },
+}

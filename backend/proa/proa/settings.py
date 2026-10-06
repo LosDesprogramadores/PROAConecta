@@ -88,6 +88,19 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Throttling (core/throttling.py). Con más de un worker de uvicorn el contador debe vivir en Redis
+    # (REDIS_URL): con la caché en memoria cada proceso cuenta por separado y el límite se multiplica.
+    # Cantidad de proxies de confianza delante de la app (solo nginx): DRF toma la IP que ese proxy agregó
+    # al final de X-Forwarded-For y no los valores que envía el cliente. nginx debe PISAR la cabecera.
+    'NUM_PROXIES': int(os.getenv('NUM_PROXIES', '1')),
+    # Por IP (login, recuperacion, recuperacion_confirmar) y por cuenta (login_dni, recuperacion_email)
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '5/min',
+        'recuperacion': '3/hour',
+        'recuperacion_confirmar': '5/hour',
+        'login_dni': '10/hour',
+        'recuperacion_email': '3/hour',
+    },
 }
 
 SPECTACULAR_SETTINGS = {
