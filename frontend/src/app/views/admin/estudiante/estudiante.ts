@@ -245,7 +245,7 @@ cancelarEliminacion(): void {
     if (!estudiante || ids.length === 0) return;
 
     this.materiaService.inscribirEstudianteEnMaterias(estudiante.id, ids).subscribe({
-      next: (res) => {
+      next: () => {
         this.toastService.success(`Se inscribió a ${estudiante.nombre} en ${ids.length} materias.`);
         this.cerrarModalInscribir();
       },
@@ -292,7 +292,7 @@ desinscribirMateria(materia: any) {
       );
      this.toastService.success("Se ha desinscrito al estudiante.");
     },
-    error: (err) => {
+    error: () => {
       this.toastService.error("No se pudo desinscribir al estudiante tiene datos cargados en la materia.");
     }
   });

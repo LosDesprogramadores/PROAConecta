@@ -148,7 +148,7 @@ export class Profesor implements OnInit {
       };
 
       this.profesorService.crearProfesores(nuevoProfesor).subscribe({
-        next: (res: Persona) => {
+        next: () => {
           this.toastService.success("Profesor se creo correctamente.")
           // Jump to the last page: that is where the new row appears.
           this.cargarProfesores(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
@@ -172,7 +172,7 @@ export class Profesor implements OnInit {
     this.materiasProfesorSeleccionado.set([]);
 
     this.profesorService.eliminarProfesor(id).subscribe({
-      next: (res) => {
+      next: () => {
         this.toastService.success("Profesor eliminado correctamente.");
         this.cargarProfesores();
         this.closeModal();
@@ -243,7 +243,7 @@ export class Profesor implements OnInit {
 
     if (!profesor || ids.length === 0) return;
     this.materiaService.asignarProfesorAMaterias(profesor.id, ids).subscribe({
-      next: (res) => {
+      next: () => {
         this.toastService.success("Las materias si asignaron correctamente")
         this.cerrarModalAsignar();
 

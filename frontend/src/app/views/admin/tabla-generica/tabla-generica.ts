@@ -16,34 +16,34 @@ import { ExportarListado } from '../../../shared/exportar-listado/exportar-lista
 export class TablaGenerica {
   @Input({ required: true }) columnas: IColumnaTabla[] = [];
   @Input({ required: true }) datos: any[] = [];
-  @Input() titulo: string = '';
-  @Input() mensajeVacio: string = 'No hay registros para mostrar.';
-  @Input() mostrarAcciones: boolean = true;
+  @Input() titulo = '';
+  @Input() mensajeVacio = 'No hay registros para mostrar.';
+  @Input() mostrarAcciones = true;
 
   /** Export endpoint. When empty (default) the export buttons are not shown. */
-  @Input() exportarUrl: string = '';
+  @Input() exportarUrl = '';
   @Input() exportarParams: ParametrosDescarga = {};
-  @Input() exportarRecurso: string = 'listado';
+  @Input() exportarRecurso = 'listado';
 
   /**
    * Server-side pagination. When `totalRegistros` is null (default) the table renders every row in
    * `datos` and shows no pager, as before.
    */
   @Input() totalRegistros: number | null = null;
-  @Input() paginaActual: number = 1;
-  @Input() tamanoPagina: number = 50;
-  onPaginaCambiada = output<number>();
+  @Input() paginaActual = 1;
+  @Input() tamanoPagina = 50;
+  paginaCambiada = output<number>();
 
-  @Input() modalTitulo: string = '¿Estás seguro?';
-  @Input() modalMensaje: string = 'Esta acción eliminará el registro seleccionado de forma permanente.';
-  @Input() modalBotonTexto: string = 'Sí, eliminar';
+  @Input() modalTitulo = '¿Estás seguro?';
+  @Input() modalMensaje = 'Esta acción eliminará el registro seleccionado de forma permanente.';
+  @Input() modalBotonTexto = 'Sí, eliminar';
 
   isLoading = input<boolean>(false);
   
   isDeleteModalOpen = signal<boolean>(false);
   filaSeleccionada = signal<any | null>(null);
 
-  onEliminar = output<any>();
+  eliminar = output<any>();
 
   obtenerValor(fila: any, campo: string): any {
     if (!campo) return '';
@@ -63,7 +63,7 @@ export class TablaGenerica {
   confirmarEliminacion() {
     const fila = this.filaSeleccionada();
     if (fila) {
-      this.onEliminar.emit(fila);
+      this.eliminar.emit(fila);
     }
     this.cancelarEliminacion();
   }

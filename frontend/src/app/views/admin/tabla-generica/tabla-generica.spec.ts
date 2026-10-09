@@ -47,7 +47,7 @@ describe('TablaGenerica', () => {
 
   it('shows the pager with the page info and emits the requested page', async () => {
     const paginas: number[] = [];
-    component.onPaginaCambiada.subscribe((p) => paginas.push(p));
+    component.paginaCambiada.subscribe((p) => paginas.push(p));
     component.totalRegistros = 120;
     component.paginaActual = 2;
     component.tamanoPagina = 50;

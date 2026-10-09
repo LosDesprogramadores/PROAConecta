@@ -16,7 +16,7 @@ export class ProximasEntregas implements OnInit {
   private actividadesService = inject(ActividadesService);
 
   // Título sobre el calendario. Si se pasa vacío (""), no se muestra.
-  @Input() titulo: string = 'Próximas entregas';
+  @Input() titulo = 'Próximas entregas';
 
   // Opcional: si se pasa, solo muestra las entregas de esa materia.
   // Si no se pasa (como en el welcome del estudiante), muestra todas.

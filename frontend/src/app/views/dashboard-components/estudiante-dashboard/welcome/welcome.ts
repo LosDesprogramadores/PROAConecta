@@ -1,6 +1,5 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { Informacion } from '../informacion/informacion';
 import { Materias } from '../../materias/materias';
@@ -14,7 +13,7 @@ import { AnunciosResumen } from '../anuncios-resumen/anuncios-resumen';
   templateUrl: './welcome.html',
   styleUrls: ['./welcome.css'],
 })
-export class Welcome implements OnInit {
+export class Welcome {
 
   constructor(private readonly authService: AuthService) {}
 
@@ -22,8 +21,5 @@ export class Welcome implements OnInit {
     const persona = this.authService.currentUser()?.persona;
     return persona ? `${persona.nombre} ${persona.apellido}` : 'Usuario';
   });
-
-  ngOnInit(): void {
-  }
 
 }
