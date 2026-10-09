@@ -44,6 +44,8 @@ if not _hsts.isdigit():
 SECURE_HSTS_SECONDS = int(_hsts)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
 SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', '').strip().lower() in ('1', 'true', 'yes')
+# El healthcheck interno (compose/orquestador) llega por http sin X-Forwarded-Proto: no se redirige
+SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
 
 if not REDIS_URL:  # noqa: F405
     # La caché local y el channel layer en memoria no se comparten entre workers

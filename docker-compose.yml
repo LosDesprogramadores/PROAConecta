@@ -84,6 +84,13 @@ services:
       redis:
         condition: service_healthy
     command: sh -c "python manage.py migrate --noinput && uvicorn proa.asgi:application --host 0.0.0.0 --port 8000"
+    # La imagen no trae curl: se usa python. urlopen lanza error con 4xx/5xx, así que un 503 (PostgreSQL caído) falla
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health/', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 60s
     develop:
       watch:
         # Requiere Docker Compose >= 2.23 para sync+restart; el hot reload se reemplazó por un reinicio en cada cambio
@@ -105,7 +112,8 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
     develop:
       watch:
