@@ -1,6 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, DestroyRef, Input, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
@@ -16,7 +15,7 @@ import { UserRole } from '../../../core/auth/auth.model';
 @Component({
   selector: 'app-portada',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
+  imports: [RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
   templateUrl: './portada.html',
   styleUrls: ['./portada.css'],
 })

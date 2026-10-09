@@ -33,7 +33,7 @@ module.exports = defineConfig([
       '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/no-inferrable-types': 'error',
       '@typescript-eslint/no-empty-function': 'error',
-      '@angular-eslint/prefer-inject': 'warn',
+      '@angular-eslint/prefer-inject': 'error',
       '@angular-eslint/no-output-on-prefix': 'error',
       '@angular-eslint/no-empty-lifecycle-method': 'error',
       '@angular-eslint/use-lifecycle-interface': 'error',
@@ -43,7 +43,7 @@ module.exports = defineConfig([
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {
-      '@angular-eslint/template/prefer-control-flow': 'warn',
+      '@angular-eslint/template/prefer-control-flow': 'error',
       '@angular-eslint/template/alt-text': 'error',
       '@angular-eslint/template/click-events-have-key-events': 'error',
       '@angular-eslint/template/elements-content': 'error',

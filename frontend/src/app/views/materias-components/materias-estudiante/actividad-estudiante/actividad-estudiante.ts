@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -14,7 +13,7 @@ export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
 @Component({
   selector: 'app-actividad-estudiante',
   standalone: true,
-  imports: [Modal, CommonModule, RouterModule, ReactiveFormsModule, ArchivoProtegidoDirective],
+  imports: [Modal, RouterModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './actividad-estudiante.html',
   styleUrl: './actividad-estudiante.css',
 })

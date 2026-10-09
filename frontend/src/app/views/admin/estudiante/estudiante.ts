@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -21,7 +20,7 @@ const TAMANO_PAGINA = 20;
 
 @Component({
   selector: 'app-estudiante',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica, ExportarListado, Paginador],
+  imports: [Modal, ReactiveFormsModule, RouterModule, TablaGenerica, ExportarListado, Paginador],
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })

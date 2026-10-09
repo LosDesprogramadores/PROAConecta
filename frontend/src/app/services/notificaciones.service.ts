@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -11,9 +11,9 @@ import { ConsultaPaginada } from '../core/models/api-response.interface';
   providedIn: 'root'
 })
 export class NotificacionService {
-  private readonly apiUrl = `${environment.apiUrl}notificaciones/`;
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  private readonly apiUrl = `${environment.apiUrl}notificaciones/`;
 
   obtenerNotificaciones(): Observable<INotificacion[]> {
     return this.http.get<INotificacion[]>(this.apiUrl);

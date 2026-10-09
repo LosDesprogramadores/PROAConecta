@@ -1,5 +1,4 @@
 import { Component, Input, OnInit, SimpleChanges, inject, signal, OnChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -14,7 +13,7 @@ import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegi
 @Component({
   selector: 'app-recursos-clase',
   standalone: true,
-  imports: [Modal, CommonModule, ReactiveFormsModule, ArchivoProtegidoDirective],
+  imports: [Modal, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })

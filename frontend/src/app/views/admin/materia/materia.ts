@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { filter, switchMap } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IMateria } from '../../../model/materia.model';
@@ -12,13 +11,12 @@ import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { Paginador } from '../../../shared/paginador/paginador';
 
-
 const TAMANO_PAGINA = 20;
 
 @Component( {
   selector: 'app-materia',
   standalone: true,
-  imports: [ Modal, CommonModule, ReactiveFormsModule, ExportarListado, Paginador ],
+  imports: [Modal, ReactiveFormsModule, ExportarListado, Paginador],
   templateUrl: './materia.html'
 } )
 export class Materia implements OnInit {

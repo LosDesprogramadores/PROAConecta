@@ -12,6 +12,8 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
   styleUrl: './notificacion.css',
 })
 export class Notificacion implements OnInit {
+  private notificacionService = inject(NotificacionService);
+
   notificaciones: INotificacion[] = [];
   cargando = true;
 
@@ -36,7 +38,7 @@ export class Notificacion implements OnInit {
     fecha_hasta: ['', Validators.required],
   });
 
-  constructor(private notificacionService: NotificacionService) {
+  constructor() {
     this.destroyRef.onDestroy(() => {
       if (this.timerMensaje) clearTimeout(this.timerMensaje);
     });

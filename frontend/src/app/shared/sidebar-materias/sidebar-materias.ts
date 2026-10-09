@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
@@ -11,17 +11,15 @@ import { UserRole } from '../../core/auth/auth.model';
   styleUrl: './sidebar-materias.css',
 })
 export class SidebarMaterias implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private authService = inject(AuthService);
+
   materiaId: string | null = null;
 
   links: { label: string; path: string; queryParams?: Record<string, string> }[] = [];
 
   areaPersonalPath = '';
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private authService: AuthService,
-  ) {}
 
   ngOnInit(): void {
     this.materiaId =

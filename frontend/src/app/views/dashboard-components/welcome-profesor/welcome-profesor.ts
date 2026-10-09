@@ -1,5 +1,5 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
+
 import { RouterLink } from '@angular/router';
 
 import { MateriaService } from '../../../services/materia.service';
@@ -18,11 +18,15 @@ export interface MateriasProfesor extends IMateria {
 @Component({
   selector: 'app-welcome-profesor',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink],
   templateUrl: './welcome-profesor.html',
   styleUrls: ['./welcome-profesor.css'],
 })
 export class WelcomeProfesor implements OnInit {
+  private readonly materiaService = inject(MateriaService);
+  private readonly actividadesService = inject(ActividadesService);
+  private readonly authService = inject(AuthService);
+
   // Señales exclusivas para profesor
   materiasProfesor = signal<MateriasProfesor[]>([]);
   actividadesActivas = signal<number>(0);
@@ -53,12 +57,6 @@ export class WelcomeProfesor implements OnInit {
   error = signal<string | null>(null);
 
   filtroMaterias = signal<'todas' | 'en-progreso' | 'finalizadas' | 'favoritas'>('todas');
-
-  constructor(
-    private readonly materiaService: MateriaService,
-    private readonly actividadesService: ActividadesService,
-    private readonly authService: AuthService,
-  ) {}
 
   // === COMPUTED SIGNALS ===
 

@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ToastService } from '../../../../services/toast.service';
 import { MaterialesService } from '../../../../services/materiales.service';
@@ -11,7 +10,7 @@ import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegi
 @Component({
   selector: 'app-material-estudiante',
   standalone: true,
-  imports: [Modal, CommonModule, ArchivoProtegidoDirective],
+  imports: [Modal, ArchivoProtegidoDirective],
   templateUrl: './material-estudiante.html',
   styleUrl: './material-estudiante.css',
 })
