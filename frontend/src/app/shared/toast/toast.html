@@ -21,7 +21,7 @@
               'bg-emerald-500': toast.tipo === 'exito',
               'bg-rose-500': toast.tipo === 'error',
               'bg-amber-500': toast.tipo === 'atención',
-              'bg-[#155dfc]': toast.tipo === 'información'
+              'bg-primary': toast.tipo === 'información'
             }">
           </div>
 
@@ -33,7 +33,7 @@
                 'bg-emerald-50 border-emerald-200 text-emerald-600': toast.tipo === 'exito',
                 'bg-rose-50 border-rose-200 text-rose-600': toast.tipo === 'error',
                 'bg-amber-50 border-amber-200 text-amber-600': toast.tipo === 'atención',
-                'bg-blue-50 border-blue-200 text-[#155dfc]': toast.tipo === 'información'
+                'bg-blue-50 border-blue-200 text-primary': toast.tipo === 'información'
               }">
               @switch (toast.tipo) {
                 @case ('exito') {
@@ -103,7 +103,7 @@
                   'bg-emerald-500': toast.tipo === 'exito',
                   'bg-rose-500': toast.tipo === 'error',
                   'bg-amber-500': toast.tipo === 'atención',
-                  'bg-[#155dfc]': toast.tipo === 'información'
+                  'bg-primary': toast.tipo === 'información'
                 }">
               </div>
             </div>

@@ -34,7 +34,7 @@
           type="button"
           (click)="dialogo.responder(true)"
           class="px-4 py-2 text-sm font-semibold text-white rounded-xl cursor-pointer"
-          [class]="dialogo.peligro === false ? 'bg-[#155dfc] hover:bg-[#114cc9]' : 'bg-rose-600 hover:bg-rose-700'"
+          [class]="dialogo.peligro === false ? 'bg-primary hover:bg-primary-hover' : 'bg-rose-600 hover:bg-rose-700'"
         >
           {{ dialogo.textoConfirmar ?? 'Confirmar' }}
         </button>
