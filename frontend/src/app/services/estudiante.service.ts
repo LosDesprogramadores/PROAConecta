@@ -3,6 +3,7 @@ import { Observable } from "rxjs";
 import { IPersona, Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";
 import { MateriaService } from "./materia.service";
+import { IMateria } from "../model/materia.model";
 import { ConsultaPaginada, RespuestaPaginada } from "../core/models/api-response.interface";
 
 
@@ -40,7 +41,7 @@ eliminarEstudiante(id: number): Observable<void> {
   return this.personaService.eliminarPersona(id);       
 }
 
-obtenerMateriasEstudiante(estudianteId: number): Observable<any[]> {
+obtenerMateriasEstudiante(estudianteId: number): Observable<IMateria[]> {
   return this.materiaService.obteberMateriasPorEstudiante(estudianteId);  
   }
 

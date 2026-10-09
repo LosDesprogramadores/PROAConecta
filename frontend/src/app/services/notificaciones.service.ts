@@ -3,8 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { INotificacion, RespuestaNotificaciones } from '../model/notificacion.model';
-import { ConsultaPaginada } from '../core/models/api-response.interface';
+import { INotificacion, NotificacionEntrada, RespuestaNotificacionCreada, RespuestaNotificaciones } from '../model/notificacion.model';
+import { ConsultaPaginada, RespuestaDetalle } from '../core/models/api-response.interface';
 
 
 @Injectable({
@@ -29,15 +29,15 @@ export class NotificacionService {
     return this.http.post<{ id: string; leida: boolean }>(`${this.apiUrl}${id}/leer/`, {});
   }
 
-  crearNotificacion(data: { titulo: string; mensaje: string; tipo_notificacion_codigo: string; alcance: string }): Observable<any> {
-    return this.http.post(this.apiUrl, data);
+  crearNotificacion(data: NotificacionEntrada): Observable<RespuestaNotificacionCreada> {
+    return this.http.post<RespuestaNotificacionCreada>(this.apiUrl, data);
   }
 
-  actualizarNotificacion(id: string, data: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}${id}/`, data);
+  actualizarNotificacion(id: string, data: NotificacionEntrada): Observable<RespuestaDetalle> {
+    return this.http.put<RespuestaDetalle>(`${this.apiUrl}${id}/`, data);
   }
 
-  eliminarNotificacion(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}${id}/`);
+  eliminarNotificacion(id: string): Observable<RespuestaDetalle> {
+    return this.http.delete<RespuestaDetalle>(`${this.apiUrl}${id}/`);
   }
 }

@@ -3,6 +3,7 @@ import { Observable } from "rxjs/internal/Observable";
 import { IPersona, Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";
 import { MateriaService } from "./materia.service";
+import { RespuestaAsignacionProfesor } from "../model/materia.model";
 import { ConsultaPaginada, RespuestaPaginada } from "../core/models/api-response.interface";
 
 @Injectable({
@@ -31,14 +32,14 @@ crearProfesores(nuevoProfesor:IPersona):Observable<Persona>{
 
 }
 
-asignarMateriasAProfesor(profesorId: number, materiaIds: number[]): Observable<any> {
+asignarMateriasAProfesor(profesorId: number, materiaIds: number[]): Observable<RespuestaAsignacionProfesor> {
     return this.materiaService.asignarProfesorAMaterias(profesorId, materiaIds);
   }
  actualizarProfesor(profesorId: number, profesorData: IPersona): Observable<Persona> {
     return this.personaService.actualizarPersona(profesorId, profesorData);
   } 
 
-eliminarProfesor(profesorId: number): Observable<any> {
+eliminarProfesor(profesorId: number): Observable<void> {
     return this.personaService.eliminarPersona(profesorId); 
   }
 

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Actividad } from '../model/actividad-model';
+import { Actividad, ActividadPayload } from '../model/actividad-model';
 
 export interface NotaEntrega {
   id: number;
@@ -53,16 +53,16 @@ export class ActividadesService {
     return this.http.get<Actividad>(`${this.apiUrl}/${id}/`);
   }
 
-  crearActividad(datos: any): Observable<Actividad> {
+  crearActividad(datos: ActividadPayload): Observable<Actividad> {
     return this.http.post<Actividad>(`${this.apiUrl}/`, datos);
   }
 
-  updateActividad(id: number, datos: any): Observable<Actividad> {
+  updateActividad(id: number, datos: Partial<ActividadPayload>): Observable<Actividad> {
     return this.http.put<Actividad>(`${this.apiUrl}/${id}/`, datos);
   }
 
-  eliminarActividad(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}/`);
+  eliminarActividad(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/`);
   }
 
   // ===== Entregas y calificaciones =====
@@ -74,8 +74,8 @@ export class ActividadesService {
   calificarEntregaIndividual(
     entregaId: number,
     datos: CalificacionPayload
-  ): Observable<any> {
-    return this.http.post<any>(
+  ): Observable<NotaEntrega> {
+    return this.http.post<NotaEntrega>(
       `${this.entregasUrl}/${entregaId}/calificar/`,
       datos
     );
@@ -83,9 +83,9 @@ export class ActividadesService {
 
   calificarEstudianteEnActividad(
     actividadId: number,
-    datos: CalificacionPayload & { estudiante: number }
-  ): Observable<any> {
-    return this.http.post(
+    datos: CalificacionPayload & { estudiante_id: number }
+  ): Observable<NotaEntrega> {
+    return this.http.post<NotaEntrega>(
       `${this.apiUrl}/${actividadId}/calificar-estudiante/`,
       datos
     );
@@ -94,12 +94,12 @@ export class ActividadesService {
   // Agregar dentro de ActividadesService:
 
   // Crear o enviar entrega
-  crearEntrega(datos: FormData | any): Observable<Entrega> {
+  crearEntrega(datos: FormData): Observable<Entrega> {
     return this.http.post<Entrega>(`${this.entregasUrl}/`, datos);
   }
 
   // Editar entrega existente
-  actualizarEntrega(entregaId: number, datos: FormData | any): Observable<Entrega> {
+  actualizarEntrega(entregaId: number, datos: FormData): Observable<Entrega> {
     return this.http.put<Entrega>(`${this.entregasUrl}/${entregaId}/`, datos);
   }
 

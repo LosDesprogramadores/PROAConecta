@@ -91,15 +91,15 @@ export class ToastService {
    * Returns a user-safe Spanish message for an error. It never returns a raw
    * server body (HTML, traceback): technical detail only goes to the console in dev.
    */
-  readable_message_extraction(err: any): string {
+  readable_message_extraction(err: unknown): string {
     if (isDevMode()) {
       console.error('[ToastService] error técnico:', err);
     }
 
-    const status = err instanceof HttpErrorResponse ? err.status : undefined;
-    if (status === undefined) {
+    if (!(err instanceof HttpErrorResponse)) {
       return MENSAJE_INESPERADO;
     }
+    const status = err.status;
     if (status >= 500) {
       return MENSAJES_POR_ESTADO[500];
     }

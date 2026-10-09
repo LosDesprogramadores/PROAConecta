@@ -16,3 +16,15 @@ export interface Actividad {
     fecha_creacion: string;
     fecha_baja: string | null;
 }
+
+/** Writable fields of ActividadSerializer (POST/PUT `/api/actividades/`). */
+export interface ActividadPayload {
+  materia: number;
+  unidad?: number | null;
+  titulo: string;
+  descripcion?: string | null;
+  enlace?: string | null;
+  fecha_limite: string;
+  permitir_entrega_tardia?: boolean;
+  estado?: Actividad['estado'];
+}

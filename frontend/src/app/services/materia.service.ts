@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EstadoInscripcion, IAlumnoMateria, IMateria } from '../model/materia.model';
+import { EstadoInscripcion, IAlumnoMateria, IMateria, RespuestaAsignacionProfesor, RespuestaInscripcionLote } from '../model/materia.model';
 import { environment } from '../../environments/environment';
-import { ConsultaPaginada, RespuestaPaginada } from '../core/models/api-response.interface';
+import { ConsultaPaginada, RespuestaDetalle, RespuestaMensaje, RespuestaPaginada } from '../core/models/api-response.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -41,8 +41,8 @@ export class MateriaService {
     return this.http.delete<void>(`${this.baseUrl}${id}/`);
   }
 
-  asignarProfesorAMaterias(profesorId: number, materiaIds: number[]): Observable<any> {
-    return this.http.post(`${this.baseUrl}asignar-profesor/`, {
+  asignarProfesorAMaterias(profesorId: number, materiaIds: number[]): Observable<RespuestaAsignacionProfesor> {
+    return this.http.post<RespuestaAsignacionProfesor>(`${this.baseUrl}asignar-profesor/`, {
       profesor_id: profesorId,
       materia_ids: materiaIds,
     });
@@ -67,19 +67,19 @@ export class MateriaService {
    * La nueva lógica de inscripciones se encuentra en
    * InscripcionesService.
    */
-  inscribirEstudianteEnMaterias(estudianteId: number, materiaIds: number[]): Observable<any> {
-    return this.http.post(`${environment.apiUrl}inscripciones/inscribir/`, {
+  inscribirEstudianteEnMaterias(estudianteId: number, materiaIds: number[]): Observable<RespuestaInscripcionLote> {
+    return this.http.post<RespuestaInscripcionLote>(`${environment.apiUrl}inscripciones/inscribir/`, {
       estudiante_id: estudianteId,
       materia_ids: materiaIds,
     });
   }
 
-  desasignarProfesor(materiaId: number): Observable<any> {
-    return this.http.patch<void>(`${this.baseUrl}${materiaId}/desasignar-profesor/`, {});
+  desasignarProfesor(materiaId: number): Observable<RespuestaDetalle> {
+    return this.http.patch<RespuestaDetalle>(`${this.baseUrl}${materiaId}/desasignar-profesor/`, {});
   }
 
-  desinscribirEstudiante(estudianteId: number, materiaId: number): Observable<any> {
-    return this.http.post(`${environment.apiUrl}inscripciones/desinscribir/`, {
+  desinscribirEstudiante(estudianteId: number, materiaId: number): Observable<RespuestaMensaje> {
+    return this.http.post<RespuestaMensaje>(`${environment.apiUrl}inscripciones/desinscribir/`, {
       estudiante_id: estudianteId,
       materia_id: materiaId
     });

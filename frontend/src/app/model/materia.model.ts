@@ -49,3 +49,17 @@ export interface IAlumnoMateria {
   estado: EstadoInscripcion;
   fecha_inscripcion: string;
 }
+
+/** Body of POST /api/materias/asignar-profesor/ (AsignarProfesorSerializer answer). */
+export interface RespuestaAsignacionProfesor {
+  mensaje: string;
+  profesor_id: number;
+  materia_ids: number[];
+}
+
+/** Body of POST /api/inscripciones/inscribir/ (InscripcionViewSet.inscribir_lote). */
+export interface RespuestaInscripcionLote {
+  mensaje: string;
+  estudiante_id: number;
+  cantidad: number;
+}

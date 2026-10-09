@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { NotificacionService } from '../../../services/notificaciones.service';
-import { INotificacion } from '../../../model/notificacion.model';
+import { INotificacion, NotificacionEntrada } from '../../../model/notificacion.model';
 import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -71,15 +71,14 @@ guardarNotificacion(): void {
     }
 
     const valores = this.formulario.getRawValue();
-    const notificacionData = {
+    const notificacionData: NotificacionEntrada = {
       ...valores,
       fecha_desde: valores.fecha_desde.trim() !== '' ? valores.fecha_desde : null,
       fecha_hasta: valores.fecha_hasta.trim() !== '' ? valores.fecha_hasta : null,
-      leida: false
     };
 
     if (this.editandoId) {
-      this.notificacionService.actualizarNotificacion(this.editandoId, notificacionData as any).subscribe({
+      this.notificacionService.actualizarNotificacion(this.editandoId, notificacionData).subscribe({
         next: () => {
           this.mostrarExito('Notificación actualizada con éxito.');
           this.cancelarEdicion();
@@ -91,7 +90,7 @@ guardarNotificacion(): void {
         }
       });
     } else {
-      this.notificacionService.crearNotificacion(notificacionData as any).subscribe({
+      this.notificacionService.crearNotificacion(notificacionData).subscribe({
         next: () => {
           this.mostrarExito('Notificación global creada con éxito.');
           this.limpiarFormulario();
