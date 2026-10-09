@@ -256,6 +256,7 @@ class PersonaRolView(APIView):
 
 class PerfilUsuarioView(APIView):
     permission_classes = [IsAuthenticated]
+    permite_clave_provisoria = True
 
     def get(self, request):
         usuario = request.user
@@ -294,6 +295,7 @@ class CambiarPasswordPrimerIngresoView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated]
+    permite_clave_provisoria = True
 
     @extend_schema(
         request=inline_serializer('CambiarPasswordPrimerIngreso', {

@@ -10,7 +10,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: process.env.CI ? 1 : 2,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
+  // A test that only passes on retry is flaky: it fails the run in CI instead of hiding behind the retry
+  failOnFlakyTests: !!process.env.CI,
   timeout: 30_000,
   expect: { timeout: 10_000 },
   reporter: process.env.CI
