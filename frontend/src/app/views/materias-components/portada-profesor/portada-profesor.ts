@@ -1,6 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, DestroyRef, Input, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -20,7 +19,7 @@ import { Modal } from '../../../shared/modal/modal';
 @Component({
   selector: 'app-portada-profesor',
   standalone: true,
-  imports: [Modal, CommonModule, RouterModule, ReactiveFormsModule, UnidadesMaterial, ProximasEntregas],
+  imports: [Modal, RouterModule, ReactiveFormsModule, UnidadesMaterial, ProximasEntregas],
   templateUrl: './portada-profesor.html',
   styleUrls: ['./portada-profesor.css'],
 })

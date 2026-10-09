@@ -1,5 +1,4 @@
 import { Component, input, Input, output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Modal } from '../../../shared/modal/modal';
 import { IColumnaTabla } from '../../../model/tabla.model';
 import { ParametrosDescarga } from '../../../core/http/file-download';
@@ -9,7 +8,7 @@ import { ExportarListado } from '../../../shared/exportar-listado/exportar-lista
 @Component({
   selector: 'app-tabla-generica',
   standalone: true,
-  imports: [CommonModule, Modal, ExportarListado, Paginador],
+  imports: [Modal, ExportarListado, Paginador],
   templateUrl: './tabla-generica.html',
   styleUrl: './tabla-generica.css',
 })

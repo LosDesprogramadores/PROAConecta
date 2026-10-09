@@ -16,7 +16,7 @@
           </span>
         </a>
 
-        <div class="hidden lg:flex items-center gap-2">
+        <div class="hidden lg:flex items-center gap-2" data-testid="nav-secciones-escritorio">
           @if (!isMateriaRoute()) {
             @for (link of navLinksAdmi; track link.path) {
               <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
@@ -113,7 +113,8 @@
           <div class="relative">
             <button type="button" id="notifications-button" (click)="toggleNotifications()"
               class="relative p-2 rounded-full text-slate-600 hover:text-slate-900 hover:bg-white/50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              title="Notificaciones">
+              title="Notificaciones"
+              [attr.aria-label]="unreadCount() > 0 ? 'Notificaciones, ' + unreadCount() + ' sin leer' : 'Notificaciones'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
@@ -378,4 +379,3 @@
 </app-modal>
 }
 
-<app-toast></app-toast>

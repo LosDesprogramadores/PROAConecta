@@ -1,5 +1,4 @@
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MateriaPortada } from '../../../../model/unidad-contenido.model';
@@ -13,7 +12,7 @@ import { UserRole } from '../../../../core/auth/auth.model';
 @Component({
   selector: 'app-portada-estudiante',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
+  imports: [RouterModule, FormsModule, UnidadesMaterial, RecursosClaseComponent],
   templateUrl: './portada-estudiante.html',
   styleUrls: ['./portada-estudiante.css'],
 })

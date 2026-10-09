@@ -1,5 +1,5 @@
 <!-- Componente global de Toasts -->
-<app-toast></app-toast>
+
 
 <section class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
 
@@ -291,7 +291,7 @@
 
                 <!-- CAMPO ARCHIVO -->
                 <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase">
+                    <label for="entrega-archivo" class="block text-xs font-bold text-slate-700 uppercase">
                         Adjuntar Archivo
                     </label>
 
@@ -328,7 +328,7 @@
 
                     <!-- INPUT DE SUBIDA CON RESTRICCIÓN DE EXTENSIONES (accept) -->
                     <div>
-                        <input type="file" (change)="onArchivoSeleccionado($event)"
+                        <input id="entrega-archivo" type="file" (change)="onArchivoSeleccionado($event)"
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg" class="flex items-center w-full text-xs text-slate-500 border border-slate-200 rounded-xl p-1.5 px-3
                                 file:mr-4 file:my-auto file:py-1.5 file:px-3.5 file:rounded-lg file:border-0 
                                 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary 

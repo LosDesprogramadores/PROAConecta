@@ -108,7 +108,7 @@ describe('Modal', () => {
     await abrir();
     dialogos()[0].click();
     expect(host.cierres).toBe(0);
-    (dialogos()[0].parentElement as HTMLElement).click();
+    dom().querySelector<HTMLElement>('[data-testid=modal-fondo]')!.click();
     expect(host.cierres).toBe(1);
 
     await abrir();
@@ -119,7 +119,7 @@ describe('Modal', () => {
   it('ignores the backdrop when cerrarAlClickFuera is false', async () => {
     host.clickFuera.set(false);
     await abrir();
-    (dialogos()[0].parentElement as HTMLElement).click();
+    dom().querySelector<HTMLElement>('[data-testid=modal-fondo]')!.click();
     expect(host.cierres).toBe(0);
   });
 

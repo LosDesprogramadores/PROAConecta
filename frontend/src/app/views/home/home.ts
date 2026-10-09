@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -13,7 +12,7 @@ interface Feature {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

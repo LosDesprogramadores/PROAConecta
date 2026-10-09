@@ -28,8 +28,8 @@
 
     <!-- TÍTULO -->
     <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-1">Título de la actividad *</label>
-      <input
+      <label for="act-titulo" class="block text-sm font-semibold text-slate-700 mb-1">Título de la actividad *</label>
+      <input id="act-titulo"
         type="text"
         formControlName="titulo"
         placeholder="Ej: Templo de bases de datos o Práctica Unidad 1"
@@ -42,7 +42,7 @@
     <!-- MATERIA: solo al crear desde el dashboard general -->
     @if (mostrarSelectorMateria()) {
       <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Materia *</label>
+        <label for="act-materia" class="block text-sm font-semibold text-slate-700 mb-1">Materia *</label>
 
         @if (cargandoMaterias()) {
           <p class="text-sm text-slate-500">Cargando tus materias...</p>
@@ -51,7 +51,7 @@
             No tenés materias asignadas. Pedile a un administrador que te asigne una para poder crear actividades.
           </p>
         } @else {
-          <select
+          <select id="act-materia"
             formControlName="materia"
             class="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm bg-white">
             <option [ngValue]="null" disabled>Elegí una materia</option>
@@ -68,8 +68,8 @@
 
     <!-- DESCRIPCIÓN -->
     <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-1">Descripción / Consignas</label>
-      <textarea
+      <label for="act-descripcion" class="block text-sm font-semibold text-slate-700 mb-1">Descripción / Consignas</label>
+      <textarea id="act-descripcion"
         rows="4"
         formControlName="descripcion"
         placeholder="Describí los detalles de la tarea..."
@@ -79,16 +79,16 @@
     <!-- FECHA LÍMITE Y ESTADO -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha y hora límite *</label>
-        <input
+        <label for="act-fecha-limite" class="block text-sm font-semibold text-slate-700 mb-1">Fecha y hora límite *</label>
+        <input id="act-fecha-limite"
           type="datetime-local"
           formControlName="fecha_limite"
           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm" />
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Estado</label>
-        <select
+        <label for="act-estado" class="block text-sm font-semibold text-slate-700 mb-1">Estado</label>
+        <select id="act-estado"
           formControlName="estado"
           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm bg-white">
           <option value="PUBLICADA">Publicada</option>
@@ -99,8 +99,8 @@
 
     <!-- ENLACE EXTERNO -->
     <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-1">Enlace de referencia (Opcional)</label>
-      <input
+      <label for="act-enlace" class="block text-sm font-semibold text-slate-700 mb-1">Enlace de referencia (Opcional)</label>
+      <input id="act-enlace"
         type="url"
         formControlName="enlace"
         placeholder="https://..."

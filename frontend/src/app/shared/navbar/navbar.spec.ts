@@ -87,6 +87,8 @@ describe('Navbar notifications (logged in)', () => {
 
     expect(fixture.componentInstance.unreadCount()).toBe(3);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Parcial');
+    expect((fixture.nativeElement as HTMLElement).querySelector('#notifications-button')!.getAttribute('aria-label'))
+      .toBe('Notificaciones, 3 sin leer');
   });
 
   it('raises the counter with a live notification and lowers it when marked as read', () => {
@@ -175,7 +177,7 @@ describe('Navbar section links inside a materia (desktop)', () => {
     http.match(() => true).forEach((req) => req.flush({ ...vacio, no_leidas: 0, no_leidos: 0 }));
     fixture.detectChanges();
     // The first "lg:flex" group is the desktop center nav; the mobile menu is a separate block
-    const escritorio = (fixture.nativeElement as HTMLElement).querySelector('header nav div.hidden.lg\\:flex');
+    const escritorio = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="nav-secciones-escritorio"]');
     return Array.from(escritorio!.querySelectorAll('a'));
   }
 

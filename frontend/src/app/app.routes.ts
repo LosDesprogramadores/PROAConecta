@@ -71,22 +71,22 @@ export const routes: Routes = [
     path: '',
     loadComponent: cargarMainLayout,
     children: [
-      { path: 'home', loadComponent: cargarHome },
+      { path: 'home', title: 'Inicio', loadComponent: cargarHome },
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ],
   },
   {
     path: 'login',
-    loadComponent: cargarLogin,
+    title: 'Ingresar', loadComponent: cargarLogin,
   },
   {
     path: 'cambiar-password',
     canActivate: [authGuard],
-    loadComponent: cargarCambiarPassword,
+    title: 'Cambiar contraseña', loadComponent: cargarCambiarPassword,
   },
   {
     path: 'restablecer-password',
-    loadComponent: cargarRestablecerPassword,
+    title: 'Restablecer contraseña', loadComponent: cargarRestablecerPassword,
   },
   {
     path: 'dashboard',
@@ -102,26 +102,26 @@ export const routes: Routes = [
         path: 'estudiante',
         canActivate: [soloEstudiante],
         children: [
-          { path: 'welcome', loadComponent: cargarWelcome },
-          { path: 'anuncios', loadComponent: cargarAnuncios },
-          { path: 'materias', loadComponent: cargarMaterias },
-          { path: 'contacto', loadComponent: cargarContacto },
+          { path: 'welcome', title: 'Inicio', loadComponent: cargarWelcome },
+          { path: 'anuncios', title: 'Anuncios', loadComponent: cargarAnuncios },
+          { path: 'materias', title: 'Mis materias', loadComponent: cargarMaterias },
+          { path: 'contacto', title: 'Contacto', loadComponent: cargarContacto },
         ],
       },
 
-      { path: 'welcome', canActivate: [soloProfesor], loadComponent: cargarWelcomeProfesor },
-      { path: 'actividades', canActivate: [soloProfesor], loadComponent: cargarActividadesDashboard },
+      { path: 'welcome', canActivate: [soloProfesor], title: 'Inicio', loadComponent: cargarWelcomeProfesor },
+      { path: 'actividades', canActivate: [soloProfesor], title: 'Actividades', loadComponent: cargarActividadesDashboard },
       // Static segments go before ':id', otherwise 'nueva' is captured as an id.
-      { path: 'actividades/nueva', canActivate: [soloProfesor], loadComponent: cargarActividadForm },
-      { path: 'actividades/editar/:id', canActivate: [soloProfesor], loadComponent: cargarActividadForm },
-      { path: 'actividades/:id', canActivate: [soloProfesor], loadComponent: cargarActividadDetalleComponent },
-      { path: 'actividades/:id/entregas', canActivate: [soloProfesor], loadComponent: cargarActividadEntregasComponent },
-      { path: 'anuncios', loadComponent: cargarAnuncios },
-      { path: 'materias', loadComponent: cargarMaterias },
-      { path: 'tablaGenerica', loadComponent: cargarTablaGenerica },
+      { path: 'actividades/nueva', canActivate: [soloProfesor], title: 'Nueva actividad', loadComponent: cargarActividadForm },
+      { path: 'actividades/editar/:id', canActivate: [soloProfesor], title: 'Editar actividad', loadComponent: cargarActividadForm },
+      { path: 'actividades/:id', canActivate: [soloProfesor], title: 'Detalle de actividad', loadComponent: cargarActividadDetalleComponent },
+      { path: 'actividades/:id/entregas', canActivate: [soloProfesor], title: 'Entregas', loadComponent: cargarActividadEntregasComponent },
+      { path: 'anuncios', title: 'Anuncios', loadComponent: cargarAnuncios },
+      { path: 'materias', title: 'Mis materias', loadComponent: cargarMaterias },
+      { path: 'tablaGenerica', title: 'Listado', loadComponent: cargarTablaGenerica },
       // The administrator has no private inbox (the server answers 403).
-      { path: 'mensajes', canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ESTUDIANTE])], loadComponent: cargarMensajesComponent },
-      { path: 'notificaciones', loadComponent: cargarNotificacionesComponent },
+      { path: 'mensajes', canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ESTUDIANTE])], title: 'Mensajes', loadComponent: cargarMensajesComponent },
+      { path: 'notificaciones', title: 'Notificaciones', loadComponent: cargarNotificacionesComponent },
 
       { path: '', redirectTo: 'ingreso', pathMatch: 'full' },
     ],
@@ -132,41 +132,41 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
 
-      { path: 'portada', loadComponent: cargarPortada },
-      { path: 'anuncios', loadComponent: cargarAnunciosMateriaComponent },
-      { path: 'material', loadComponent: cargarMaterial },
+      { path: 'portada', title: 'Portada de la materia', loadComponent: cargarPortada },
+      { path: 'anuncios', title: 'Anuncios de la materia', loadComponent: cargarAnunciosMateriaComponent },
+      { path: 'material', title: 'Material', loadComponent: cargarMaterial },
 
       {
         path: 'estudiante',
         canActivate: [soloEstudiante],
         children: [
           { path: '', redirectTo: 'portada', pathMatch: 'full' },
-          { path: 'portada', loadComponent: cargarPortadaEstudiante },
-          { path: 'calificaciones', loadComponent: cargarCalificaciones },
-          { path: 'material', loadComponent: cargarMaterialEstudiante },
-          { path: 'actividades', loadComponent: cargarActividadEstudiante },
+          { path: 'portada', title: 'Portada de la materia', loadComponent: cargarPortadaEstudiante },
+          { path: 'calificaciones', title: 'Calificaciones', loadComponent: cargarCalificaciones },
+          { path: 'material', title: 'Material', loadComponent: cargarMaterialEstudiante },
+          { path: 'actividades', title: 'Actividades', loadComponent: cargarActividadEstudiante },
         ]
       },
 
       // =========================
       // PROFESOR
       // =========================
-      { path: 'portada-profesor', canActivate: [soloProfesor], loadComponent: cargarPortadaProfesor },
-      { path: 'actividades', loadComponent: cargarActividades },
-      { path: 'actividades/:id/detalle', loadComponent: cargarActividadDetalleComponent },
-      { path: 'actividades/nueva', canActivate: [soloProfesor], loadComponent: cargarActividadForm },
-      { path: 'actividades/:id/editar', canActivate: [soloProfesor], loadComponent: cargarActividadForm },
-      { path: 'actividades/:id/entregas', canActivate: [soloProfesor], loadComponent: cargarActividadEntregasComponent },
-      { path: 'calificaciones-profesor', canActivate: [planillaCalificacionesGuard], loadComponent: cargarCalificacionesProfesor },
+      { path: 'portada-profesor', canActivate: [soloProfesor], title: 'Portada de la materia', loadComponent: cargarPortadaProfesor },
+      { path: 'actividades', title: 'Actividades', loadComponent: cargarActividades },
+      { path: 'actividades/:id/detalle', title: 'Detalle de actividad', loadComponent: cargarActividadDetalleComponent },
+      { path: 'actividades/nueva', canActivate: [soloProfesor], title: 'Nueva actividad', loadComponent: cargarActividadForm },
+      { path: 'actividades/:id/editar', canActivate: [soloProfesor], title: 'Editar actividad', loadComponent: cargarActividadForm },
+      { path: 'actividades/:id/entregas', canActivate: [soloProfesor], title: 'Entregas', loadComponent: cargarActividadEntregasComponent },
+      { path: 'calificaciones-profesor', canActivate: [planillaCalificacionesGuard], title: 'Planilla de calificaciones', loadComponent: cargarCalificacionesProfesor },
       {
         path: 'alumnos',
         canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ADMIN])],
-        loadComponent: cargarAlumnos,
+        title: 'Alumnos', loadComponent: cargarAlumnos,
       },
       // One URL, one component per role: the student sees their own grades, the
       // professor and the admin see the course grade sheet.
-      { path: 'calificaciones', canMatch: [rolCoincide([UserRole.ESTUDIANTE])], loadComponent: cargarCalificaciones },
-      { path: 'calificaciones', canMatch: [rolCoincide([UserRole.DOCENTE, UserRole.ADMIN])], loadComponent: cargarCalificacionesProfesor },
+      { path: 'calificaciones', canMatch: [rolCoincide([UserRole.ESTUDIANTE])], title: 'Calificaciones', loadComponent: cargarCalificaciones },
+      { path: 'calificaciones', canMatch: [rolCoincide([UserRole.DOCENTE, UserRole.ADMIN])], title: 'Planilla de calificaciones', loadComponent: cargarCalificacionesProfesor },
 
       {
         path: '',
@@ -182,11 +182,11 @@ export const routes: Routes = [
     loadComponent: cargarDashboardAdmin,
     children: [
       { path: '', redirectTo: 'profesores', pathMatch: 'full' },
-      { path: 'estudiantes', loadComponent: cargarEstudiante },
-      { path: 'profesores', loadComponent: cargarProfesor },
-      { path: 'materias', loadComponent: cargarMateria },
-      { path: 'notificaciones', loadComponent: cargarNotificacion },
+      { path: 'estudiantes', title: 'Estudiantes', loadComponent: cargarEstudiante },
+      { path: 'profesores', title: 'Profesores', loadComponent: cargarProfesor },
+      { path: 'materias', title: 'Materias', loadComponent: cargarMateria },
+      { path: 'notificaciones', title: 'Notificaciones', loadComponent: cargarNotificacion },
     ],
   },
-  { path: '**', loadComponent: cargarNotFound },
+  { path: '**', title: 'Página no encontrada', loadComponent: cargarNotFound },
 ];

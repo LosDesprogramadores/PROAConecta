@@ -1,5 +1,4 @@
 import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
-import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, DestroyRef, computed, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -12,7 +11,7 @@ import { IMateria } from '../../../model/materia.model';
 @Component({
   selector: 'app-actividad-form',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [RouterModule, ReactiveFormsModule],
   templateUrl: './actividad-form.html',
   styleUrl: './actividad-form.css',
 })

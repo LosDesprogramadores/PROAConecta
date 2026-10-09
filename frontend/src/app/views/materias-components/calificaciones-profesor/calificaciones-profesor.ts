@@ -1,5 +1,4 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 import { ActividadesService, Entrega } from '../../../services/actividades.service';
@@ -21,7 +20,7 @@ interface FilaAlumno {
 @Component({
   selector: 'app-calificaciones-profesor',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './calificaciones-profesor.html',
 })
 export class CalificacionesProfesor implements OnInit {

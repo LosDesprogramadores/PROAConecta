@@ -83,7 +83,7 @@ describe('ConfirmDialog', () => {
     const respuestas = await abrir();
     dialogo()!.click();
     expect(respuestas).toEqual([]);
-    (dialogo()!.parentElement as HTMLElement).click();
+    dom().querySelector<HTMLElement>('[data-testid=confirm-fondo]')!.click();
     expect(respuestas).toEqual([false]);
   });
 

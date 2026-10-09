@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Profesor } from './profesor';
+import { Persona, RolId } from '../../../model/Persona.model';
 import { ProfesorService } from '../../../services/profesor.service';
 import { MateriaService } from '../../../services/materia.service';
 
@@ -148,5 +150,76 @@ describe('Profesor admin pagination', () => {
 
     // 40 + 1 records at 20 per page: the new one lives on page 3.
     expect(listar).toHaveBeenCalledWith({ page: 3, page_size: 20 });
+  });
+});
+
+describe('Profesor admin save errors', () => {
+  it('keeps the modal open with the typed data when creating fails', async () => {
+    const crear = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 400, error: { dni: ['DNI duplicado'] } })));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await TestBed.configureTestingModule({
+      imports: [Profesor],
+      providers: [
+        provideRouter([]),
+        { provide: ProfesorService, useValue: { listarPaginado: vi.fn(() => of({ count: 0, next: null, previous: null, results: [] })), crearProfesores: crear } },
+        { provide: MateriaService, useValue: {} },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Profesor);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.openCreateModal();
+    const datos = { nombre: 'N', apellido: 'A', dni: '12345678', email: 'a@b.c', fecha_nacimiento: '2000-01-01', tel_contacto: '' };
+    component.form.setValue(datos);
+
+    component.save();
+
+    expect(crear).toHaveBeenCalled();
+    expect(component.isModalOpen()).toBe(true);
+    expect(component.form.getRawValue()).toEqual(datos);
+  });
+
+  describe('editing', () => {
+    const original = { id: 7, nombre: 'N', apellido: 'A', dni: '1234567', email: 'a@b.c', tel_contacto: '', fecha_nacimiento: '2000-01-01', rol: RolId.PROFESOR } as unknown as Persona;
+
+    async function montar(actualizar: ReturnType<typeof vi.fn>) {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      await TestBed.configureTestingModule({
+        imports: [Profesor],
+        providers: [
+          provideRouter([]),
+          { provide: ProfesorService, useValue: { listarPaginado: vi.fn(() => of({ count: 1, next: null, previous: null, results: [original] })), actualizarProfesor: actualizar } },
+          { provide: MateriaService, useValue: {} },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(Profesor);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      component.openEditModal(original);
+      component.form.patchValue({ nombre: 'Editado' });
+      return component;
+    }
+
+    it('keeps the modal open with the edited data when updating fails', async () => {
+      const actualizar = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 400, error: { dni: ['DNI duplicado'] } })));
+      const component = await montar(actualizar);
+
+      component.save();
+
+      expect(actualizar).toHaveBeenCalledWith(7, expect.objectContaining({ nombre: 'Editado' }));
+      expect(component.isModalOpen()).toBe(true);
+      expect(component.form.getRawValue().nombre).toBe('Editado');
+      expect(component.profesores()[0].nombre).toBe('N');
+    });
+
+    it('closes the modal and refreshes the list row when updating succeeds', async () => {
+      const actualizar = vi.fn(() => of({ ...original, nombre: 'Editado' }));
+      const component = await montar(actualizar);
+
+      component.save();
+
+      expect(component.isModalOpen()).toBe(false);
+      expect(component.profesores()[0].nombre).toBe('Editado');
+    });
   });
 });

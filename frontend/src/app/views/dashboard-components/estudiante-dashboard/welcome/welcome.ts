@@ -1,5 +1,5 @@
-import { Component, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+
 import { AuthService } from '../../../../core/auth/auth.service';
 import { Informacion } from '../informacion/informacion';
 import { Materias } from '../../materias/materias';
@@ -9,13 +9,13 @@ import { AnunciosResumen } from '../anuncios-resumen/anuncios-resumen';
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, Materias, Informacion, ProximasEntregas, AnunciosResumen],
+  imports: [Materias, Informacion, ProximasEntregas, AnunciosResumen],
   templateUrl: './welcome.html',
   styleUrls: ['./welcome.css'],
 })
 export class Welcome {
+  private readonly authService = inject(AuthService);
 
-  constructor(private readonly authService: AuthService) {}
 
   userName = computed(() => {
     const persona = this.authService.currentUser()?.persona;

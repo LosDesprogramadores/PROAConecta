@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, signal, inject, OnInit} from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { IPersona, Persona, RolId } from '../../../model/Persona.model';
@@ -19,7 +18,7 @@ const TAMANO_PAGINA = 20;
 
 @Component({
   selector: 'app-profesor',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica, ExportarListado, Paginador],
+  imports: [Modal, ReactiveFormsModule, RouterModule, TablaGenerica, ExportarListado, Paginador],
   templateUrl: './profesor.html',
   styleUrl: './profesor.css',
 })
@@ -160,7 +159,6 @@ export class Profesor implements OnInit {
         }
       });
     }
-    this.closeModal();
   }
 
   eliminar(): void {

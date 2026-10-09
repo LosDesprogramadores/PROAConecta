@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -9,7 +8,6 @@ import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
 import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
-import { Toast } from '../../../shared/toast/toast';
 import { Paginador } from '../../../shared/paginador/paginador';
 import { IColumnaTabla } from '../../../model/tabla.model';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
@@ -22,7 +20,7 @@ const TAMANO_PAGINA = 20;
 
 @Component({
   selector: 'app-estudiante',
-  imports: [Modal, ReactiveFormsModule, RouterModule, CommonModule, Toast, TablaGenerica, ExportarListado, Paginador],
+  imports: [Modal, ReactiveFormsModule, RouterModule, TablaGenerica, ExportarListado, Paginador],
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })

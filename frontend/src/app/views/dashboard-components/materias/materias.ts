@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { IMateria, IInscripcion } from '../../../model/materia.model';
@@ -19,6 +19,9 @@ interface IMateriaConInscripcion extends IMateria {
   styleUrl: './materias.css',
 })
 export class Materias implements OnInit {
+  private readonly inscripcionesService = inject(InscripcionesService);
+  private readonly authService = inject(AuthService);
+
   materias = signal<IMateriaConInscripcion[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -60,11 +63,6 @@ export class Materias implements OnInit {
     'bg-pink-300',
     'bg-teal-300',
   ];
-
-  constructor(
-    private readonly inscripcionesService: InscripcionesService,
-    private readonly authService: AuthService,
-  ) { }
 
   ngOnInit(): void {
     this.cargarMaterias();

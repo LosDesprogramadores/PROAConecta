@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { finalize, filter } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
@@ -15,7 +14,7 @@ import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegi
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
-  imports: [Modal, RouterModule, CommonModule, ReactiveFormsModule, ArchivoProtegidoDirective],
+  imports: [Modal, RouterModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './unidades-material.html',
   styleUrl: './unidades-material.css',
 })
