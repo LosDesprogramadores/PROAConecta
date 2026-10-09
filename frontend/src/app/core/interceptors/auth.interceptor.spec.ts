@@ -177,6 +177,27 @@ describe('authInterceptor', () => {
     controller.expectNone(api('auth/refresh/'));
   });
 
+  it('sends the user to the password change on a 403 with the temporary-password code', () => {
+    let error: unknown;
+    http.get(api('materias/')).subscribe({ error: (e) => (error = e) });
+
+    controller
+      .expectOne(api('materias/'))
+      .flush({ detail: 'Cambiá tu clave.', code: 'cambio_de_clave_requerido' }, { status: 403, statusText: 'Forbidden' });
+
+    expect(navigate).toHaveBeenCalledWith(['/cambiar-password']);
+    expect(error).toBeDefined();
+    controller.expectNone(api('auth/refresh/'));
+  });
+
+  it('does not redirect on other 403 responses', () => {
+    http.get(api('materias/')).subscribe({ error: () => undefined });
+
+    controller.expectOne(api('materias/')).flush({ detail: 'No permitido.' }, { status: 403, statusText: 'Forbidden' });
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('does not refresh a 401 that came from a request without session', () => {
     localStorage.clear();
     TestBed.resetTestingModule();
