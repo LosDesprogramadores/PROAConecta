@@ -224,7 +224,7 @@
                     <td class="py-3 px-4 text-center" (click)="$event.stopPropagation()">
                     <input 
                       type="checkbox"
-                      [checked]="isMateriaSelected(materia.id)"
+                      [attr.aria-label]="'Seleccionar ' + materia.titulo" [checked]="isMateriaSelected(materia.id)"
                       (change)="toggleMateria(materia.id)"
                       class="w-4 h-4 rounded text-[#155dfc] accent-[#155dfc] border-slate-300 focus:ring-0 cursor-pointer"
                     />

@@ -47,7 +47,7 @@
     @else {
     @let novedad = state.data;
 
-    <article (click)="abrirModal(novedad)"
+    <article
         class="group relative bg-white rounded-2xl p-5 border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex items-start gap-4">
 
         <!-- Ícono Ilustrativo Grande a la IZQUIERDA -->
@@ -115,6 +115,12 @@
                 {{ novedad.mensaje }}
             </p>
         </div>
+
+        <!-- Botón estirado: hace toda la tarjeta operable con teclado y mouse -->
+        <button type="button" (click)="abrirModal(novedad)"
+            class="tarjeta-boton absolute inset-0 w-full h-full rounded-2xl cursor-pointer">
+            <span class="sr-only">Ver novedad: {{ novedad.titulo }}</span>
+        </button>
     </article>
     }
 </div>

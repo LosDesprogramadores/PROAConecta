@@ -171,4 +171,26 @@ describe('UnidadesMaterial', () => {
     component.eliminarMaterial(3, { contenidos: [] } as any);
     expect(materialesService.eliminarMaterial).toHaveBeenCalledWith(3);
   });
+
+  it('toggles a unit from a dedicated title button that reports aria-expanded', () => {
+    component.unidades.set([{ id: 5, orden: 1, titulo: 'U1', visible: true } as never]);
+    fixture.detectChanges();
+    const dom = fixture.nativeElement as HTMLElement;
+    expect(dom.querySelector('[role="button"]')).toBeNull();
+    const toggle = dom.querySelector<HTMLButtonElement>('h3 button[aria-controls="unidad-5"]')!;
+    expect(toggle).not.toBeNull();
+    expect(toggle.textContent).toContain('U1');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(component.unidadExpandida()).toBe(5);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(dom.querySelector('#unidad-5')).not.toBeNull();
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(component.unidadExpandida()).toBeNull();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
 });

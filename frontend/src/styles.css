@@ -23,6 +23,20 @@
 }
 
 /* ===========================
+   Foco visible global (teclado)
+   Sin @layer a propósito: gana sobre utilidades como focus:outline-none.
+   =========================== */
+:where(button, a, [role="button"], [tabindex]:not([tabindex="-1"]), summary):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Botón estirado sobre una tarjeta con overflow-hidden: el aro va por dentro para no recortarse. */
+.tarjeta-boton:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ===========================
    🅰️ Tipografía global
    =========================== */
 @layer base {

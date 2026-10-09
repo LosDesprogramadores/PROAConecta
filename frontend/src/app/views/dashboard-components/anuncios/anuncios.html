@@ -76,7 +76,7 @@
       @else {
       <div class="space-y-3.5">
         @for (anuncio of state.data; track anuncio.id) {
-        <article (click)="abrirModal(anuncio)"
+        <article
           class="group relative bg-white rounded-2xl p-5 border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex items-start gap-4">
           <!-- Borde lateral de acento decorativo -->
           <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 group-hover:bg-blue-700 transition-colors"></div>
@@ -145,6 +145,12 @@
               {{ anuncio.mensaje }}
             </p>
           </div>
+
+          <!-- Botón estirado: hace toda la tarjeta operable con teclado y mouse -->
+          <button type="button" (click)="abrirModal(anuncio)"
+            class="tarjeta-boton absolute inset-0 w-full h-full rounded-2xl cursor-pointer">
+            <span class="sr-only">Ver anuncio: {{ anuncio.titulo }}</span>
+          </button>
         </article>
         }
       </div>

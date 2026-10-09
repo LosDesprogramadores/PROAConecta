@@ -236,7 +236,7 @@
               class="hover:bg-slate-50/80 transition-colors cursor-pointer select-none">
 
               <td class="py-2.5 px-4 text-center" (click)="$event.stopPropagation()">
-                <input type="checkbox" [checked]="isMateriaSelected(materia.id)" (change)="toggleMateria(materia.id)"
+                <input type="checkbox" [attr.aria-label]="'Seleccionar ' + materia.titulo" [checked]="isMateriaSelected(materia.id)" (change)="toggleMateria(materia.id)"
                   class="w-4 h-4 rounded text-[#155dfc] accent-[#155dfc] border-slate-300 focus:ring-0 cursor-pointer" />
               </td>
               <td class="py-2.5 px-4 font-semibold text-slate-800 whitespace-nowrap">

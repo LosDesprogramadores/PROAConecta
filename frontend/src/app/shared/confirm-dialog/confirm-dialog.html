@@ -1,17 +1,20 @@
 @if (servicio.pendiente(); as dialogo) {
-  <div
-    class="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-    (click)="dialogo.responder(false)"
-  >
+  <div class="fixed inset-0 z-[100000] flex items-center justify-center p-4">
+    <!-- Mouse-only backdrop: keyboard users cancel with Escape or the Cancel button. -->
+    <div
+      aria-hidden="true"
+      data-testid="confirm-fondo"
+      class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+      (click)="dialogo.responder(false)"
+    ></div>
     <div
       appFocusTrap
       (escape)="dialogo.responder(false)"
-      (click)="$event.stopPropagation()"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-titulo"
       aria-describedby="confirm-dialog-mensaje"
-      class="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 shadow-xl space-y-4"
+      class="relative w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 shadow-xl space-y-4"
     >
       <h2 id="confirm-dialog-titulo" class="text-lg font-bold text-slate-800">
         {{ dialogo.titulo ?? 'Confirmar acción' }}
