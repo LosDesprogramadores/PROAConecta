@@ -59,6 +59,7 @@ class Material(ContenidoSoftDelete):
         verbose_name = 'Material'
         verbose_name_plural = 'Materiales'
         ordering = ['-fecha_publicacion']
+        indexes = [models.Index(fields=['materia', 'fecha_baja'], name='material_materia_baja_idx')]
     
     def __str__(self):
         return f'{self.titulo} - {self.materia.titulo}'
@@ -86,6 +87,7 @@ class Actividad(ContenidoSoftDelete):
         verbose_name = 'Actividad'
         verbose_name_plural = 'Actividades'
         ordering = ['-fecha_creacion']
+        indexes = [models.Index(fields=['materia', 'fecha_baja'], name='actividad_materia_baja_idx')]
     
     def __str__(self):
         return f'{self.titulo} ({self.materia.titulo})'
@@ -112,6 +114,10 @@ class Entrega(ContenidoSoftDelete):
         verbose_name = 'Entrega'
         verbose_name_plural = 'Entregas'
         ordering = ['-fecha_entrega']
+        indexes = [
+            models.Index(fields=['actividad', 'fecha_baja'], name='entrega_actividad_baja_idx'),
+            models.Index(fields=['estudiante', 'fecha_baja'], name='entrega_estudiante_baja_idx'),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['actividad', 'estudiante'],
@@ -135,6 +141,12 @@ class Nota(models.Model):
         db_table = 'nota'
         verbose_name = 'Nota'
         verbose_name_plural = 'Notas'
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(calificacion__gte=1) & models.Q(calificacion__lte=10),
+                name='nota_calificacion_en_rango'
+            )
+        ]
 
     def __str__(self):
         return f'{self.calificacion} | {self.entrega.estudiante.id} - {self.entrega.actividad.titulo}'
