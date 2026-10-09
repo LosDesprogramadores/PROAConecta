@@ -42,6 +42,13 @@ jobs:
           DJANGO_SECURE_HSTS_SECONDS=31536000 \
           DJANGO_SECURE_SSL_REDIRECT=true \
           python manage.py check --deploy --settings=proa.settings.prod --fail-level ERROR
+      # Obligatorio: solo errores reales (sintaxis, usos inválidos y nombres indefinidos)
+      - name: Ruff
+        run: ruff check --select E9,F63,F7,F82 .
+      # Obligatorio: falla ante cualquier vulnerabilidad conocida. Una excepción se documenta con
+      # --ignore-vuln <id> y un comentario con la fecha de revisión
+      - name: Auditoría de dependencias
+        run: pip-audit -r ../requirements.txt
       - name: Tests con cobertura
         run: pytest --cov --cov-report=term-missing
 
@@ -68,6 +75,9 @@ jobs:
       # Obligatorio: sin continue-on-error. Vitest sobre jsdom, sin navegador ni modo watch
       - name: Tests del frontend
         run: npx ng test --watch=false
+      # Obligatorio: solo dependencias de producción y vulnerabilidades altas o críticas
+      - name: Auditoría de dependencias
+        run: npm audit --audit-level=high --omit=dev
 
   # Recorridos críticos en un navegador real sobre el compose (docker-compose.e2e.yml: proyecto propio, Mailpit para
   # el correo, datos de seed_demo). Solo en pull requests; si falla, el pull request no se puede fusionar.

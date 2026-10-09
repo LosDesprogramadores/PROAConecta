@@ -11,3 +11,7 @@ pypdf==6.19.0
 pytest-cov==7.1.0
 # channels.testing importa daphne al cargarse (WebsocketCommunicator)
 daphne>=4.0.0
+
+# Gates del CI: errores reales de Python y vulnerabilidades de las dependencias
+ruff==0.16.10
+pip-audit==2.10.1
