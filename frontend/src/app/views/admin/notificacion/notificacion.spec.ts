@@ -54,7 +54,7 @@ describe('Notificacion (admin)', () => {
 
     expect(servicio['crearNotificacion']).toHaveBeenCalledWith({
       titulo: 'Inscripciones', mensaje: 'Abiertas', alcance: 'ESTUDIANTE', tipo_notificacion_codigo: 'URGENTE',
-      fecha_desde: '2026-10-01', fecha_hasta: '2026-10-31', leida: false,
+      fecha_desde: '2026-10-01', fecha_hasta: '2026-10-31',
     });
     expect(component.formulario.getRawValue().titulo).toBe('');
   });

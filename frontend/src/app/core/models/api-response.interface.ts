@@ -16,3 +16,13 @@ export interface ConsultaPaginada {
   page: number;
   page_size?: number;
 }
+
+/** Confirmation body of the endpoints that answer `{mensaje}`. */
+export interface RespuestaMensaje {
+  mensaje: string;
+}
+
+/** Confirmation body of the endpoints that answer `{detail}` (DRF convention). */
+export interface RespuestaDetalle {
+  detail: string;
+}

@@ -8,7 +8,11 @@ import { finalize, Observable, shareReplay, switchMap, tap, throwError, map} fro
 
 import { environment } from '../../../environments/environment';
 import { Persona } from '../../model/Persona.model';
+import { RespuestaMensaje } from '../models/api-response.interface';
 
+
+/** Body of POST auth/cambiar-password/ (CambiarPasswordPrimerIngresoView): confirmation plus a fresh token pair. */
+export interface RespuestaCambioPassword extends RespuestaMensaje, AuthResponse {}
 
 export interface LoginCredentials {
   dni: string;
@@ -77,11 +81,11 @@ export class AuthService {
     );
   }
 
-  cambiarPasswordPrimerIngreso(data: { password_actual: string; password_nuevo: string }): Observable<any> {
+  cambiarPasswordPrimerIngreso(data: { password_actual: string; password_nuevo: string }): Observable<RespuestaCambioPassword> {
     const headers = new HttpHeaders({
       Authorization: `Bearer ${this.token()}`,
     });
-    return this.http.post<Partial<AuthResponse>>(this.cambiarPasswordUrl, data, { headers }).pipe(
+    return this.http.post<RespuestaCambioPassword>(this.cambiarPasswordUrl, data, { headers }).pipe(
       tap((res) => {
         // El servidor revoca los refresh anteriores (incluido el nuestro) y entrega un par nuevo
         if (res.access && res.refresh) {
@@ -93,12 +97,12 @@ export class AuthService {
     );
   }
 
-  solicitarRecuperacion(email: string): Observable<any> {
-    return this.http.post(this.solicitarRecuperacionUrl, { email });
+  solicitarRecuperacion(email: string): Observable<RespuestaMensaje> {
+    return this.http.post<RespuestaMensaje>(this.solicitarRecuperacionUrl, { email });
   }
 
-  confirmarRecuperacion(data: { uid: string; token: string; password_nuevo: string }): Observable<any> {
-    return this.http.post(this.confirmarRecuperacionUrl, data);
+  confirmarRecuperacion(data: { uid: string; token: string; password_nuevo: string }): Observable<RespuestaMensaje> {
+    return this.http.post<RespuestaMensaje>(this.confirmarRecuperacionUrl, data);
   }
 
   rol(): number | undefined {
