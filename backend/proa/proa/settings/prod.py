@@ -2,8 +2,13 @@
 
 Se activa con ``DJANGO_SETTINGS_MODULE=proa.settings.prod``. Variables obligatorias: ``DJANGO_SECRET_KEY`` y
 ``DJANGO_ALLOWED_HOSTS`` (sin ellas no arranca); además ``DJANGO_CORS_ALLOWED_ORIGINS`` y ``DJANGO_CSRF_TRUSTED_ORIGINS``.
+
+Opcionales, solo con TLS delante de nginx: ``DJANGO_SECURE_HSTS_SECONDS`` (segundos de HSTS, 0 o vacío lo apaga;
+31536000 es un año) y ``DJANGO_SECURE_SSL_REDIRECT`` (``true`` redirige http a https). Sin TLS, la redirección
+entra en bucle.
 """
 import logging
+import os
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -31,7 +36,14 @@ if not ALLOWED_HOSTS:
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-# SECURE_SSL_REDIRECT queda desactivado a propósito: forzar https rompería el compose local (http en :80)
+# HSTS y redirección a https apagados por defecto: forzarlos rompería el compose local (http en :80).
+# Se activan en el entorno de producción real, donde el proxy ya envía X-Forwarded-Proto
+_hsts = os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '').strip() or '0'
+if not _hsts.isdigit():
+    raise ImproperlyConfigured('DJANGO_SECURE_HSTS_SECONDS debe ser un número entero de segundos (0 para desactivar).')
+SECURE_HSTS_SECONDS = int(_hsts)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
+SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', '').strip().lower() in ('1', 'true', 'yes')
 
 if not REDIS_URL:  # noqa: F405
     # La caché local y el channel layer en memoria no se comparten entre workers

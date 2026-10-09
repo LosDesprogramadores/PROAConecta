@@ -12,7 +12,8 @@ from proa.entorno import CLAVE_SECRETA_DESARROLLO
 
 MODULOS = ('proa.settings.base', 'proa.settings.dev', 'proa.settings.prod', 'proa.settings.test')
 VARIABLES = ('DJANGO_DEBUG', 'DJANGO_SECRET_KEY', 'KEY_SECRET', 'DJANGO_ALLOWED_HOSTS',
-             'DJANGO_CORS_ALLOWED_ORIGINS', 'DJANGO_CSRF_TRUSTED_ORIGINS', 'REDIS_URL')
+             'DJANGO_CORS_ALLOWED_ORIGINS', 'DJANGO_CSRF_TRUSTED_ORIGINS', 'REDIS_URL',
+             'DJANGO_SECURE_HSTS_SECONDS', 'DJANGO_SECURE_SSL_REDIRECT')
 
 ENTORNO_PROD = {
     'DJANGO_SECRET_KEY': 'k' * 50,
@@ -104,6 +105,45 @@ def test_prod_aplica_cookies_seguras_y_cabecera_del_proxy():
     assert s.SECURE_CONTENT_TYPE_NOSNIFF is True
     assert not getattr(s, 'SECURE_SSL_REDIRECT', False)  # un redirect rompería el compose local
     assert 'core.middleware.MedicionMiddleware' not in s.MIDDLEWARE
+
+
+def test_prod_sin_variables_deja_hsts_y_redirect_apagados():
+    s = importar('proa.settings.prod', ENTORNO_PROD)
+    assert s.SECURE_HSTS_SECONDS == 0
+    assert s.SECURE_HSTS_INCLUDE_SUBDOMAINS is False
+    assert s.SECURE_SSL_REDIRECT is False
+
+
+def test_prod_toma_hsts_y_redirect_del_entorno():
+    s = importar('proa.settings.prod', {**ENTORNO_PROD, 'DJANGO_SECURE_HSTS_SECONDS': '31536000',
+                                        'DJANGO_SECURE_SSL_REDIRECT': 'true'})
+    assert s.SECURE_HSTS_SECONDS == 31536000
+    assert s.SECURE_HSTS_INCLUDE_SUBDOMAINS is True
+    assert s.SECURE_SSL_REDIRECT is True
+
+
+@pytest.mark.parametrize('valor,esperado', [('1', True), ('True', True), ('yes', True), ('false', False), ('0', False), ('', False)])
+def test_prod_interpreta_el_redirect_a_https(valor, esperado):
+    s = importar('proa.settings.prod', {**ENTORNO_PROD, 'DJANGO_SECURE_SSL_REDIRECT': valor})
+    assert s.SECURE_SSL_REDIRECT is esperado
+
+
+def test_prod_con_hsts_vacio_lo_deja_apagado():
+    s = importar('proa.settings.prod', {**ENTORNO_PROD, 'DJANGO_SECURE_HSTS_SECONDS': ''})
+    assert s.SECURE_HSTS_SECONDS == 0
+
+
+@pytest.mark.parametrize('valor', ['abc', '-1', '1.5'])
+def test_prod_con_hsts_invalido_no_arranca(valor):
+    with pytest.raises(ImproperlyConfigured) as error:
+        importar('proa.settings.prod', {**ENTORNO_PROD, 'DJANGO_SECURE_HSTS_SECONDS': valor})
+    assert 'DJANGO_SECURE_HSTS_SECONDS' in str(error.value)
+
+
+def test_dev_no_se_ve_afectado_por_hsts_ni_redirect():
+    s = importar('proa.settings.dev', {'DJANGO_SECURE_HSTS_SECONDS': '31536000', 'DJANGO_SECURE_SSL_REDIRECT': 'true'})
+    assert not getattr(s, 'SECURE_HSTS_SECONDS', 0)
+    assert not getattr(s, 'SECURE_SSL_REDIRECT', False)
 
 
 def test_prod_sin_redis_avisa(caplog):
