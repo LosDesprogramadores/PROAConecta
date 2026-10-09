@@ -7,6 +7,7 @@ import secrets
 from core.privacidad import PrivacidadPersonaMixin
 from core.roles import es_admin
 from .correos import enviar_credenciales
+from .validators import error_de_clave_nueva
 
 
 class SoloLecturaParaNoAdminMixin:
@@ -43,6 +44,16 @@ class UsuarioSerializer(SoloLecturaParaNoAdminMixin, serializers.ModelSerializer
             raise serializers.ValidationError('Esta persona ya tiene un usuario asociado.')
         return persona
 
+    def validate(self, attrs):
+        persona = attrs.get('persona')
+        password = attrs.get('password')
+        if persona is None or password is None:
+            return attrs
+        error = error_de_clave_nueva(password, Usuario(username=persona.dni, persona=persona))
+        if error:
+            raise serializers.ValidationError({'password': [error]})
+        return attrs
+
     def create(self, validated_data):
         persona = validated_data.pop('persona')
         password = validated_data.pop('password')
@@ -76,12 +87,6 @@ class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
         if usuario is None:
             raise serializers.ValidationError(
                 'DNI o contraseña incorrectos.',
-                code='authorization',
-            )
-
-        if not usuario.activo:
-            raise serializers.ValidationError(
-                'El usuario está inactivo.',
                 code='authorization',
             )
 

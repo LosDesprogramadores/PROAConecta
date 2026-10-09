@@ -25,8 +25,9 @@ from core.exceptions import ErrorSerializer
 from core.pagination import PaginacionOpcional
 from core.exportaciones import exportar_tabla, formato_solicitado
 from core.permissions import EsAdministrador
-from core.throttling import LimiteDeIntentosMixin
+from core.throttling import LimiteDeIntentosMixin, LimitePorIdentificadorThrottle
 from .correos import enviar_recuperacion
+from .validators import error_de_clave_nueva
 from .services import revocar_sesiones
 from rest_framework_simplejwt.exceptions import TokenBackendError, TokenError
 from rest_framework_simplejwt.state import token_backend
@@ -49,6 +50,13 @@ class DNITokenObtainPairView(LimiteDeIntentosMixin, TokenObtainPairView):
     throttle_scope = 'login'
     throttle_identificador = ('dni', 'login_dni')
     serializer_class = DNITokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        limite = LimitePorIdentificadorThrottle()
+        # El cupo ya se reservó en allow_request: un fallo lo deja consumido, un éxito reinicia la cuenta
+        respuesta = super().post(request, *args, **kwargs)
+        limite.limpiar(request, self)
+        return respuesta
 
 class RolViewSet(viewsets.ModelViewSet):
     queryset = Rol.objects.all()
@@ -278,6 +286,8 @@ class PerfilUsuarioView(APIView):
 
 User = get_user_model()
 
+
+
 class CambiarPasswordPrimerIngresoView(APIView):
     """
     Para cambiar clave provisoria
@@ -307,6 +317,10 @@ class CambiarPasswordPrimerIngresoView(APIView):
 
         if password_actual == password_nuevo:
             return _solicitud_invalida('La nueva contraseña no debe ser igual a la provisoria.')
+
+        error = error_de_clave_nueva(password_nuevo, usuario)
+        if error:
+            return _solicitud_invalida(error)
 
         usuario.set_password(password_nuevo)
         usuario.debe_cambiar_password = False
@@ -425,6 +439,10 @@ class ConfirmarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
 
         if len(password_nuevo) < 8:
             return _solicitud_invalida('La contraseña debe contener al menos 8 caracteres.')
+
+        error = error_de_clave_nueva(password_nuevo, usuario)
+        if error:
+            return _solicitud_invalida(error)
 
         usuario.set_password(password_nuevo)
         usuario.debe_cambiar_password = False

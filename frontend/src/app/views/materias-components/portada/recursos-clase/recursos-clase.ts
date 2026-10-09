@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges, inject, signal, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
@@ -18,7 +18,7 @@ import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegi
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })
-export class RecursosClaseComponent implements OnInit {
+export class RecursosClaseComponent implements OnInit, OnChanges {
   @Input() materiaId: number | string | null = null;
 
   private materialesService = inject(MaterialesService);

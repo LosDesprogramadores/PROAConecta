@@ -2,7 +2,6 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Anuncio } from '../../../model/anuncio.model';
 import { AnunciosService } from '../../../services/anuncios.service';
-import { SidebarMaterias } from '../../../shared/sidebar-materias/sidebar-materias';
 
 import { Modal } from '../../../shared/modal/modal';
 @Component({

@@ -29,13 +29,14 @@ module.exports = defineConfig([
       'no-console': ['error', { allow: ['error', 'warn'] }],
       'no-alert': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
-      // Warn for now: fixing these means refactors or behavior changes. Tracked as follow-up.
-      '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-inferrable-types': 'warn',
-      '@typescript-eslint/no-empty-function': 'warn',
+      // Cleaned up to zero: enforce as errors.
+      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/no-empty-function': 'error',
       '@angular-eslint/prefer-inject': 'warn',
-      '@angular-eslint/no-output-on-prefix': 'warn',
-      '@angular-eslint/no-empty-lifecycle-method': 'warn',
+      '@angular-eslint/no-output-on-prefix': 'error',
+      '@angular-eslint/no-empty-lifecycle-method': 'error',
+      '@angular-eslint/use-lifecycle-interface': 'error',
     },
   },
   {

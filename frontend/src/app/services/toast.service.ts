@@ -43,7 +43,7 @@ export class ToastService {
   private _toasts = signal<Toast[]>([]);
   public toasts = this._toasts.asReadonly();
 
-  show(mensaje: string, tipo: ToastType = 'información', titulo?: string, duracionMs: number = 4000): void {
+  show(mensaje: string, tipo: ToastType = 'información', titulo?: string, duracionMs = 4000): void {
     const id = Date.now() + Math.random();
     const nuevoToast: Toast = { id, tipo, titulo, mensaje };
 
@@ -56,19 +56,19 @@ export class ToastService {
     }
   }
 
-  success(mensaje: string, titulo: string = ''): void {
+  success(mensaje: string, titulo = ''): void {
     this.show(mensaje, 'exito', titulo);
   }
 
-  error(mensaje: string, titulo: string = ''): void {
+  error(mensaje: string, titulo = ''): void {
     this.show(mensaje, 'error', titulo || TITULO_ERROR_POR_DEFECTO, 4000);
   }
 
-  info(mensaje: string, titulo: string = ''): void {
+  info(mensaje: string, titulo = ''): void {
     this.show(mensaje, 'información', titulo);
   }
 
-  warning(mensaje: string, titulo: string = ''): void {
+  warning(mensaje: string, titulo = ''): void {
     this.show(mensaje, 'atención', titulo);
   }
 

@@ -4,8 +4,6 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
-  UnidadMateria,
-  ContenidoUnidad,
   MateriaPortada,
 } from '../../../model/unidad-contenido.model';
 import { IMateria } from '../../../model/materia.model';

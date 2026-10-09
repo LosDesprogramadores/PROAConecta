@@ -130,7 +130,7 @@ export class Materia implements OnInit {
     } else {
       const nuevaMateria: IMateria = { ...formValues };
       this.materiaService.crearMateria( nuevaMateria ).subscribe( {
-        next: ( res ) => {
+        next: () => {
           // Jump to the last page: that is where the new row appears.
           this.cargarMaterias(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
           this.closeModal();
@@ -165,13 +165,16 @@ export class Materia implements OnInit {
     } );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept: the template passes the row
   consultar( materia: any ) {
     this.toastService.info( "La funcionalidad de consultar està en desarrollo." );
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept: the template passes the row
   asignar( materia: any ) {
     this.toastService.info( "La funcionalidad de asignar està en desarrollo." );
 
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept: the template passes the row
   inscribir( materia: any ) {
     this.toastService.info( "La funcionalidad de inscribir està en desarrollo." );
 

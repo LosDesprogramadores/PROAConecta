@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ContenidoUnidad, UnidadMateria } from '../../../model/unidad-contenido.model';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';

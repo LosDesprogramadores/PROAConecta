@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MateriaPortada } from '../../../../model/unidad-contenido.model';
 import { IMateria } from '../../../../model/materia.model';

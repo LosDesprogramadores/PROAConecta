@@ -13,12 +13,12 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 })
 export class Notificacion implements OnInit {
   notificaciones: INotificacion[] = [];
-  cargando: boolean = true;
+  cargando = true;
 
-  mensajeExito: string = '';
-  mensajeError: string = '';
+  mensajeExito = '';
+  mensajeError = '';
 
-  mostrarFormulario: boolean = false;
+  mostrarFormulario = false;
 
   notificacionAEliminar: string | null = null;
   editandoId: string | null = null;

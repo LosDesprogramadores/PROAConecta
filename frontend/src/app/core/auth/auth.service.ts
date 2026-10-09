@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 import { AuthResponse, User } from './auth.model';
 
-import { catchError, finalize, Observable, shareReplay, switchMap, tap, throwError, map} from 'rxjs';
+import { finalize, Observable, shareReplay, switchMap, tap, throwError, map} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Persona } from '../../model/Persona.model';

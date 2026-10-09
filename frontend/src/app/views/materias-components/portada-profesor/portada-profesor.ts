@@ -260,7 +260,11 @@ export class PortadaProfesor implements OnInit {
     unidad.contenidos = unidad.contenidos.filter((c) => c.id !== contenidoId);
   }
 
-  abrirModalActividad(): void {}
+  abrirModalActividad(): void {
+    // Intentionally empty: placeholder until the modal is implemented.
+  }
 
-  abrirModalRecurso(): void {}
+  abrirModalRecurso(): void {
+    // Intentionally empty: placeholder until the modal is implemented.
+  }
 }
