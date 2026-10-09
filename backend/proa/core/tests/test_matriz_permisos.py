@@ -257,6 +257,7 @@ def _estado(con_mongo):
 SOLO_ADMIN = (U, P, P, P, P, P, P, O, U)
 AUTENTICADOS = (U, O, O, O, O, O, O, O, U)
 PUBLICO = (B, B, B, B, B, B, B, B, B)
+PUBLICO_OK = (O, O, O, O, O, O, O, O, O)  # público y sin cuerpo: 200 para todos, incluso el inactivo
 
 
 def _api(*partes):
@@ -460,6 +461,9 @@ MATRIZ = [
     # ---- auditoria ----------------------------------------------------------------------------
     F('auditoria-eventos', 'GET', _api('auditoria/eventos/'), SOLO_ADMIN, mongo=True),
 
+    # ---- salud ---------------------------------------------------------------------------------
+    F('salud', 'GET', _api('health/'), PUBLICO_OK),
+
     # ---- documentación de la API ---------------------------------------------------------------
     # SEC-25: la suite corre con DOCS_API_PUBLICAS=False (como producción), así que las tres rutas responden 404
     # a todos, incluido el administrador. El modo desarrollo (abiertas) lo cubre test_documentacion_api.py
@@ -584,6 +588,7 @@ def test_mongo_arranca_vacio_en_cada_test():
 
 
 PUBLICOS_SIN_AUTENTICACION = {'login', 'logout', 'token_refresh', 'solicitar-recuperacion', 'confirmar-recuperacion'}
+SALUD = {'salud'}  # healthcheck: sin autenticación, 200 para todos
 DOCUMENTACION = {'schema', 'swagger-ui', 'redoc'}  # apagadas fuera de desarrollo: 404 para todos
 
 
@@ -591,6 +596,8 @@ def test_reglas_transversales_de_la_tabla():
     for fila in MATRIZ:
         if fila.nombre in PUBLICOS_SIN_AUTENTICACION:
             assert set(fila.esperado) == {B}, fila.id  # ignoran las credenciales: ni 401 ni 403 para nadie
+        elif fila.nombre in SALUD:
+            assert set(fila.esperado) == {O}, fila.id
         elif fila.nombre in DOCUMENTACION:
             assert set(fila.esperado) == {N}, fila.id
         else:

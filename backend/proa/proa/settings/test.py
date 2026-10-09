@@ -34,6 +34,13 @@ CACHES = {
     'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
 }
 
+# Salida limpia: la suite solo muestra avisos y errores (DJANGO_LOG_LEVEL del entorno no aplica)
+LOGGING = {
+    **LOGGING,  # noqa: F405
+    'root': {**LOGGING['root'], 'level': 'WARNING'},  # noqa: F405
+    'loggers': {'django': {'level': 'WARNING'}},
+}
+
 # Los correos quedan en django.core.mail.outbox
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 

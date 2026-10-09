@@ -278,3 +278,30 @@ else:
             "BACKEND": "channels.layers.InMemoryChannelLayer"
         }
     }
+
+
+# Registros a consola (los recoge docker logs). Nivel único para root y django: DJANGO_LOG_LEVEL (INFO por defecto).
+# Un valor inválido hace fallar el arranque de logging con un error claro en vez de silenciarse
+DJANGO_LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO').strip().upper() or 'INFO'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'estructurado': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'consola': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'estructurado',
+        },
+    },
+    'root': {
+        'handlers': ['consola'],
+        'level': DJANGO_LOG_LEVEL,
+    },
+    'loggers': {
+        'django': {'level': DJANGO_LOG_LEVEL},
+    },
+}

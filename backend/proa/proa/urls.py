@@ -20,6 +20,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import Http404
 from django.urls import path, include
+from core.salud import SaludView
 from mensajeria.urls import destinatarios_urlpatterns
 from notificacion.urls import anuncios_urlpatterns
 from notificacion.views import WsTicketView
@@ -60,6 +61,7 @@ urlpatterns = [
     path('api/schema/', _documentacion(SpectacularAPIView.as_view()), name='schema'),
     path('api/schema/swagger-ui/', _documentacion(SpectacularSwaggerView.as_view(url_name='schema')), name='swagger-ui'),
     path('api/schema/redoc/', _documentacion(SpectacularRedocView.as_view(url_name='schema')), name='redoc'),
+    path('api/health/', SaludView.as_view(), name='salud'),
     path('api/ws/ticket/', WsTicketView.as_view(), name='ws-ticket'),
     path('api/notificaciones/', include('notificacion.urls')),
 ]
