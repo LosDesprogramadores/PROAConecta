@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from auditoria.bitacora import registrar_evento
 from academico.selectors import alumnos_de_materia
@@ -21,23 +22,39 @@ def calificar_o_rectificar_estudiante(profesor_user, actividad_id: int, estudian
 
     nota_val = validar_rango_nota(calificacion)
 
-    # Buscar entrega activa existente
-    entrega = Entrega.objects.filter(
-        actividad=actividad,
-        estudiante_id=estudiante_id,
-        fecha_baja__isnull=True
-    ).first()
-
-    # Si no entregó nada, se genera la entrega administrativa
-    if not entrega:
-        entrega = Entrega.objects.create(
+    with transaction.atomic():
+        # Entrega activa existente, bloqueada hasta el final de la transacción
+        entrega = Entrega.objects.select_for_update().filter(
             actividad=actividad,
             estudiante_id=estudiante_id,
-            fuera_de_termino=True,
-            estado=Entrega.EstadoEntrega.CORREGIDO
-        )
+            fecha_baja__isnull=True
+        ).first()
 
-    # Asentar o actualizar la nota 
+        # Si no entregó nada, se genera la entrega administrativa
+        if not entrega:
+            entrega = Entrega.objects.create(
+                actividad=actividad,
+                estudiante_id=estudiante_id,
+                fuera_de_termino=True,
+                estado=Entrega.EstadoEntrega.CORREGIDO
+            )
+
+        return _asentar_nota(profesor_user, profesor, entrega, nota_val, descripcion)
+
+
+def calificar_entrega(profesor_user, entrega, calificacion, descripcion: str = ''):
+    """Asienta o modifica la calificación de una entrega existente, con la misma regla y bitácora."""
+    verificar_profesor_materia(profesor_user, entrega.actividad.materia)
+    profesor, _ = obtener_persona_y_rol(profesor_user)
+    nota_val = validar_rango_nota(calificacion)
+
+    with transaction.atomic():
+        entrega = Entrega.objects.select_for_update().select_related('actividad').get(pk=entrega.pk)
+        return _asentar_nota(profesor_user, profesor, entrega, nota_val, descripcion)
+
+
+def _asentar_nota(profesor_user, profesor, entrega, nota_val, descripcion: str):
+    """Crea o actualiza la nota, marca la entrega como corregida y registra el evento. Va dentro de una transacción."""
     calificacion_previa = Nota.objects.filter(entrega=entrega).values_list('calificacion', flat=True).first()
     nota, creada = Nota.objects.update_or_create(
         entrega=entrega,
@@ -58,7 +75,7 @@ def calificar_o_rectificar_estudiante(profesor_user, actividad_id: int, estudian
         datos['antes'] = {'calificacion': f'{calificacion_previa:.2f}'}
     registrar_evento(
         'NOTA_CREADA' if creada else 'NOTA_MODIFICADA', profesor_user, 'nota', datos,
-        entidad_id=nota.pk, materia_id=actividad.materia_id,
+        entidad_id=nota.pk, materia_id=entrega.actividad.materia_id,
     )
 
     return nota

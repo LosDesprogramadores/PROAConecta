@@ -13,7 +13,7 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from academico.models import Materia
 from academico.selectors import materias_con_acceso
-from .services import calificar_o_rectificar_estudiante
+from .services import calificar_entrega, calificar_o_rectificar_estudiante
 
 from .models import Unidad, Material, Actividad, Nota, Entrega
 from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer, EntregaSerializer, NotaSerializer
@@ -479,21 +479,10 @@ class EntregaViewSet(viewsets.ModelViewSet):
     def calificar(self, request, pk=None):
         """Asienta o modifica la calificación de una entrega existente."""
         entrega = self.get_object()
-        verificar_profesor_materia(request.user, entrega.actividad.materia)
-
-        nota_val = validar_rango_nota(request.data.get('calificacion'))
-        descripcion = (request.data.get('descripcion') or '').strip()
-        profesor, _ = obtener_persona_y_rol(request.user)
-
-        nota, _ = Nota.objects.update_or_create(
-            entrega=entrega,
-            defaults={
-                'calificacion': nota_val,
-                'descripcion': descripcion,
-                'profesor': profesor
-            }
+        nota = calificar_entrega(
+            request.user, entrega,
+            request.data.get('calificacion'),
+            request.data.get('descripcion') or '',
         )
-        entrega.estado = Entrega.EstadoEntrega.CORREGIDO
-        entrega.save(update_fields=['estado'])
 
         return Response(NotaSerializer(nota).data, status=status.HTTP_200_OK)
