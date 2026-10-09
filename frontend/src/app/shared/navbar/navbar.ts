@@ -2,7 +2,6 @@ import { Component, computed, effect, HostListener, inject, OnInit, signal } fro
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
-import { Toast } from '../toast/toast';
 import { ToastService } from '../../services/toast.service';
 import { INotificacion } from '../../model/notificacion.model';
 import { CommonModule } from '@angular/common';
@@ -19,7 +18,7 @@ interface NavLink {
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [Modal, RouterModule, Toast, CommonModule],
+  imports: [Modal, RouterModule, CommonModule],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })

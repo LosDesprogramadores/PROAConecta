@@ -6,7 +6,6 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { ActividadesService, Entrega } from '../../../../services/actividades.service';
 import { Actividad } from '../../../../model/actividad-model';
 import { ToastService } from '../../../../services/toast.service';
-import { Toast } from '../../../../shared/toast/toast'; 
 
 import { Modal } from '../../../../shared/modal/modal';
 import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
@@ -15,7 +14,7 @@ export type FiltroEstudiante = 'TODAS' | 'PENDIENTES' | 'ENTREGADAS';
 @Component({
   selector: 'app-actividad-estudiante',
   standalone: true,
-  imports: [Modal, CommonModule, RouterModule, ReactiveFormsModule, Toast, ArchivoProtegidoDirective],
+  imports: [Modal, CommonModule, RouterModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './actividad-estudiante.html',
   styleUrl: './actividad-estudiante.css',
 })

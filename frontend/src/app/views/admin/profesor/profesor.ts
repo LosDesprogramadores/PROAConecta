@@ -160,7 +160,6 @@ export class Profesor implements OnInit {
         }
       });
     }
-    this.closeModal();
   }
 
   eliminar(): void {

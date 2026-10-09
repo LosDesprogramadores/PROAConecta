@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ToastService } from './toast.service';
 
@@ -26,6 +26,56 @@ describe('ToastService', () => {
     it('respects the title sent by the caller', () => {
       service.error('Algo falló', 'No se pudo guardar');
       expect(service.toasts()[0].titulo).toBe('No se pudo guardar');
+    });
+  });
+
+  describe('stacking limits', () => {
+    it('does not stack identical persistent error toasts', () => {
+      service.error('Algo falló', 'Título');
+      service.error('Algo falló', 'Título');
+      expect(service.toasts().length).toBe(1);
+    });
+
+    it('keeps distinct errors as separate toasts', () => {
+      service.error('Falló A', 'Título');
+      service.error('Falló B', 'Título');
+      expect(service.toasts().length).toBe(2);
+    });
+
+    it('caps visible toasts at 5 and drops the oldest', () => {
+      for (let i = 1; i <= 7; i++) {
+        service.error(`Falló ${i}`);
+      }
+      const mensajes = service.toasts().map(t => t.mensaje);
+      expect(mensajes).toEqual(['Falló 3', 'Falló 4', 'Falló 5', 'Falló 6', 'Falló 7']);
+    });
+
+    it('marks error toasts as persistent and the rest as transient', () => {
+      service.error('Falló');
+      service.success('ok');
+      expect(service.toasts().map(t => t.persistente)).toEqual([true, false]);
+    });
+  });
+
+  describe('auto-dismiss', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('keeps error toasts until the user closes them', () => {
+      service.error('Algo falló');
+      vi.advanceTimersByTime(60_000);
+      expect(service.toasts().length).toBe(1);
+      service.remove(service.toasts()[0].id);
+      expect(service.toasts().length).toBe(0);
+    });
+
+    it('still auto-dismisses success, info and warning toasts', () => {
+      service.success('ok');
+      service.info('info');
+      service.warning('ojo');
+      expect(service.toasts().length).toBe(3);
+      vi.advanceTimersByTime(4000);
+      expect(service.toasts().length).toBe(0);
     });
   });
 

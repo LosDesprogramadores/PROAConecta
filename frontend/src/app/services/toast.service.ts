@@ -8,11 +8,14 @@ export interface Toast {
   tipo: ToastType;
   titulo?: string;
   mensaje: string;
+  /** Persistent toasts have no auto-dismiss, so they show no draining progress bar. */
+  persistente: boolean;
 }
 
 const TITULO_ERROR_POR_DEFECTO = 'Error al cargar los datos';
 const MENSAJE_INESPERADO = 'Ocurrió un error inesperado. Intenta nuevamente.';
 const LARGO_MAXIMO_DETALLE = 200;
+const MAXIMO_TOASTS_VISIBLES = 5;
 
 const MENSAJES_POR_ESTADO: Record<number, string> = {
   0: 'No se pudo conectar con el servidor. Revisa tu conexión.',
@@ -44,10 +47,17 @@ export class ToastService {
   public toasts = this._toasts.asReadonly();
 
   show(mensaje: string, tipo: ToastType = 'información', titulo?: string, duracionMs = 4000): void {
-    const id = Date.now() + Math.random();
-    const nuevoToast: Toast = { id, tipo, titulo, mensaje };
+    const duplicado = this._toasts().find(
+      t => t.tipo === tipo && t.titulo === titulo && t.mensaje === mensaje
+    );
+    if (duplicado && duracionMs <= 0) {
+      return;
+    }
 
-    this._toasts.update(actuales => [...actuales, nuevoToast]);
+    const id = Date.now() + Math.random();
+    const nuevoToast: Toast = { id, tipo, titulo, mensaje, persistente: duracionMs <= 0 };
+
+    this._toasts.update(actuales => [...actuales, nuevoToast].slice(-MAXIMO_TOASTS_VISIBLES));
 
     if (duracionMs > 0) {
       setTimeout(() => {
@@ -61,7 +71,8 @@ export class ToastService {
   }
 
   error(mensaje: string, titulo = ''): void {
-    this.show(mensaje, 'error', titulo || TITULO_ERROR_POR_DEFECTO, 4000);
+    // Errors stay until the user dismisses them (duration 0 = no auto-dismiss).
+    this.show(mensaje, 'error', titulo || TITULO_ERROR_POR_DEFECTO, 0);
   }
 
   info(mensaje: string, titulo = ''): void {
