@@ -41,6 +41,8 @@ INSCRIPCION_ESTUDIANTES = inline_serializer('InscripcionEstudiantes', {
     ),
 })
 
+MENSAJE_MATERIA_CON_VINCULOS = 'Esta materia tiene profesor o estudiantes, primero debe desasignarlos o desinscribirlos'
+
 
 def _entero_o_400(valor, campo):
     try:
@@ -170,10 +172,16 @@ class MateriaViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_destroy(self, instance):
-        # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
+        # Comprobación y baja en la misma transacción, con la fila de la materia bloqueada
         with transaction.atomic():
-            instance.soft_delete()
-            registrar_evento('MATERIA_BAJA', self.request.user, 'materia', entidad_id=instance.pk, materia_id=instance.pk)
+            materia = Materia.objects.select_for_update().get(pk=instance.pk)
+            # Un titular o una inscripción distinta de BAJA (LIBRE incluida) impide la baja: primero se desvincula
+            tiene_alumnos = materia.inscripciones.exclude(estado=Inscripcion.EstadoInscripcion.BAJA).exists()
+            if materia.profesor_id is not None or tiene_alumnos:
+                raise ValidationError(MENSAJE_MATERIA_CON_VINCULOS)
+            # Baja lógica: unidades, materiales, actividades, entregas, notas e inscripciones se conservan
+            materia.soft_delete()
+            registrar_evento('MATERIA_BAJA', self.request.user, 'materia', entidad_id=materia.pk, materia_id=materia.pk)
 
     @extend_schema(
         parameters=[OpenApiParameter('formato', str, enum=['csv', 'pdf'], description='csv (defecto) o pdf')],

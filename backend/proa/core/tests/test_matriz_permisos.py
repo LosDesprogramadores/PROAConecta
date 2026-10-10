@@ -130,6 +130,7 @@ def _crear_escena():
     titular = e.u['titular'].persona
     e.m = MateriaFactory(profesor=titular, titulo='Materia de la matriz')
     e.m_ajena = MateriaFactory(profesor=e.u['prof_ajeno'].persona, titulo='Materia ajena')
+    e.m_vacia = MateriaFactory(titulo='Materia sin profesor ni estudiantes')  # la baja exige esto
     e.m_baja = MateriaFactory(profesor=titular, titulo='Materia en papelera')
     e.m_baja.soft_delete()
 
@@ -327,7 +328,7 @@ MATRIZ = [
     *PUT_Y_PATCH('materia-detail', _con('/api/materias/{e.m.pk}/'), SOLO_ADMIN,
                  lambda e: {'titulo': 'Materia editada', 'anio': 2026, 'curso': '1ro A'},
                  lambda e: {'descripcion': 'editada'}),
-    F('materia-detail', 'DELETE', _con('/api/materias/{e.m.pk}/'), (U, P, P, P, P, P, P, D, U)),
+    F('materia-detail', 'DELETE', _con('/api/materias/{e.m_vacia.pk}/'), (U, P, P, P, P, P, P, D, U)),
     F('materia-alumnos', 'GET', _con('/api/materias/{e.m.pk}/alumnos/'), (U, P, P, P, P, O, P, O, U)),
     F('materia-desasignar-profesor', 'PATCH', _con('/api/materias/{e.m.pk}/desasignar-profesor/'), SOLO_ADMIN),
     F('materia-mi-rendimiento', 'GET', _con('/api/materias/{e.m.pk}/mi-rendimiento/'), (U, O, O, P, P, P, P, O, U)),

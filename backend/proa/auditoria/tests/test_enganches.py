@@ -176,6 +176,9 @@ def test_desasignar_una_materia_sin_profesor_no_registra_nada(api_as, admin, con
 
 
 def test_baja_y_restauracion_de_materia(api_as, admin, materia, confirmar):
+    # La baja exige una materia sin titular ni estudiantes vigentes
+    materia.profesor = None
+    materia.save(update_fields=['profesor'])
     with confirmar():
         assert api_as(admin).delete(f'/api/materias/{materia.id}/').status_code == 204
     baja = unico('MATERIA_BAJA')
