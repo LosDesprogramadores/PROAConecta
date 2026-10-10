@@ -1,8 +1,10 @@
 """Baja lógica de materias sin borrado en cascada (BE-08, TSK144)."""
 import datetime
+from unittest import mock
 
 import pytest
-from django.db.models import ProtectedError
+from django.db import connection
+from django.db.models import ProtectedError, QuerySet
 from django.utils import timezone
 
 from academico.models import Inscripcion, Materia
@@ -44,7 +46,17 @@ def _dar_de_baja(materia):
 
 # --- el borrado ya no es en cascada ---
 
+MENSAJE_BLOQUEO = 'Esta materia tiene profesor o estudiantes, primero debe desasignarlos o desinscribirlos'
+
+
+def _desasignar_y_desinscribir(materia):
+    materia.profesor = None
+    materia.save(update_fields=['profesor'])
+    Inscripcion.objects.filter(materia=materia).update(estado=Inscripcion.EstadoInscripcion.BAJA)
+
+
 def test_eliminar_una_materia_la_da_de_baja_y_conserva_todo_su_contenido(api_as, admin, materia_completa):
+    _desasignar_y_desinscribir(materia_completa)
     antes = _conteos()
 
     respuesta = api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
@@ -52,6 +64,71 @@ def test_eliminar_una_materia_la_da_de_baja_y_conserva_todo_su_contenido(api_as,
     assert respuesta.status_code == 204
     materia = Materia.todas.get(pk=materia_completa.pk)
     assert materia.fecha_baja is not None
+    assert _conteos() == antes
+
+
+def test_eliminar_una_materia_con_titular_responde_400_y_sigue_activa(api_as, admin, materia_completa):
+    Inscripcion.objects.all().delete()
+
+    respuesta = api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
+
+    assert respuesta.status_code == 400
+    assert respuesta.json() == {'detail': MENSAJE_BLOQUEO}
+    assert Materia.objects.filter(pk=materia_completa.pk).exists()
+
+
+@pytest.mark.parametrize('estado', [
+    Inscripcion.EstadoInscripcion.CURSANDO, Inscripcion.EstadoInscripcion.REGULAR,
+    Inscripcion.EstadoInscripcion.PROMOCIONADO, Inscripcion.EstadoInscripcion.LIBRE,
+])
+def test_eliminar_una_materia_con_una_inscripcion_no_baja_responde_400(estado, api_as, admin, materia_completa):
+    materia_completa.profesor = None
+    materia_completa.save(update_fields=['profesor'])
+    Inscripcion.objects.update(estado=estado)
+
+    respuesta = api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
+
+    assert respuesta.status_code == 400
+    assert respuesta.json() == {'detail': MENSAJE_BLOQUEO}
+    assert Materia.objects.filter(pk=materia_completa.pk).exists()
+
+
+def test_eliminar_una_materia_bloqueada_no_modifica_nada(api_as, admin, materia_completa):
+    antes = _conteos()
+
+    api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
+
+    assert _conteos() == antes
+    assert Materia.objects.get(pk=materia_completa.pk).profesor_id is not None
+
+
+def test_eliminar_una_materia_con_solo_inscripciones_en_baja_es_posible(api_as, admin, rol_estudiante, materia_completa):
+    _desasignar_y_desinscribir(materia_completa)
+    InscripcionFactory(
+        materia=materia_completa, estudiante=PersonaFactory(rol=rol_estudiante), estado=Inscripcion.EstadoInscripcion.BAJA
+    )
+
+    respuesta = api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
+
+    assert respuesta.status_code == 204
+    assert Materia.todas.get(pk=materia_completa.pk).fecha_baja is not None
+
+
+def test_eliminar_una_materia_vacia_es_posible(api_as, admin):
+    materia = MateriaFactory()
+
+    assert api_as(admin).delete(f'/api/materias/{materia.pk}/').status_code == 204
+    assert Materia.todas.get(pk=materia.pk).fecha_baja is not None
+
+
+def test_una_materia_dada_de_baja_se_restaura_con_su_contenido_tras_el_bloqueo(api_as, admin, materia_completa):
+    _desasignar_y_desinscribir(materia_completa)
+    antes = _conteos()
+    api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
+
+    respuesta = api_as(admin).post(f'/api/materias/{materia_completa.pk}/restaurar/')
+
+    assert respuesta.status_code == 200
     assert _conteos() == antes
 
 
@@ -359,3 +436,19 @@ def test_una_carrera_contra_la_restriccion_responde_400_y_no_500(metodo, api_as,
 
     assert respuesta.status_code == 400
     assert respuesta.json() == {'detail': 'Ya existe una materia con ese título, curso y año.'}
+
+
+def test_la_baja_comprueba_y_borra_dentro_de_una_transaccion_con_la_materia_bloqueada(api_as, admin, materia_completa):
+    _desasignar_y_desinscribir(materia_completa)
+    real = QuerySet.select_for_update
+    bloqueos = []
+
+    def espiar(self, *args, **kwargs):
+        bloqueos.append((self.model, connection.in_atomic_block))
+        return real(self, *args, **kwargs)
+
+    with mock.patch.object(QuerySet, 'select_for_update', autospec=True, side_effect=espiar):
+        respuesta = api_as(admin).delete(f'/api/materias/{materia_completa.pk}/')
+
+    assert respuesta.status_code == 204
+    assert (Materia, True) in bloqueos

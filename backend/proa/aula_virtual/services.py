@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from auditoria.bitacora import registrar_evento
 from academico.selectors import alumnos_de_materia
@@ -207,3 +208,53 @@ def obtener_rendimiento_curso_profesor(user, materia) -> dict:
     }
 
 
+ESTADOS_SEGUIMIENTO = ('PENDIENTE', 'ENTREGADO', 'FUERA_DE_TERMINO', 'CORREGIDO', 'NO_ENTREGADO')
+
+
+def _estado_de_seguimiento(entrega, plazo_vencido: bool) -> str:
+    # Una entrega en borrador o marcada sin entregar todavía no es una entrega del estudiante
+    if entrega is None or entrega.estado in (Entrega.EstadoEntrega.BORRADOR, Entrega.EstadoEntrega.NO_ENTREGADO):
+        return 'NO_ENTREGADO' if plazo_vencido else 'PENDIENTE'
+    if entrega.estado == Entrega.EstadoEntrega.CORREGIDO or hasattr(entrega, 'nota'):
+        return 'CORREGIDO'
+    return 'FUERA_DE_TERMINO' if entrega.fuera_de_termino else 'ENTREGADO'
+
+
+def seguimiento_de_actividad(usuario, actividad) -> dict:
+    """Todos los inscriptos de la materia con el estado de su entrega en la actividad (BAJA no; LIBRE sí)."""
+    materia = actividad.materia
+    verificar_profesor_materia(usuario, materia)
+
+    estudiantes = Persona.objects.filter(
+        id__in=alumnos_de_materia(materia).values('estudiante_id'), fecha_baja__isnull=True
+    ).order_by('apellido', 'nombre', 'id')
+    entregas = {
+        e.estudiante_id: e
+        for e in Entrega.objects.filter(actividad=actividad, fecha_baja__isnull=True).select_related('nota')
+    }
+    plazo_vencido = bool(actividad.fecha_limite and timezone.now() > actividad.fecha_limite)
+
+    filas = []
+    resumen = dict.fromkeys(ESTADOS_SEGUIMIENTO, 0)
+    for estudiante in estudiantes:
+        entrega = entregas.get(estudiante.id)
+        estado = _estado_de_seguimiento(entrega, plazo_vencido)
+        resumen[estado] += 1
+        nota = getattr(entrega, 'nota', None)
+        filas.append({
+            'estudiante_id': estudiante.id,
+            'apellido': estudiante.apellido,
+            'nombre': estudiante.nombre,
+            'dni': estudiante.dni,
+            'estado': estado,
+            'entrega_id': entrega.id if entrega else None,
+            'fecha_entrega': entrega.fecha_entrega if entrega else None,
+            'nota': {'calificacion': nota.calificacion, 'descripcion': nota.descripcion} if nota else None,
+        })
+
+    return {
+        'actividad': {'id': actividad.id, 'titulo': actividad.titulo, 'fecha_limite': actividad.fecha_limite},
+        'materia': {'id': materia.id, 'titulo': materia.titulo},
+        'resumen': resumen,
+        'estudiantes': filas,
+    }

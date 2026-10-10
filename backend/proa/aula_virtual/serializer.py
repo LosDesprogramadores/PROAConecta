@@ -7,6 +7,7 @@ from django.urls import reverse
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from .models import Unidad, Material, Actividad, Entrega, Nota
+from .services import ESTADOS_SEGUIMIENTO
 from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
 
 MENSAJE_UNIDAD_DUPLICADA = 'Ya existe una unidad con ese título en esta materia.'
@@ -214,11 +215,14 @@ class EntregaSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
     tipo_archivo = 'entrega'
     nota = NotaSerializer(read_only=True)
     estudiante_nombre = serializers.SerializerMethodField()
+    actividad_titulo = serializers.CharField(source='actividad.titulo', read_only=True)
+    materia_id = serializers.IntegerField(source='actividad.materia_id', read_only=True)
+    materia_titulo = serializers.CharField(source='actividad.materia.titulo', read_only=True)
 
     class Meta:
         model = Entrega
         fields = [
-            'id', 'actividad', 'estudiante', 'estudiante_nombre',
+            'id', 'actividad', 'actividad_titulo', 'materia_id', 'materia_titulo', 'estudiante', 'estudiante_nombre',
             'archivo', 'enlace', 'contenido_texto',
             'fuera_de_termino', 'estado', 'fecha_entrega', 'fecha_baja', 'nota'
         ]
@@ -279,3 +283,39 @@ class EntregaSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
             raise serializers.ValidationError("Debes enviar al menos un archivo, enlace o texto.")
 
         return attrs
+
+
+class SeguimientoNotaSerializer(serializers.Serializer):
+    calificacion = serializers.DecimalField(max_digits=4, decimal_places=2)
+    descripcion = serializers.CharField(allow_blank=True)
+
+
+class SeguimientoEstudianteSerializer(serializers.Serializer):
+    estudiante_id = serializers.IntegerField()
+    apellido = serializers.CharField()
+    nombre = serializers.CharField()
+    dni = serializers.CharField()
+    estado = serializers.ChoiceField(choices=ESTADOS_SEGUIMIENTO)
+    entrega_id = serializers.IntegerField(allow_null=True)
+    fecha_entrega = serializers.DateTimeField(allow_null=True)
+    nota = SeguimientoNotaSerializer(allow_null=True)
+
+
+class SeguimientoActividadSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    titulo = serializers.CharField()
+    fecha_limite = serializers.DateTimeField(allow_null=True)
+
+
+class SeguimientoMateriaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    titulo = serializers.CharField()
+
+
+class SeguimientoSerializer(serializers.Serializer):
+    """Respuesta de ``GET /api/actividades/<id>/seguimiento/`` (solo lectura)."""
+
+    actividad = SeguimientoActividadSerializer()
+    materia = SeguimientoMateriaSerializer()
+    resumen = serializers.DictField(child=serializers.IntegerField())
+    estudiantes = SeguimientoEstudianteSerializer(many=True)

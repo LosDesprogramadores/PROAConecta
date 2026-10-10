@@ -130,6 +130,7 @@ def _crear_escena():
     titular = e.u['titular'].persona
     e.m = MateriaFactory(profesor=titular, titulo='Materia de la matriz')
     e.m_ajena = MateriaFactory(profesor=e.u['prof_ajeno'].persona, titulo='Materia ajena')
+    e.m_vacia = MateriaFactory(titulo='Materia sin profesor ni estudiantes')  # la baja exige esto
     e.m_baja = MateriaFactory(profesor=titular, titulo='Materia en papelera')
     e.m_baja.soft_delete()
 
@@ -327,7 +328,7 @@ MATRIZ = [
     *PUT_Y_PATCH('materia-detail', _con('/api/materias/{e.m.pk}/'), SOLO_ADMIN,
                  lambda e: {'titulo': 'Materia editada', 'anio': 2026, 'curso': '1ro A'},
                  lambda e: {'descripcion': 'editada'}),
-    F('materia-detail', 'DELETE', _con('/api/materias/{e.m.pk}/'), (U, P, P, P, P, P, P, D, U)),
+    F('materia-detail', 'DELETE', _con('/api/materias/{e.m_vacia.pk}/'), (U, P, P, P, P, P, P, D, U)),
     F('materia-alumnos', 'GET', _con('/api/materias/{e.m.pk}/alumnos/'), (U, P, P, P, P, O, P, O, U)),
     F('materia-desasignar-profesor', 'PATCH', _con('/api/materias/{e.m.pk}/desasignar-profesor/'), SOLO_ADMIN),
     F('materia-mi-rendimiento', 'GET', _con('/api/materias/{e.m.pk}/mi-rendimiento/'), (U, O, O, P, P, P, P, O, U)),
@@ -343,6 +344,9 @@ MATRIZ = [
       lambda e: {'materia': e.m.pk, 'estudiante': e.sin_inscripcion.pk}),
     F('inscripcion-inscribir-lote', 'POST', _api('inscripciones/inscribir/'), (U, P, P, P, P, P, P, C, U),
       lambda e: {'estudiante_id': e.sin_inscripcion.pk, 'materia_ids': [e.m.pk]}),
+    F('inscripcion-inscribir-estudiantes', 'POST', _api('inscripciones/inscribir-estudiantes/'),
+      (U, P, P, P, P, P, P, C, U),
+      lambda e: {'materia_id': e.m.pk, 'estudiante_ids': [e.sin_inscripcion.pk]}),
     F('inscripcion-desinscribir-estudiante', 'POST', _api('inscripciones/desinscribir/'), SOLO_ADMIN,
       lambda e: {'estudiante_id': e.extra.pk, 'materia_id': e.m.pk}),
     F('inscripcion-detail', 'GET', _con('/api/inscripciones/{e.insc_cursando.pk}/'), (U, O, N, N, N, O, N, O, U)),
@@ -395,6 +399,8 @@ MATRIZ = [
     F('actividad-cambiar-estado', 'PATCH', _con('/api/actividades/{e.actividad.pk}/cambiar-estado/'),
       (U, P, P, N, N, O, N, O, U)),
     F('actividad-entregas', 'GET', _con('/api/actividades/{e.actividad.pk}/entregas/'), (U, P, P, N, N, O, N, O, U)),
+    F('actividad-seguimiento', 'GET', _con('/api/actividades/{e.actividad.pk}/seguimiento/'),
+      (U, P, P, N, N, O, N, O, U)),
     *[
         F('actividad-calificar-estudiante', metodo, _con('/api/actividades/{e.actividad.pk}/calificar-estudiante/'),
           (U, P, P, P, P, O, P, O, U),
