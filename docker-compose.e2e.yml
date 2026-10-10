@@ -72,6 +72,18 @@ services:
       retries: 30
       start_period: 20s
 
+  # Publishes scheduled notices (python manage.py publicar_notificaciones_programadas every 60 s).
+  # Same image and settings as the backend; the tests can also run the command once explicitly.
+  programador:
+    env_file: !reset []
+    environment:
+      - PYTHONPATH=/e2e
+      - DJANGO_SETTINGS_MODULE=settings_e2e
+      - DJANGO_SECRET_KEY=e2e-only-secret-key-not-a-real-secret
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    volumes: !override
+      - ./e2e/stack/settings_e2e.py:/e2e/settings_e2e.py:ro
+
   frontend:
     container_name: !reset null
     restart: "no"

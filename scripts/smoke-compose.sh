@@ -41,6 +41,33 @@ else
   exit 1
 fi
 
+# El programador de avisos debe estar en ejecución (no reiniciándose en bucle)
+echo "Verificando el programador de avisos..."
+estado_programador=""
+for _ in $(seq 1 15); do
+  estado_programador=$(docker inspect -f '{{.State.Status}}' "$(docker compose ps -q programador)" 2>/dev/null || true)
+  [ "$estado_programador" = "running" ] && break
+  sleep 2
+done
+if [ "$estado_programador" = "running" ]; then
+  echo "OK: el servicio programador está en ejecución"
+else
+  echo "FALLO: el servicio programador está '${estado_programador:-ausente}' (se esperaba running)"
+  docker compose logs --tail=50 programador
+  exit 1
+fi
+
+# Una pasada manual del comando: debe terminar bien (conexión a Mongo y Redis, imports, índices)
+echo "Ejecutando una vuelta del programador..."
+if salida_programador=$(docker compose exec -T programador python manage.py publicar_notificaciones_programadas 2>&1); then
+  echo "OK: publicar_notificaciones_programadas terminó sin errores (${salida_programador})"
+else
+  echo "FALLO: publicar_notificaciones_programadas terminó con error"
+  echo "$salida_programador"
+  docker compose logs --tail=50 programador
+  exit 1
+fi
+
 # WebSocket a través de nginx: el handshake debe completarse (101) aunque no haya ticket,
 # y la app cierra enseguida con 4401. Un origen ajeno debe rechazarse con 403.
 echo "Verificando el WebSocket..."
