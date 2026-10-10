@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Actividad, ActividadPayload } from '../model/actividad-model';
+import { RespuestaPaginada } from '../core/models/api-response.interface';
+import { Seguimiento } from '../model/seguimiento.model';
 
 export interface NotaEntrega {
   id: number;
@@ -17,6 +19,10 @@ export interface Entrega {
   actividad: number;
   estudiante: number;
   estudiante_nombre: string;
+  /** Only in `GET /api/entregas/`: titles and materia of the activity. */
+  actividad_titulo?: string;
+  materia_id?: number;
+  materia_titulo?: string;
   archivo?: string | null;
   enlace?: string | null;
   contenido_texto?: string | null;
@@ -24,6 +30,15 @@ export interface Entrega {
   estado?: string;
   fecha_entrega: string;
   nota?: NotaEntrega | null;
+}
+
+/** Filters of the paginated deliveries listing (`GET /api/entregas/?page=`). */
+export interface FiltroEntregas {
+  page: number;
+  page_size?: number;
+  /** true: only graded deliveries; false: only the ones without a grade. */
+  calificada?: boolean;
+  materia?: number;
 }
 
 export interface CalificacionPayload {
@@ -69,6 +84,20 @@ export class ActividadesService {
 
   getEntregas(actividadId: number): Observable<Entrega[]> {
     return this.http.get<Entrega[]>(`${this.apiUrl}/${actividadId}/entregas/`);
+  }
+
+  /** Deliveries across the professor's materias, paginated (the envelope appears with `page`). */
+  getEntregasPagina(filtro: FiltroEntregas): Observable<RespuestaPaginada<Entrega>> {
+    let params = new HttpParams().set('page', filtro.page);
+    if (filtro.page_size) params = params.set('page_size', filtro.page_size);
+    if (filtro.calificada !== undefined) params = params.set('calificada', filtro.calificada);
+    if (filtro.materia !== undefined) params = params.set('materia', filtro.materia);
+    return this.http.get<RespuestaPaginada<Entrega>>(`${this.entregasUrl}/`, { params });
+  }
+
+  /** Every enrolled student of the activity with the delivery status (also those who did not deliver). */
+  getSeguimiento(actividadId: number): Observable<Seguimiento> {
+    return this.http.get<Seguimiento>(`${this.apiUrl}/${actividadId}/seguimiento/`);
   }
 
   calificarEntregaIndividual(

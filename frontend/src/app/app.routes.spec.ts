@@ -195,3 +195,45 @@ describe('view-materia/:id/calificaciones by role', () => {
     expect(planillaProfesor({ logueado: false })).toBe('/login');
   });
 });
+
+describe('dashboard/entregas guard (soloProfesor)', () => {
+  const rutaEntregas = () => routes.find((r) => r.path === 'dashboard')!.children!.find((r) => r.path === 'entregas')!;
+
+  function evaluar(sesion: { logueado: boolean; rol?: UserRole }): string | boolean {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isLoggedIn: () => sesion.logueado, rol: () => sesion.rol } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const guardas = rutaEntregas().canActivate!;
+    const resultado = TestBed.runInInjectionContext(() =>
+      (guardas[0] as (r: ActivatedRouteSnapshot, s: RouterStateSnapshot) => unknown)(
+        {} as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    );
+    return resultado instanceof UrlTree ? router.serializeUrl(resultado) : (resultado as boolean);
+  }
+
+  it('is protected by a guard', () => {
+    expect(rutaEntregas().canActivate).toHaveLength(1);
+  });
+
+  it('lets the professor in', () => {
+    expect(evaluar({ logueado: true, rol: UserRole.DOCENTE })).toBe(true);
+  });
+
+  it('sends a student to their own panel', () => {
+    expect(evaluar({ logueado: true, rol: UserRole.ESTUDIANTE })).toBe('/dashboard/estudiante/welcome');
+  });
+
+  it('sends the administrator to the admin panel', () => {
+    expect(evaluar({ logueado: true, rol: UserRole.ADMIN })).toBe('/dashboard-admin');
+  });
+
+  it('sends a visitor without a session to /login', () => {
+    expect(evaluar({ logueado: false })).toBe('/login');
+  });
+});

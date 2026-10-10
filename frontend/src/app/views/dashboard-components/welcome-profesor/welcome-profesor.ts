@@ -1,9 +1,12 @@
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 
 import { MateriaService } from '../../../services/materia.service';
 import { ActividadesService } from '../../../services/actividades.service';
+import { MensajesEstadoService } from '../../../services/mensajes-estado.service';
+import { Actividad } from '../../../model/actividad-model';
 import { IMateria } from '../../../model/materia.model';
 import { AuthService } from '../../../core/auth/auth.service';
 
@@ -12,13 +15,12 @@ export interface MateriasProfesor extends IMateria {
   estado: 'en-progreso' | 'finalizada' | 'archived';
   esFavorita: boolean;
   estudiantes: number;
-  proximaEntrega: string;
 }
 
 @Component({
   selector: 'app-welcome-profesor',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   templateUrl: './welcome-profesor.html',
   styleUrls: ['./welcome-profesor.css'],
 })
@@ -26,10 +28,15 @@ export class WelcomeProfesor implements OnInit {
   private readonly materiaService = inject(MateriaService);
   private readonly actividadesService = inject(ActividadesService);
   private readonly authService = inject(AuthService);
+  private readonly mensajesEstado = inject(MensajesEstadoService);
 
   // Señales exclusivas para profesor
   materiasProfesor = signal<MateriasProfesor[]>([]);
-  actividadesActivas = signal<number>(0);
+  private readonly actividades = signal<Actividad[]>([]);
+  /** Deliveries without a grade; null while loading or when the server could not answer. */
+  entregasSinCalificar = signal<number | null>(null);
+  entregasNoDisponible = signal(false);
+  consultasSinLeer = this.mensajesEstado.noLeidos;
 
   // Anuncios para el sidebar del profesor
   sidebarAnuncios = signal([
@@ -76,14 +83,32 @@ export class WelcomeProfesor implements OnInit {
     return all.filter((m) => m.estado === filtro);
   });
 
-  // Computed para total de actividades activas
-  totalActividadesActivas = computed(() => this.actividadesActivas());
+  // Published activities whose deadline has not passed yet.
+  private readonly actividadesVigentes = computed(() => {
+    const ahora = Date.now();
+    return this.actividades().filter((a) => a.estado === 'PUBLICADA' && new Date(a.fecha_limite).getTime() >= ahora);
+  });
+
+  totalActividadesActivas = computed(() => this.actividadesVigentes().length);
+
+  /** Nearest deadline (ISO) of the current activities of each materia. */
+  private readonly proximaEntregaPorMateria = computed(() => {
+    const proximas = new Map<number, string>();
+    for (const a of this.actividadesVigentes()) {
+      const actual = proximas.get(a.materia);
+      if (!actual || new Date(a.fecha_limite) < new Date(actual)) {
+        proximas.set(a.materia, a.fecha_limite);
+      }
+    }
+    return proximas;
+  });
 
   // === LIFECYCLE ===
 
   ngOnInit(): void {
     this.loadMateriasProfesor();
     this.loadActividadesActivas();
+    this.loadEntregasSinCalificar();
   }
 
   // === MÉTODOS PRIVADOS ===
@@ -113,7 +138,6 @@ export class WelcomeProfesor implements OnInit {
             estado: 'en-progreso' as const,
             esFavorita: false,
             estudiantes: materia.total_estudiantes || 0,
-            proximaEntrega: 'Próxima entrega: 25 Ago',
           }));
 
         this.materiasProfesor.set(materiasConInfo);
@@ -130,22 +154,29 @@ export class WelcomeProfesor implements OnInit {
 
   private loadActividadesActivas(): void {
     this.actividadesService.getActividades().subscribe({
-      next: (data) => {
-        // Contar actividades que estén activas/vigentes
-        // Si la Actividad tiene un campo 'estado', puedes filtrar aquí
-        const actividadesVigentes = data.filter((a: any) => a.estado === 'activa' || a.estado === 'vigente');
-        this.actividadesActivas.set(actividadesVigentes.length || data.length);
-      },
-
-      error: (err: any) => {
+      next: (data) => this.actividades.set(data),
+      error: (err) => {
         console.error('Error cargando actividades activas:', err);
-        // No interrumpimos el flujo, solo dejamos el contador en 0
-        this.actividadesActivas.set(0);
+        // No interrumpimos el flujo: sin datos no hay vigentes ni próximas entregas.
+        this.actividades.set([]);
       },
     });
   }
 
+  private loadEntregasSinCalificar(): void {
+    // page=1 returns the envelope; one item is enough because only the count matters.
+    this.actividadesService.getEntregasPagina({ calificada: false, page: 1, page_size: 1 }).subscribe({
+      next: (respuesta) => this.entregasSinCalificar.set(respuesta.count),
+      error: () => this.entregasNoDisponible.set(true),
+    });
+  }
+
   // === MÉTODOS PÚBLICOS ===
+
+  /** ISO deadline of the next delivery of a materia, or null when it has none. */
+  proximaEntregaDe(materiaId: number): string | null {
+    return this.proximaEntregaPorMateria().get(materiaId) ?? null;
+  }
 
   toggleFavoritaProfesor(materiaId: number): void {
     this.materiasProfesor.update((materias) =>

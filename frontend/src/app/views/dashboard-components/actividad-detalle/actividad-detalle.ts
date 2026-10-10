@@ -1,8 +1,7 @@
-import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ActividadesService } from '../../../services/actividades.service';
 import { Actividad } from '../../../model/actividad-model';
 
@@ -16,10 +15,6 @@ export class ActividadDetalleComponent implements OnInit {
   private actividadesService = inject(ActividadesService);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
-  private router = inject(Router);
-
-  // Se calcula una sola vez: el componente se recrea en cada navegación.
-  protected readonly enMateria = estaEnVistaMateria(this.router.url);
 
   actividad = signal<Actividad | null>(null);
   cargando = signal(false);
@@ -59,14 +54,5 @@ export class ActividadDetalleComponent implements OnInit {
         this.cargando.set(false);
       }
     });
-  }
-
-  volver(): void {
-    const matId = this.materiaId();
-    if (matId) {
-      this.router.navigate(['/view-materia', matId, 'actividades']);
-    } else {
-      this.router.navigate(['/dashboard/actividades']);
-    }
   }
 }
