@@ -465,12 +465,12 @@ MATRIZ = [
     F('mensaje-list-create', 'POST', _api('mensajes/'), (U, C, C, P, P, P, P, P, U),
       lambda e: {'materia_id': e.m.pk, 'destinatario_id': e.u['titular'].pk, 'asunto': 'Duda', 'cuerpo': 'Hola'},
       variante='a-titular', mongo=True),
-    # Lectura del hilo: el historial se conserva en BAJA; solo la pareja profesor-estudiante es válida (si no, 404
-    # uniforme: no se distingue "no existe" de "no es pareja")
+    # Lectura del hilo: el historial se conserva en BAJA; pertenecer a la materia (titular o con inscripción en
+    # cualquier estado) y ser pareja profesor-estudiante: si no, 404 uniforme (no se distingue "no existe")
     F('mensaje-conversacion', 'GET', _con('/api/mensajes/conversacion/?materia={e.m.pk}&con={e.u[titular].pk}'),
-      (U, O, O, O, O, N, N, P, U), variante='con-titular', mongo=True),
+      (U, O, O, O, N, N, N, P, U), variante='con-titular', mongo=True),
     F('mensaje-conversacion', 'GET', _con('/api/mensajes/conversacion/?materia={e.m.pk}&con={e.u[cursando].pk}'),
-      (U, N, N, N, N, O, O, P, U), variante='con-estudiante', mongo=True),
+      (U, N, N, N, N, O, N, P, U), variante='con-estudiante', mongo=True),
     F('mensaje-leer', 'POST', _con('/api/mensajes/{e.id_mensaje}/leer/'), (U, O, N, N, N, N, N, N, U), mongo=True),
     F('mensaje-detail', 'DELETE', _con('/api/mensajes/{e.id_mensaje}/'), (U, N, N, N, N, D, N, N, U), mongo=True),
 

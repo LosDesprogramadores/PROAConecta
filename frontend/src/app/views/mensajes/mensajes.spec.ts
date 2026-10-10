@@ -406,6 +406,52 @@ describe('MensajesComponent', () => {
       expect(c.respuesta.value).toBe('');
     });
 
+    it('sends the reply when the inline form is submitted and does not trigger a native submit (no reload)', () => {
+      const { c } = abrir();
+      const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+      const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
+      textarea.value = 'Sí, entra';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      const submit = new Event('submit', { cancelable: true, bubbles: true });
+      form.dispatchEvent(submit);
+
+      expect(submit.defaultPrevented).toBe(true);
+      const req = http.expectOne(base);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ materia_id: 7, destinatario_id: 12, asunto: 'Re: Asunto 1', cuerpo: 'Sí, entra' });
+      req.flush(mio('3', { cuerpo: 'Sí, entra', asunto: 'Re: Asunto 1' }));
+      expect(c.respuesta.value).toBe('');
+    });
+
+    it('disables the inline reply submit button while sending and re-enables it afterwards', () => {
+      const { c } = abrir();
+      c.respuesta.setValue('Sí, entra');
+      fixture.detectChanges();
+      const boton = fixture.nativeElement.querySelector('form button[type="submit"]') as HTMLButtonElement;
+      expect(boton.disabled).toBe(false);
+
+      c.responderEnHilo();
+      fixture.detectChanges();
+      expect(boton.disabled).toBe(true);
+
+      http.expectOne(base).flush(mio('3', { cuerpo: 'Sí, entra', asunto: 'Re: Asunto 1' }));
+      fixture.detectChanges();
+      expect(c.enviandoRespuesta()).toBe(false);
+    });
+
+    it('does not send an empty reply when the inline form is submitted', () => {
+      abrir();
+      const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+
+      const submit = new Event('submit', { cancelable: true, bubbles: true });
+      form.dispatchEvent(submit);
+
+      expect(submit.defaultPrevented).toBe(true);
+      http.expectNone(base);
+    });
+
     it('does not send an empty reply', () => {
       const { c } = abrir();
       c.respuesta.setValue('   ');

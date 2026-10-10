@@ -64,11 +64,10 @@ def test_listado_de_entregas_del_profesor_excluye_materias_ajenas_aun_filtrando_
     for consulta in ('', f'?materia={actividad.materia_id}', f'?materia={actividad.materia_id}&calificada=false',
                      f'?actividad={actividad.pk}'):
         respuesta = cliente.get(f'/api/entregas/{consulta}')
-        assert respuesta.status_code in (200, 403, 404), consulta
-        if respuesta.status_code == 200:
-            cuerpo = respuesta.json()
-            filas = cuerpo['results'] if isinstance(cuerpo, dict) else cuerpo
-            assert filas == [], consulta
+        assert respuesta.status_code == 200, consulta
+        cuerpo = respuesta.json()
+        filas = cuerpo['results'] if isinstance(cuerpo, dict) else cuerpo
+        assert filas == [], consulta
 
     propio = con_token(profesor).get(f'/api/entregas/?materia={actividad.materia_id}').json()
     filas = propio['results'] if isinstance(propio, dict) else propio
@@ -172,11 +171,10 @@ def test_profesor_ajeno_no_lee_la_conversacion_de_otra_materia(
     respuesta = con_token(otro_profesor).get(
         '/api/mensajes/conversacion/', {'materia': materia_con_inscripcion.pk, 'con': estudiante.pk},
     )
-    # El hilo es siempre entre quien pide y `con`: la matriz lo declara 200, pero nunca con mensajes ajenos
-    assert respuesta.status_code in (200, 404)
+    # No pertenece a la materia: 404 uniforme, sin importar quién sea `con`
+    assert respuesta.status_code == 404
+    assert respuesta.json() == {'detail': 'No se encontró la conversación.'}
     assert 'secreto' not in respuesta.content.decode()
-    if respuesta.status_code == 200:
-        assert respuesta.json() == []
 
 
 # ---- clave provisoria ---------------------------------------------------------------------------

@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 
 from django.shortcuts import get_object_or_404
 
-from academico.models import Materia
+from academico.models import Inscripcion, Materia
 from academico.selectors import alumnos_de_materia
 from auditoria.bitacora import registrar_evento
 from core.roles import (
@@ -50,6 +50,19 @@ def _es_titular(usuario, materia) -> bool:
 def _es_inscripto(usuario, materia) -> bool:
     persona, _ = obtener_persona_y_rol(usuario)
     return es_estudiante(usuario) and tiene_inscripcion_activa(persona, materia)
+
+
+def _pertenece_a_la_materia(usuario, materia) -> bool:
+    """Titular, profesor que participó en mensajes de la materia (ex-titular), o estudiante con inscripción
+    en cualquier estado (BAJA incluida). Es solo para leer: enviar sigue exigiendo ``par_permitido``."""
+    if _es_titular(usuario, materia):
+        return True
+    if es_profesor(usuario):
+        return repositorio.participo_en_materia(usuario.pk, materia.pk)
+    persona, _ = obtener_persona_y_rol(usuario)
+    return es_estudiante(usuario) and persona is not None and Inscripcion.objects.filter(
+        materia=materia, estudiante=persona,
+    ).exists()
 
 
 # Quien pasa a BAJA (o cuya materia se da de baja) conserva el acceso de lectura a su historial,
@@ -197,14 +210,18 @@ def conversacion(usuario, params) -> list:
     """Hilo entre ``usuario`` y la persona ``con`` en la materia, en orden cronológico.
 
     Como el resto de la lectura, no exige inscripción vigente: quien pasó a BAJA conserva su historial.
-    Solo se pide que la pareja sea profesor-estudiante; los mensajes de terceros nunca entran en la consulta.
+    Pertenece a la materia el profesor titular (o ex-titular con mensajes en ella) o quien tiene (o tuvo)
+    una inscripción en cualquier estado.
+    Quien no pertenece, o pide una pareja que no es profesor-estudiante, recibe el mismo 404: no se puede sondear
+    materias, ids ni roles. Los mensajes de terceros nunca entran en la consulta.
     """
     if es_admin(usuario):
         raise PermissionDenied(MENSAJE_ADMIN)
     materia_id = _entero_obligatorio(params, 'materia')
     otro_id = _entero_obligatorio(params, 'con')
-    if not Materia.todas.filter(pk=materia_id).exists():
-        raise NotFound('Materia no encontrada.')
+    materia = Materia.todas.filter(pk=materia_id).first()
+    if materia is None or not _pertenece_a_la_materia(usuario, materia):
+        raise NotFound(MENSAJE_CONVERSACION_NO_ENCONTRADA)
     otro = Usuario.objects.select_related('persona__rol').filter(pk=otro_id).first()
     pareja = otro is not None and (
         (es_profesor(usuario) and es_estudiante(otro)) or (es_estudiante(usuario) and es_profesor(otro))

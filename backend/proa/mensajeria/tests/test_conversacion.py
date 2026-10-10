@@ -30,6 +30,11 @@ def otro_estudiante(rol_estudiante, materia_con_inscripcion):
     return usuario
 
 
+@pytest.fixture
+def otro_profesor(rol_profesor):
+    return UsuarioFactory(persona__rol=rol_profesor)
+
+
 def _guardar(materia, remitente, destinatario, minutos=0, asunto='A', **extra):
     id_, _ = repositorio.crear({
         'materia_id': materia.pk, 'remitente_id': remitente.pk, 'destinatario_id': destinatario.pk,
@@ -120,6 +125,36 @@ def test_estudiante_con_otro_estudiante_es_404(api_as, materia_con_inscripcion, 
     assert respuesta.json() == {'detail': 'No se encontró la conversación.'}
 
 
+MENSAJE_404 = {'detail': 'No se encontró la conversación.'}
+
+
+def test_quien_no_pertenece_a_la_materia_recibe_siempre_el_mismo_404(
+    api_as, materia_con_inscripcion, profesor, estudiante, otro_profesor, rol_estudiante
+):
+    sin_inscripcion = UsuarioFactory(persona__rol=rol_estudiante)
+    for ajeno in (otro_profesor, sin_inscripcion):
+        cliente = api_as(ajeno)
+        for con in (profesor, estudiante, 999999):
+            respuesta = cliente.get(URL, {'materia': materia_con_inscripcion.pk, 'con': getattr(con, 'pk', con)})
+            assert respuesta.status_code == 404, (ajeno, con)
+            assert respuesta.json() == MENSAJE_404
+
+
+def test_materia_inexistente_responde_igual_que_quien_no_pertenece(api_as, estudiante, profesor):
+    respuesta = api_as(estudiante).get(URL, {'materia': 999999, 'con': profesor.pk})
+
+    assert respuesta.status_code == 404
+    assert respuesta.json() == MENSAJE_404
+
+
+def test_el_estudiante_con_inscripcion_en_cualquier_estado_pertenece_a_la_materia(
+    api_as, materia_con_inscripcion, profesor, estudiante
+):
+    for estado in ('CURSANDO', 'REGULAR', 'PROMOCIONADO', 'LIBRE', 'BAJA'):
+        materia_con_inscripcion.inscripciones.update(estado=estado)
+        assert _pedir(api_as(estudiante), materia_con_inscripcion, profesor).status_code == 200, estado
+
+
 def test_con_uno_mismo_o_con_un_administrador_se_rechaza(api_as, materia_con_inscripcion, estudiante, admin):
     assert _pedir(api_as(estudiante), materia_con_inscripcion, estudiante).status_code == 404
     assert _pedir(api_as(estudiante), materia_con_inscripcion, admin).status_code == 404
@@ -172,3 +207,46 @@ def test_crear_indices_mongo_incluye_el_de_la_conversacion_y_es_idempotente():
 
     claves = [i['key'] for i in mongo.obtener_coleccion(mongo.COLECCION_MENSAJE).index_information().values()]
     assert [('materia_id', 1), ('remitente_id', 1), ('destinatario_id', 1), ('fecha_creacion', -1), ('_id', -1)] in claves
+
+
+def test_el_ex_titular_con_mensajes_en_la_materia_conserva_la_lectura_de_su_hilo(
+    api_as, materia_con_inscripcion, profesor, estudiante, otro_profesor
+):
+    _guardar(materia_con_inscripcion, profesor, estudiante, asunto='enviado')
+    _guardar(materia_con_inscripcion, estudiante, profesor, minutos=5, asunto='recibido')
+    materia_con_inscripcion.profesor = otro_profesor.persona
+    materia_con_inscripcion.save()
+
+    respuesta = _pedir(api_as(profesor), materia_con_inscripcion, estudiante)
+
+    assert respuesta.status_code == 200
+    assert [m['asunto'] for m in respuesta.json()] == ['enviado', 'recibido']
+
+
+def test_el_profesor_sin_participacion_que_no_es_titular_recibe_el_404_uniforme(
+    api_as, materia_con_inscripcion, profesor, estudiante, otro_profesor
+):
+    # Sus mensajes en otra materia, o ya dados de baja, no cuentan como participación en esta
+    otra_materia = MateriaFactory(profesor=otro_profesor.persona)
+    _guardar(otra_materia, otro_profesor, estudiante)
+    _guardar(materia_con_inscripcion, otro_profesor, estudiante, fecha_baja=BASE)
+    materia_con_inscripcion.profesor = None
+    materia_con_inscripcion.save()
+
+    respuesta = _pedir(api_as(otro_profesor), materia_con_inscripcion, estudiante)
+
+    assert respuesta.status_code == 404
+    assert respuesta.json() == MENSAJE_404
+
+
+def test_los_miembros_de_una_materia_dada_de_baja_conservan_la_lectura_del_hilo(
+    api_as, materia_con_inscripcion, profesor, estudiante
+):
+    _guardar(materia_con_inscripcion, profesor, estudiante)
+    materia_con_inscripcion.fecha_baja = BASE
+    materia_con_inscripcion.save()
+
+    for usuario, otro in ((profesor, estudiante), (estudiante, profesor)):
+        respuesta = _pedir(api_as(usuario), materia_con_inscripcion, otro)
+        assert respuesta.status_code == 200
+        assert len(respuesta.json()) == 1

@@ -73,12 +73,7 @@ test.describe('message threads', () => {
     await estudiante.close();
   });
 
-  // APP BUG (reported, not fixed here): the inline reply <form (ngSubmit)> in mensajes.html has no [formGroup]/NgForm
-  // (the component only imports ReactiveFormsModule), so "Enviar respuesta" submits the form natively: the page
-  // reloads and no message is sent. test.fail() keeps the suite green while the bug exists and turns red as soon as
-  // it is fixed, which is the signal to delete the annotation.
   test('a student answers inline in the thread and the professor sees the reply', async ({ browser }) => {
-    test.fail(true, 'inline reply form has no ngSubmit directive: the browser reloads the page instead of sending');
     test.setTimeout(45_000);
     const asunto = `Hilo inline E2E ${Date.now()}-${Math.floor(Math.random() * 10_000)}`;
     const consulta = `Consulta de ${asunto}`;
