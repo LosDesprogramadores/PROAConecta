@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { MateriaService } from '../../../services/materia.service';
@@ -11,7 +11,7 @@ import { Materia } from './materia';
 describe('Materia (admin)', () => {
   let fixture: ComponentFixture<Materia>;
   let component: Materia;
-  let materiaService: { listarPaginado: any; eliminarMateria: any; crearMateria: any; actualizarMateria: any };
+  let materiaService: { listarPaginado: any; eliminarMateria: any; crearMateria: any; actualizarMateria: any; obtenerAlumnos: any };
   let confirmDialog: { confirmar: any };
   let toast: { success: any; error: any; info: any; readable_message_extraction: any };
 
@@ -24,6 +24,7 @@ describe('Materia (admin)', () => {
       eliminarMateria: vi.fn(() => of(undefined)),
       crearMateria: vi.fn(),
       actualizarMateria: vi.fn(),
+      obtenerAlumnos: vi.fn(() => of([])),
     };
     confirmDialog = { confirmar: vi.fn(() => of(true)) };
     toast = {
@@ -134,6 +135,103 @@ describe('Materia (admin)', () => {
     component.form.patchValue({ titulo: 'X', curso: '1A', anio: 2026 });
     component.save();
     expect(toast.error).toHaveBeenCalled();
+  });
+});
+
+describe('Materia (admin) consultar y baja', () => {
+  let fixture: ComponentFixture<Materia>;
+  let component: Materia;
+  let materiaService: Record<'listarPaginado' | 'eliminarMateria' | 'obtenerAlumnos', Mock>;
+  const dom = () => fixture.nativeElement as HTMLElement;
+
+  const profesor = { id: 7, dni: '1', nombre: 'Ana', apellido: 'Gómez', nombre_completo: 'Ana Gómez', email: 'a@x.com', rol_nombre: 'Profesor' };
+  const conProfesor = { id: 1, titulo: 'Matemática', curso: '1A', anio: 2026, profesor: 7, profesor_detalle: profesor };
+  const sinProfesor = { id: 2, titulo: 'Historia', curso: '2B', anio: 2026, profesor: null, profesor_detalle: null };
+  const alumno = (id: number, apellido: string, estado = 'CURSANDO') =>
+    ({ inscripcion_id: id, persona_id: id, apellido, nombre: 'Luis', email: `${apellido}@x.com`, estado, fecha_inscripcion: '2026-03-01' });
+
+  beforeEach(async () => {
+    materiaService = {
+      listarPaginado: vi.fn(() => of({ count: 2, next: null, previous: null, results: [conProfesor, sinProfesor] })),
+      eliminarMateria: vi.fn(),
+      obtenerAlumnos: vi.fn(() => of([alumno(1, 'Pérez'), alumno(2, 'Ruiz', 'LIBRE')])),
+    };
+    await TestBed.configureTestingModule({
+      imports: [Materia],
+      providers: [
+        { provide: MateriaService, useValue: materiaService },
+        { provide: ConfirmDialogService, useValue: { confirmar: () => of(true) } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Materia);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('no longer shows the "en desarrollo" stub toast', () => {
+    const info = vi.spyOn(TestBed.inject(ToastService), 'info');
+    component.consultar(conProfesor);
+    expect(info).not.toHaveBeenCalled();
+  });
+
+  it('shows the titular professor and the enrolled students below the table', () => {
+    component.consultar(conProfesor);
+    fixture.detectChanges();
+
+    expect(materiaService.obtenerAlumnos).toHaveBeenCalledWith(1);
+    const panel = dom().querySelector('[data-testid="panel-consulta"]')!;
+    expect(panel.textContent).toContain('Matemática');
+    expect(panel.textContent).toContain('Gómez, Ana');
+    expect(panel.textContent).toContain('Pérez, Luis');
+    expect(panel.textContent).toContain('Ruiz, Luis');
+    expect(panel.textContent).toContain('LIBRE');
+  });
+
+  it('shows empty states when there is no professor and no students', () => {
+    materiaService.obtenerAlumnos.mockReturnValue(of([]));
+    component.consultar(sinProfesor);
+    fixture.detectChanges();
+
+    const panel = dom().querySelector('[data-testid="panel-consulta"]')!;
+    expect(panel.textContent).toContain('Sin profesor asignado');
+    expect(panel.textContent).toContain('No hay estudiantes inscriptos');
+  });
+
+  it('shows an error state when the students cannot be loaded', () => {
+    materiaService.obtenerAlumnos.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    component.consultar(conProfesor);
+    fixture.detectChanges();
+
+    expect(dom().querySelector('[data-testid="panel-consulta"]')!.textContent).toContain('No se pudieron cargar los estudiantes');
+    expect(component.isLoadingConsulta()).toBe(false);
+  });
+
+  it('closes the panel from its close button', () => {
+    component.consultar(conProfesor);
+    fixture.detectChanges();
+    dom().querySelector<HTMLButtonElement>('[data-testid="cerrar-consulta"]')!.click();
+    fixture.detectChanges();
+    expect(dom().querySelector('[data-testid="panel-consulta"]')).toBeNull();
+  });
+
+  it('toggles the panel when consulting the same subject twice', () => {
+    component.consultar(conProfesor);
+    component.consultar(conProfesor);
+    expect(component.materiaConsultada()).toBeNull();
+  });
+
+  it('shows the exact server message when the delete is blocked with 400', () => {
+    const mensaje = 'Esta materia tiene profesor o estudiantes, primero debe desasignarlos o desinscribirlos';
+    materiaService.eliminarMateria.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { detail: mensaje } })));
+    const toast = TestBed.inject(ToastService);
+    const error = vi.spyOn(toast, 'error');
+    materiaService.listarPaginado.mockClear();
+
+    component.eliminar(1);
+
+    expect(error).toHaveBeenCalledWith(mensaje);
+    expect(materiaService.listarPaginado).not.toHaveBeenCalled();
+    expect(component.materias().length).toBe(2);
   });
 });
 

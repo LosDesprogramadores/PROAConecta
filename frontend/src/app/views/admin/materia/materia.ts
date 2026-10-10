@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { filter, switchMap } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IMateria } from '../../../model/materia.model';
+import { IAlumnoMateria, IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
@@ -34,6 +34,11 @@ export class Materia implements OnInit {
   isEditing = signal<boolean>( false );
   selectedId = signal<number | null>( null );
   isLoading = signal<boolean>( false );
+
+  materiaConsultada = signal<IMateria | null>( null );
+  alumnosConsulta = signal<IAlumnoMateria[]>( [] );
+  isLoadingConsulta = signal<boolean>( false );
+  errorConsulta = signal<boolean>( false );
 
   form = this.fb.nonNullable.group( {
     titulo: [ '', [ Validators.required, Validators.maxLength( 150 ) ] ],
@@ -163,19 +168,39 @@ export class Materia implements OnInit {
     } );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept: the template passes the row
-  consultar( materia: any ) {
-    this.toastService.info( "La funcionalidad de consultar està en desarrollo." );
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept: the template passes the row
-  asignar( materia: any ) {
-    this.toastService.info( "La funcionalidad de asignar està en desarrollo." );
+  /** Opens the panel below the table with the titular professor and the enrolled students; a second click closes it. */
+  consultar( materia: IMateria ): void {
+    if ( !materia.id ) return;
+    if ( this.materiaConsultada()?.id === materia.id ) {
+      this.cerrarConsulta();
+      return;
+    }
 
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept: the template passes the row
-  inscribir( materia: any ) {
-    this.toastService.info( "La funcionalidad de inscribir està en desarrollo." );
+    const id = materia.id;
+    this.materiaConsultada.set( materia );
+    this.alumnosConsulta.set( [] );
+    this.errorConsulta.set( false );
+    this.isLoadingConsulta.set( true );
 
+    this.materiaService.obtenerAlumnos( id ).subscribe( {
+      next: ( alumnos ) => {
+        if ( this.materiaConsultada()?.id !== id ) return;
+        this.alumnosConsulta.set( alumnos );
+        this.isLoadingConsulta.set( false );
+      },
+      error: ( err ) => {
+        console.error( 'Error al consultar los estudiantes de la materia:', err );
+        if ( this.materiaConsultada()?.id !== id ) return;
+        this.errorConsulta.set( true );
+        this.isLoadingConsulta.set( false );
+      }
+    } );
   }
 
+  cerrarConsulta(): void {
+    this.materiaConsultada.set( null );
+    this.alumnosConsulta.set( [] );
+    this.errorConsulta.set( false );
+    this.isLoadingConsulta.set( false );
+  }
 }
