@@ -2,9 +2,15 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ActividadesService } from '../../../../services/actividades.service';
+import { Actividad } from '../../../../model/actividad-model';
 import { AuthService } from '../../../../core/auth/auth.service';
 
 import { Modal } from '../../../../shared/modal/modal';
+/** `Entrega.actividad` arrives as a number; tolerate a nested object too. */
+function idDeActividad(actividad: number | { id: number } | null | undefined): number | undefined {
+  return typeof actividad === 'object' && actividad !== null ? actividad.id : (actividad ?? undefined);
+}
+
 export interface MateriaPendienteResumen {
   materiaId: number | string;
   nombreMateria: string;
@@ -49,12 +55,16 @@ export class Informacion implements OnInit {
     }).subscribe({
       next: ({ actividades, entregas }) => {
 
-        const idsActividadesEntregadas = new Set(
-          entregas.map((e: any) => e.actividad?.id || e.actividadId || e.id)
+        // Same rule as the backend seguimiento: BORRADOR / NO_ENTREGADO count as not delivered.
+        const idsActividadesEntregadas = new Set<number | undefined>(
+          entregas
+            .filter((e) => e.estado !== 'BORRADOR' && e.estado !== 'NO_ENTREGADO')
+            .map((e) => idDeActividad(e.actividad)),
         );
 
         const pendientes = actividades.filter(
-          (actividad: any) => !idsActividadesEntregadas.has(actividad.id)
+          (actividad) =>
+            actividad.estado !== 'BORRADOR' && !idsActividadesEntregadas.has(actividad.id),
         );
 
         this.actividadesPendientes.set(pendientes.length);
@@ -68,7 +78,7 @@ export class Informacion implements OnInit {
     });
   }
 
-  private agruparPendientesPorMateria(actividades: any[]): void {
+  private agruparPendientesPorMateria(actividades: Actividad[]): void {
     const resumenMap = new Map<string | number, MateriaPendienteResumen>();
 
     for (const act of actividades) {

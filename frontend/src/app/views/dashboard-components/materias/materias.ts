@@ -8,7 +8,6 @@ import { InscripcionesService } from '../../../services/inscripciones.service';
 
 interface IMateriaConInscripcion extends IMateria {
   fecha_inscripcion?: string;
-  anio_lectivo?: number;
 }
 
 @Component({
@@ -37,21 +36,7 @@ export class Materias implements OnInit {
       return lista;
     }
 
-    return lista.filter((materia) => {
-      // Si la fecha de inscripción tiene el año actual
-      if (materia.fecha_inscripcion) {
-        const anioInscripcion = new Date(materia.fecha_inscripcion).getFullYear();
-        if (anioInscripcion === this.anioActual) return true;
-      }
-
-      // Si tiene año lectivo explícito
-      if (materia.anio_lectivo === this.anioActual) {
-        return true;
-      }
-
-      // De lo contrario, por defecto muestra todas si no hay metadato de fecha
-      return true;
-    });
+    return lista.filter((materia) => materia.anio === this.anioActual);
   });
 
   private readonly colores = [
@@ -94,7 +79,6 @@ export class Materias implements OnInit {
           curso: inscripcion.materia_curso,
           anio: inscripcion.materia_anio,
           fecha_inscripcion: inscripcion.fecha_inscripcion,
-          anio_lectivo: inscripcion.fecha_inscripcion ? new Date(inscripcion.fecha_inscripcion).getFullYear() : undefined,
           descripcion: null,
           criterios_evaluacion: null,
           activo: true,

@@ -18,7 +18,11 @@
                 </div>
                 } @else {
                 <p class="text-xl font-bold text-slate-800">
+                    @if (actividadesPendientes() === 0) {
+                    Sin pendientes
+                    } @else {
                     {{ actividadesPendientes() }} {{ actividadesPendientes() === 1 ? 'Pendiente' : 'Pendientes' }}
+                    }
                 </p>
                 }
             </div>
