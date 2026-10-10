@@ -1,6 +1,10 @@
+import re
+from datetime import date, datetime
+
 from rest_framework import serializers
 
 ALCANCES = ('AMBOS', 'TODOS', 'ESTUDIANTE', 'ESTUDIANTES', 'PROFESOR', 'PROFESORES')
+FORMATO_FECHA = re.compile(r'^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$', re.ASCII)
 TIPOS = ('GENERAL', 'ANUNCIO', 'ACADEMICO', 'URGENTE')
 
 
@@ -29,7 +33,29 @@ class NotificacionEntradaSerializer(serializers.Serializer):
         for campo in ('fecha_desde', 'fecha_hasta'):
             if attrs.get(campo) == '':
                 attrs[campo] = None
+        dias = {}
+        for campo in ('fecha_desde', 'fecha_hasta'):
+            if attrs.get(campo):
+                dias[campo], attrs[campo] = self._normalizar(campo, attrs[campo])
+        if len(dias) == 2 and dias['fecha_hasta'] < dias['fecha_desde']:
+            raise serializers.ValidationError({'fecha_hasta': ['No puede ser anterior a la fecha de inicio.']})
         return attrs
+
+    @staticmethod
+    def _normalizar(campo, texto):
+        """(día, texto a guardar). Solo AAAA-MM-DD o AAAA-MM-DDThh:mm de calendario válido; se guarda
+        normalizado para que las comparaciones de texto en Mongo sean confiables."""
+        error = serializers.ValidationError({campo: ['Debe ser una fecha con formato AAAA-MM-DD.']})
+        if not FORMATO_FECHA.fullmatch(texto):
+            raise error
+        try:
+            if len(texto) == 10:
+                dia = date.fromisoformat(texto)
+                return dia, dia.isoformat()
+            momento = datetime.strptime(texto, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            raise error
+        return momento.date(), momento.strftime('%Y-%m-%dT%H:%M')
 
 
 class AnuncioEntradaSerializer(serializers.Serializer):
