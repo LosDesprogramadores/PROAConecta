@@ -1,58 +1,95 @@
 <section class="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
 
   <!-- HEADER -->
-  <header class="flex items-center justify-between">
-    <div>
-      <p class="text-sm text-slate-500 mb-1">Gestión académica</p>
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
-        Entregas de Alumnos
-      </h1>
-    </div>
+  <header>
+    <p class="text-sm text-slate-500 mb-1" data-testid="materia-titulo">
+      {{ seguimiento()?.materia?.titulo ?? 'Gestión académica' }}
+    </p>
+    <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
+      {{ seguimiento()?.actividad?.titulo ?? 'Entregas de la actividad' }}
+    </h1>
+    @if (seguimiento()) {
+      <p class="text-sm text-slate-500 mt-1">Entregas de alumnos</p>
+    }
   </header>
+
+  <!-- RESUMEN -->
+  @if (seguimiento()) {
+    <ul class="flex flex-wrap gap-2" data-testid="resumen" aria-label="Resumen por estado">
+      @for (item of resumenItems(); track item.estado) {
+        <li class="px-3 py-1.5 rounded-xl text-xs font-semibold" [class]="item.clase">
+          {{ item.etiqueta }}: {{ item.cantidad }}
+        </li>
+      }
+    </ul>
+  }
 
   <!-- CONTENIDO -->
   <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-    <h2 class="text-lg font-semibold text-slate-800">Listado de presentaciones</h2>
+    <h2 class="text-lg font-semibold text-slate-800">Listado de alumnos</h2>
 
     @if (cargando()) {
-      <p class="text-sm text-slate-500">Cargando entregas...</p>
+      <p class="text-sm text-slate-500" role="status">Cargando entregas...</p>
     } @else if (errorCarga()) {
-      <p class="text-sm text-red-600">{{ errorCarga() }}</p>
-    } @else if (entregas().length === 0) {
-      <p class="text-sm text-slate-500">Todavía no hay entregas para esta actividad.</p>
+      <p class="text-sm text-red-600" role="alert">{{ errorCarga() }}</p>
+      <button type="button" (click)="reintentar()" data-testid="reintentar"
+        class="px-3 py-1.5 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition">
+        Reintentar
+      </button>
+    } @else if (filas().length === 0) {
+      <p class="text-sm text-slate-500">No hay alumnos inscriptos en esta materia.</p>
     } @else {
-      <div class="border border-slate-100 rounded-xl overflow-hidden">
-        <div class="bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider grid grid-cols-4">
-          <span>Estudiante</span>
-          <span>Fecha de Entrega</span>
-          <span>Nota</span>
-          <span>Acciones</span>
+      @if (errorRecarga()) {
+        <div class="flex flex-wrap items-center gap-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="alert">
+          <span>No se pudo actualizar el listado; se muestran los últimos datos cargados.</span>
+          <button type="button" (click)="reintentar()" data-testid="reintentar"
+            class="px-3 py-1 border border-amber-300 rounded-lg text-xs font-semibold hover:bg-amber-100 transition">
+            Reintentar
+          </button>
         </div>
+      }
+      <div class="border border-slate-100 rounded-xl overflow-x-auto">
+        <div class="min-w-[40rem]">
+          <div class="bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider grid grid-cols-5 gap-2">
+            <span>Estudiante</span>
+            <span>Estado</span>
+            <span>Fecha de entrega</span>
+            <span>Nota</span>
+            <span>Acciones</span>
+          </div>
 
-        <div class="divide-y divide-slate-100 text-sm text-slate-600">
-          @for (e of entregas(); track e.id) {
-            <div class="px-4 py-4 grid grid-cols-4 items-center">
-              <span class="font-medium text-slate-800">{{ e.estudiante_nombre }}</span>
-              <span class="text-xs text-slate-400">{{ e.fecha_entrega | date: 'yyyy-MM-dd HH:mm' }}</span>
-              <span>
-                @if (e.nota) {
-                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-primary font-bold">
-                    {{ e.nota.calificacion | number: '1.0-2' }}
+          <div class="divide-y divide-slate-100 text-sm text-slate-600">
+            @for (f of filas(); track f.estudiante_id) {
+              <div class="px-4 py-4 grid grid-cols-5 gap-2 items-center" data-testid="fila-estudiante">
+                <span class="font-medium text-slate-800">{{ f.apellido }}, {{ f.nombre }}</span>
+                <span>
+                  <span data-testid="estado" class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold" [class]="estadoDe(f)?.clase">
+                    {{ estadoDe(f)?.etiqueta ?? f.estado }}
                   </span>
-                } @else {
-                  <span class="text-xs text-amber-600 font-semibold">Sin calificar</span>
-                }
-              </span>
-              <div>
-                <button
-                  type="button"
-                  (click)="abrirModal(e)"
-                  class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
-                  Calificar / Ver archivo
-                </button>
+                </span>
+                <span class="text-xs text-slate-400">
+                  {{ f.fecha_entrega ? (f.fecha_entrega | date: 'yyyy-MM-dd HH:mm') : '—' }}
+                </span>
+                <span>
+                  @if (f.nota) {
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-primary font-bold">
+                      {{ f.nota.calificacion | number: '1.0-2' }}
+                    </span>
+                  } @else {
+                    <span class="text-slate-400">—</span>
+                  }
+                </span>
+                <div>
+                  <button
+                    type="button"
+                    (click)="abrirModal(f)"
+                    class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+                    Calificar
+                  </button>
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       </div>
     }
@@ -61,27 +98,34 @@
 </section>
 
 <!-- MODAL DE CALIFICACIÓN -->
-@if (entregaSeleccionada(); as entrega) {
-  <app-modal titulo="Calificar a {{ entrega.estudiante_nombre }}" ancho="sm" (cerrar)="cerrarModal()">
-      
+@if (filaSeleccionada(); as fila) {
+  <app-modal titulo="Calificar a {{ fila.apellido }}, {{ fila.nombre }}" ancho="sm" (cerrar)="cerrarModal()">
 
-      <div class="space-y-2 text-sm">
-        @if (entrega.archivo) {
-          <a [href]="entrega.archivo" [appArchivoProtegido]="entrega.archivo" target="_blank" rel="noopener"
-             class="inline-block px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
-            Ver archivo entregado
-          </a>
-        }
-        @if (entrega.enlace) {
-          <a [href]="entrega.enlace" target="_blank" rel="noopener"
-             class="inline-block px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
-            Abrir enlace entregado
-          </a>
-        }
-        @if (entrega.contenido_texto) {
-          <p class="text-slate-600 bg-slate-50 rounded-lg p-3">{{ entrega.contenido_texto }}</p>
-        }
-      </div>
+      @if (entregaSeleccionada(); as entrega) {
+        <div class="space-y-2 text-sm">
+          @if (entrega.archivo) {
+            <a [href]="entrega.archivo" [appArchivoProtegido]="entrega.archivo" target="_blank" rel="noopener"
+               class="inline-block px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+              Ver archivo entregado
+            </a>
+          }
+          @if (entrega.enlace) {
+            <a [href]="entrega.enlace" target="_blank" rel="noopener"
+               class="inline-block px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+              Abrir enlace entregado
+            </a>
+          }
+          @if (entrega.contenido_texto) {
+            <p class="text-slate-600 bg-slate-50 rounded-lg p-3">{{ entrega.contenido_texto }}</p>
+          }
+        </div>
+      } @else if (fila.entrega_id && errorEntregas()) {
+        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="alert" data-testid="aviso-entrega">
+          No se pudo cargar el contenido de la entrega.
+        </p>
+      } @else if (!fila.entrega_id) {
+        <p class="text-sm text-slate-500">El alumno no entregó. Al calificar se registra la nota igualmente.</p>
+      }
 
       <div class="space-y-1">
         <label for="nota" class="text-sm font-semibold text-slate-700">Nota (1 a 10)</label>
@@ -126,6 +170,6 @@
           {{ guardando() ? 'Guardando...' : 'Guardar calificación' }}
         </button>
       </div>
-    
+
 </app-modal>
 }

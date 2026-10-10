@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Actividad, ActividadPayload } from '../model/actividad-model';
+import { Seguimiento } from '../model/seguimiento.model';
 
 export interface NotaEntrega {
   id: number;
@@ -69,6 +70,11 @@ export class ActividadesService {
 
   getEntregas(actividadId: number): Observable<Entrega[]> {
     return this.http.get<Entrega[]>(`${this.apiUrl}/${actividadId}/entregas/`);
+  }
+
+  /** Every enrolled student of the activity with the delivery status (also those who did not deliver). */
+  getSeguimiento(actividadId: number): Observable<Seguimiento> {
+    return this.http.get<Seguimiento>(`${this.apiUrl}/${actividadId}/seguimiento/`);
   }
 
   calificarEntregaIndividual(

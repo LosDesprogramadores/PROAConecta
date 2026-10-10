@@ -26,4 +26,11 @@ describe('ActividadesService', () => {
     expect(req.request.body).toEqual(datos);
     req.flush({});
   });
+
+  it('reads the follow-up of every enrolled student of an activity', () => {
+    service.getSeguimiento(9).subscribe();
+    const req = http.expectOne(`${environment.apiUrl}actividades/9/seguimiento/`);
+    expect(req.request.method).toBe('GET');
+    req.flush({});
+  });
 });
