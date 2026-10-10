@@ -63,3 +63,12 @@ export interface RespuestaInscripcionLote {
   estudiante_id: number;
   cantidad: number;
 }
+
+/** Body of POST /api/inscripciones/inscribir-estudiantes/ (InscripcionViewSet.inscribir_estudiantes). */
+export interface RespuestaInscripcionEstudiantes {
+  mensaje: string;
+  materia_id: number;
+  cantidad: number;
+  /** Ids of the students the server skipped (already enrolled). */
+  omitidos: number[];
+}

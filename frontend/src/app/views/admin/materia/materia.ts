@@ -1,8 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { filter, switchMap } from 'rxjs';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { filter, finalize, forkJoin, switchMap } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IAlumnoMateria, IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
+import { ProfesorService } from '../../../services/profesor.service';
+import { EstudianteService } from '../../../services/estudiante.service';
+import { InscripcionesService } from '../../../services/inscripciones.service';
+import { Persona } from '../../../model/Persona.model';
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from '../../../shared/modal/modal';
 import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
@@ -12,6 +16,8 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { Paginador } from '../../../shared/paginador/paginador';
 
 const TAMANO_PAGINA = 20;
+/** Mirrors the backend MAXIMO_ESTUDIANTES_POR_LOTE. */
+export const MAXIMO_ESTUDIANTES_POR_LOTE = 200;
 
 @Component( {
   selector: 'app-materia',
@@ -24,6 +30,9 @@ export class Materia implements OnInit {
   private fb = inject( FormBuilder );
   private toastService = inject( ToastService );
   private confirmDialog = inject( ConfirmDialogService );
+  private profesorService = inject( ProfesorService );
+  private estudianteService = inject( EstudianteService );
+  private inscripcionesService = inject( InscripcionesService );
 
   protected readonly urlExportarMaterias = `${environment.apiUrl}materias/exportar/`;
   materias = signal<IMateria[]>( [] );
@@ -39,6 +48,38 @@ export class Materia implements OnInit {
   alumnosConsulta = signal<IAlumnoMateria[]>( [] );
   isLoadingConsulta = signal<boolean>( false );
   errorConsulta = signal<boolean>( false );
+
+  // Asignar profesor
+  materiaParaAsignar = signal<IMateria | null>( null );
+  profesoresDisponibles = signal<Persona[]>( [] );
+  profesorElegidoId = signal<number | null>( null );
+  isLoadingProfesores = signal<boolean>( false );
+  errorProfesores = signal<boolean>( false );
+  guardandoAsignacion = signal<boolean>( false );
+
+  // Inscribir estudiantes
+  materiaParaInscribir = signal<IMateria | null>( null );
+  estudiantesDisponibles = signal<Persona[]>( [] );
+  estudiantesSeleccionados = signal<number[]>( [] );
+  filtroEstudiantes = signal<string>( '' );
+  isLoadingEstudiantes = signal<boolean>( false );
+  isGuardando = signal<boolean>( false );
+  errorEstudiantes = signal<boolean>( false );
+  readonly limiteLote = MAXIMO_ESTUDIANTES_POR_LOTE;
+  excedeLimite = computed( () => this.estudiantesSeleccionados().length > MAXIMO_ESTUDIANTES_POR_LOTE );
+
+  todosSeleccionados = computed( () => {
+    const seleccionados = this.estudiantesSeleccionados();
+    const filtrados = this.estudiantesFiltrados();
+    return filtrados.length > 0 && filtrados.every( e => seleccionados.includes( e.id ) );
+  } );
+
+  estudiantesFiltrados = computed( () => {
+    const texto = this.filtroEstudiantes().trim().toLowerCase();
+    const todos = this.estudiantesDisponibles();
+    if ( !texto ) return todos;
+    return todos.filter( e => `${e.apellido} ${e.nombre} ${e.email}`.toLowerCase().includes( texto ) );
+  } );
 
   form = this.fb.nonNullable.group( {
     titulo: [ '', [ Validators.required, Validators.maxLength( 150 ) ] ],
@@ -67,6 +108,11 @@ export class Materia implements OnInit {
           return;
         }
         this.materias.set( respuesta.results );
+        const abierta = this.materiaConsultada();
+        if ( abierta ) {
+          const fresca = respuesta.results.find( m => m.id === abierta.id );
+          if ( fresca ) this.materiaConsultada.set( fresca );
+        }
         this.total.set( respuesta.count );
         this.pagina.set( pagina );
         this.isLoading.set( false );
@@ -176,8 +222,11 @@ export class Materia implements OnInit {
       return;
     }
 
-    const id = materia.id;
     this.materiaConsultada.set( materia );
+    this.cargarAlumnosConsulta( materia.id );
+  }
+
+  private cargarAlumnosConsulta( id: number ): void {
     this.alumnosConsulta.set( [] );
     this.errorConsulta.set( false );
     this.isLoadingConsulta.set( true );
@@ -202,5 +251,172 @@ export class Materia implements OnInit {
     this.alumnosConsulta.set( [] );
     this.errorConsulta.set( false );
     this.isLoadingConsulta.set( false );
+  }
+
+  // ---- Asignar profesor titular ----
+
+  asignar( materia: IMateria ): void {
+    this.materiaParaAsignar.set( materia );
+    this.profesorElegidoId.set( null );
+    this.guardandoAsignacion.set( false );
+    this.cargarProfesores( materia );
+  }
+
+  reintentarProfesores(): void {
+    const materia = this.materiaParaAsignar();
+    if ( materia ) this.cargarProfesores( materia );
+  }
+
+  private cargarProfesores( materia: IMateria ): void {
+    this.profesoresDisponibles.set( [] );
+    this.errorProfesores.set( false );
+    this.isLoadingProfesores.set( true );
+
+    this.profesorService.obtenerProfesores().subscribe( {
+      next: ( profesores ) => {
+        this.profesoresDisponibles.set( profesores.filter( p => p.id !== materia.profesor ) );
+        this.isLoadingProfesores.set( false );
+      },
+      error: ( err ) => {
+        console.error( 'Error al cargar profesores:', err );
+        this.errorProfesores.set( true );
+        this.isLoadingProfesores.set( false );
+      }
+    } );
+  }
+
+  elegirProfesor( id: number ): void {
+    this.profesorElegidoId.set( id );
+  }
+
+  guardarAsignacion(): void {
+    const materia = this.materiaParaAsignar();
+    const profesorId = this.profesorElegidoId();
+    if ( !materia?.id || profesorId === null || this.guardandoAsignacion() ) return;
+
+    // The backend replaces the titular, so there is no need to unassign first.
+    this.guardandoAsignacion.set( true );
+    this.materiaService.asignarProfesorAMaterias( profesorId, [ materia.id ] ).pipe(
+      finalize( () => this.guardandoAsignacion.set( false ) )
+    ).subscribe( {
+      next: () => {
+        this.toastService.success( 'Profesor asignado correctamente.' );
+        this.cerrarModalAsignar();
+        this.cargarMaterias();
+      },
+      error: ( err ) => {
+        console.error( 'Error al asignar el profesor:', err );
+        this.toastService.error( this.toastService.readable_message_extraction( err ) );
+      }
+    } );
+  }
+
+  quitarTitular(): void {
+    const materia = this.materiaParaAsignar();
+    if ( !materia?.id || this.guardandoAsignacion() ) return;
+
+    this.guardandoAsignacion.set( true );
+    this.materiaService.desasignarProfesor( materia.id ).pipe(
+      finalize( () => this.guardandoAsignacion.set( false ) )
+    ).subscribe( {
+      next: () => {
+        this.toastService.success( 'Profesor desasignado correctamente.' );
+        this.cerrarModalAsignar();
+        this.cargarMaterias();
+      },
+      error: ( err ) => {
+        console.error( 'Error al desasignar el profesor:', err );
+        this.toastService.error( this.toastService.readable_message_extraction( err ) );
+      }
+    } );
+  }
+
+  cerrarModalAsignar(): void {
+    this.materiaParaAsignar.set( null );
+    this.profesorElegidoId.set( null );
+  }
+
+  // ---- Inscribir estudiantes ----
+
+  inscribir( materia: IMateria ): void {
+    if ( !materia.id ) return;
+    this.materiaParaInscribir.set( materia );
+    this.estudiantesSeleccionados.set( [] );
+    this.filtroEstudiantes.set( '' );
+    this.cargarEstudiantes( materia.id );
+  }
+
+  reintentarEstudiantes(): void {
+    const id = this.materiaParaInscribir()?.id;
+    if ( id ) this.cargarEstudiantes( id );
+  }
+
+  private cargarEstudiantes( id: number ): void {
+    this.estudiantesDisponibles.set( [] );
+    this.errorEstudiantes.set( false );
+    this.isLoadingEstudiantes.set( true );
+
+    // Available = everyone without a current (non-BAJA) enrolment; obtenerAlumnos already leaves BAJA out.
+    forkJoin( {
+      estudiantes: this.estudianteService.obtenerEstudiates(),
+      inscriptos: this.materiaService.obtenerAlumnos( id )
+    } ).subscribe( {
+      next: ( { estudiantes, inscriptos } ) => {
+        const ocupados = new Set( inscriptos.map( a => a.persona_id ) );
+        this.estudiantesDisponibles.set( estudiantes.filter( e => !ocupados.has( e.id ) ) );
+        this.isLoadingEstudiantes.set( false );
+      },
+      error: ( err ) => {
+        console.error( 'Error al cargar estudiantes:', err );
+        this.errorEstudiantes.set( true );
+        this.isLoadingEstudiantes.set( false );
+      }
+    } );
+  }
+
+  toggleEstudiante( id: number ): void {
+    this.estudiantesSeleccionados.update( actuales =>
+      actuales.includes( id ) ? actuales.filter( i => i !== id ) : [ ...actuales, id ]
+    );
+  }
+
+  /** Selects every student that matches the filter, or clears them when all are already selected. */
+  seleccionarTodosEstudiantes(): void {
+    const ids = this.estudiantesFiltrados().map( e => e.id );
+    const seleccionados = this.estudiantesSeleccionados();
+    const todos = ids.length > 0 && ids.every( id => seleccionados.includes( id ) );
+    this.estudiantesSeleccionados.set( todos ? seleccionados.filter( id => !ids.includes( id ) ) : [ ...new Set( [ ...seleccionados, ...ids ] ) ] );
+  }
+
+  guardarInscripcion(): void {
+    const materia = this.materiaParaInscribir();
+    const ids = this.estudiantesSeleccionados();
+    const materiaId = materia?.id;
+    if ( !materiaId || ids.length === 0 || ids.length > MAXIMO_ESTUDIANTES_POR_LOTE || this.isGuardando() ) return;
+
+    this.isGuardando.set( true );
+    this.inscripcionesService.inscribirEstudiantesEnMateria( materiaId, ids ).subscribe( {
+      next: ( respuesta ) => {
+        this.isGuardando.set( false );
+        this.toastService.success( `Se inscribió a ${respuesta.cantidad} ${respuesta.cantidad === 1 ? 'estudiante' : 'estudiantes'}.` );
+        if ( respuesta.omitidos.length > 0 ) {
+          this.toastService.warning( `${respuesta.omitidos.length} ${respuesta.omitidos.length === 1 ? 'estudiante ya estaba inscripto y fue omitido' : 'estudiantes ya estaban inscriptos y fueron omitidos'}.` );
+        }
+        this.cerrarModalInscribir();
+        this.cargarMaterias();
+        if ( this.materiaConsultada()?.id === materiaId ) this.cargarAlumnosConsulta( materiaId );
+      },
+      error: ( err ) => {
+        console.error( 'Error al inscribir estudiantes:', err );
+        this.isGuardando.set( false );
+        this.toastService.error( this.toastService.readable_message_extraction( err ) );
+      }
+    } );
+  }
+
+  cerrarModalInscribir(): void {
+    this.materiaParaInscribir.set( null );
+    this.estudiantesSeleccionados.set( [] );
+    this.filtroEstudiantes.set( '' );
   }
 }
