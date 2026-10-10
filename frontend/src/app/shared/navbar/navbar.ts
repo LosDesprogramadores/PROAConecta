@@ -1,5 +1,7 @@
-import { Component, computed, effect, HostListener, inject, OnInit, signal } from '@angular/core';
-import { RouterModule, Router } from '@angular/router';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, RouterModule, Router } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 import { ToastService } from '../../services/toast.service';
@@ -13,6 +15,8 @@ interface NavLink {
   label: string;
   path: string;
   queryParams?: Record<string, string>;
+  /** Highlight the link only when the URL matches it exactly. */
+  exact?: boolean;
 }
 
 @Component({
@@ -50,12 +54,6 @@ export class Navbar implements OnInit {
   messagesLoading = this.mensajesEstado.cargando;
   messagesError = this.mensajesEstado.error;
 
-  navLinksAdmi: NavLink[] = [];
-
-  navLinks: NavLink[] = [];
-
-  navLinksMateria: NavLink[] = [];
-
   userAvatar = signal<string>(
     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
   );
@@ -70,73 +68,60 @@ export class Navbar implements OnInit {
     return `${persona.nombre} ${persona.apellido}`;
   });
 
-  isMateriaRoute = computed(() => {
-    return this.router.url.startsWith('/view-materia/');
+  // Reactive URL: the navbar lives across navigations, so the section links must follow it.
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** Materia the user is in: the /view-materia/<id> path, or the "materia" filter of the inbox. */
+  private readonly materiaId = computed(() => {
+    const url = this.url();
+    const deRuta = url.match(/^\/view-materia\/([^/?#]+)/)?.[1];
+    if (deRuta) {
+      return deRuta;
+    }
+    if (url.startsWith('/dashboard/mensajes')) {
+      return this.router.parseUrl(url).queryParams['materia'] ?? null;
+    }
+    return null;
   });
 
-  constructor() {
-    effect(() => {
-      const user = this.currentUser();
+  isMateriaRoute = computed(() => this.materiaId() !== null);
 
-      if (!user) {
-        this.navLinksAdmi = [];
-        this.navLinks = [];
-        this.navLinksMateria = [];
-        return;
-      }
+  /** Home of each role; visitors without a session go to the public home. */
+  inicioPath = computed(() => {
+    switch (this.currentUser()?.rolId) {
+      case UserRole.ADMIN:
+        return '/dashboard-admin';
+      case UserRole.DOCENTE:
+        return '/dashboard/welcome';
+      case UserRole.ESTUDIANTE:
+        return '/dashboard/estudiante/welcome';
+      default:
+        return '/';
+    }
+  });
 
-      if (this.isMateriaRoute()) {
-        this.navLinksAdmi = [];
-        this.navLinks = [];
-        this.navLinksMateria = this.obtenerLinksMateria();
-        return;
-      }
+  navLinksAdmi = computed<NavLink[]>(() => {
+    if (this.isMateriaRoute() || this.currentUser()?.rolId !== UserRole.ADMIN) {
+      return [];
+    }
+    return [
+      { label: 'Profesores', path: '/dashboard-admin/profesores' },
+      { label: 'Estudiantes', path: '/dashboard-admin/estudiantes' },
+      { label: 'Materias', path: '/dashboard-admin/materias' },
+      { label: 'Notificaciones', path: '/dashboard-admin/notificaciones' },
+    ];
+  });
 
-      this.navLinksMateria = [];
-
-      switch (user.rolId) {
-        case UserRole.ADMIN:
-          this.navLinksAdmi = [
-            {
-              label: 'Profesores',
-              path: '/dashboard-admin/profesores',
-            },
-            {
-              label: 'Estudiantes',
-              path: '/dashboard-admin/estudiantes',
-            },
-            {
-              label: 'Materias',
-              path: '/dashboard-admin/materias',
-            },
-            {
-              label: 'Notificaciones',
-              path: '/dashboard-admin/notificaciones',
-            },
-          ];
-
-          this.navLinks = [];
-          break;
-
-        case UserRole.DOCENTE:
-          this.navLinksAdmi = [];
-          this.navLinks = []; // Limpiamos para que no aparezcan links sueltos arriba
-          break;
-
-        case UserRole.ESTUDIANTE:
-          this.navLinksAdmi = [];
-          this.navLinks = []; // Limpiamos para que no aparezcan links sueltos arriba
-          break;
-
-        default:
-          console.warn('Rol no reconocido:', user.rolId);
-
-          this.navLinksAdmi = [];
-          this.navLinks = [];
-          break;
-      }
-    });
-  }
+  navLinksMateria = computed<NavLink[]>(() => {
+    const materiaId = this.materiaId();
+    return this.currentUser() && materiaId ? this.obtenerLinksMateria(materiaId) : [];
+  });
 
   ngOnInit(): void {
     const user = this.currentUser();
@@ -153,28 +138,21 @@ export class Navbar implements OnInit {
     this.notificacionesEstado.marcarLeida(notif).subscribe({ error: () => undefined });
   }
 
-  private obtenerLinksMateria(): NavLink[] {
-    const url = this.router.url;
-
-    const match = url.match(/^\/view-materia\/([^/]+)/);
-    const materiaId = match?.[1];
-
-    if (!materiaId) {
-      return [];
-    }
+  private obtenerLinksMateria(materiaId: string): NavLink[] {
     const user = this.currentUser();
     const esEstudiante = user?.rolId === UserRole.ESTUDIANTE;
 
     if (esEstudiante) {
-      // Rutas específicas del Estudiante
+      // Student routes. Material is reached from the materia cover page.
       return [
+        {
+          label: 'Portada',
+          path: `/view-materia/${materiaId}/estudiante/portada`,
+          exact: true,
+        },
         {
           label: 'Anuncios',
           path: `/view-materia/${materiaId}/anuncios`,
-        },
-        {
-          label: 'Material',
-          path: `/view-materia/${materiaId}/estudiante/material`,
         },
         {
           label: 'Actividades',
@@ -188,7 +166,14 @@ export class Navbar implements OnInit {
       ];
     }
 
+    // Professor cover is role-specific; the administrator uses the shared materia cover.
+    const portada: NavLink =
+      user?.rolId === UserRole.DOCENTE
+        ? { label: 'Portada', path: `/view-materia/${materiaId}/portada-profesor`, exact: true }
+        : { label: 'Portada', path: `/view-materia/${materiaId}/portada`, exact: true };
+
     const links: NavLink[] = [
+      portada,
       {
         label: 'Anuncios',
         path: `/view-materia/${materiaId}/anuncios`,

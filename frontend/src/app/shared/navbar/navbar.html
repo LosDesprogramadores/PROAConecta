@@ -4,7 +4,7 @@
     <div class="flex h-16 items-center justify-between px-6 sm:px-8">
 
       <div class="flex items-center gap-8">
-        <a routerLink="/" class="flex items-center gap-3 group focus:outline-none">
+        <a [routerLink]="inicioPath()" data-testid="logo-inicio" class="flex items-center gap-3 group focus:outline-none">
           <div
             class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-700 to-blue-900 shadow-sm text-white font-black text-xl transition-transform duration-300 group-hover:scale-105">
             P
@@ -17,28 +17,17 @@
         </a>
 
         <div class="hidden lg:flex items-center gap-2" data-testid="nav-secciones-escritorio">
-          @if (!isMateriaRoute()) {
-            @for (link of navLinksAdmi; track link.path) {
-              <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
-                class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
-                {{ link.label }}
-              </a>
-            }
-            @for (link of navLinks; track link.path) {
-              <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
-                class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
-                {{ link.label }}
-              </a>
-            }
+          @for (link of navLinksAdmi(); track link.path) {
+            <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
+              class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
+              {{ link.label }}
+            </a>
           }
-
-          @if (isMateriaRoute()) {
-            @for (link of navLinksMateria; track link.path) {
-              <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm"
-                class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
-                {{ link.label }}
-              </a>
-            }
+          @for (link of navLinksMateria(); track link.path) {
+            <a [routerLink]="link.path" [queryParams]="link.queryParams" routerLinkActive="bg-white/60 text-sky-700 font-semibold shadow-sm" [routerLinkActiveOptions]="{ exact: !!link.exact }"
+              class="px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-white/40 transition-colors">
+              {{ link.label }}
+            </a>
           }
         </div>
       </div>
@@ -173,7 +162,7 @@
               </div>
 
               <div class="p-2 bg-slate-50 text-center border-t border-slate-100">
-                <a routerLink="/dashboard/notificaciones" (click)="closeMenus()" class="text-xs text-sky-600 font-medium hover:underline">Ver todas las notificaciones</a>
+                <a routerLink="/dashboard/anuncios" (click)="closeMenus()" class="text-xs text-sky-600 font-medium hover:underline">Ver todas las notificaciones</a>
               </div>
             </div>
           </div>
@@ -240,33 +229,20 @@
     <div [class.max-h-[600px]]="isMobileMenuOpen()" [class.opacity-100]="isMobileMenuOpen()"
       [class.max-h-0]="!isMobileMenuOpen()" [class.opacity-0]="!isMobileMenuOpen()"
       class="lg:hidden overflow-hidden transition-all duration-300 ease-in-out px-4 pb-4">
-      <div class="space-y-1 pt-2 border-t border-slate-300/60">
+      <div class="space-y-1 pt-2 border-t border-slate-300/60" data-testid="nav-secciones-movil">
 
-        @if (!isMateriaRoute()) {
-        @for (link of navLinksAdmi; track link.path) {
+        @for (link of navLinksAdmi(); track link.path) {
         <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
           class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
           {{ link.label }}
         </a>
         }
-        }
 
-        @if (!isMateriaRoute()) {
-        @for (link of navLinks; track link.path) {
-        <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
+        @for (link of navLinksMateria(); track link.path) {
+        <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold" [routerLinkActiveOptions]="{ exact: !!link.exact }"
           class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
           {{ link.label }}
         </a>
-        }
-        }
-
-        @if (isMateriaRoute()) {
-        @for (link of navLinksMateria; track link.path) {
-        <a [routerLink]="link.path" [queryParams]="link.queryParams" (click)="closeMenus()" routerLinkActive="bg-white/60 text-sky-700 font-semibold"
-          class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-white/40 transition-colors">
-          {{ link.label }}
-        </a>
-        }
         }
 
         @if (!currentUser()) {

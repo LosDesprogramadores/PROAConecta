@@ -1,4 +1,3 @@
-import { estaEnVistaMateria } from '../../../shared/utils/navegacion';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
@@ -22,9 +21,6 @@ export class ActividadEntregasComponent implements OnInit {
   private router = inject(Router);
   private actividadesService = inject(ActividadesService);
   private toastService = inject(ToastService);
-
-  // Se calcula una sola vez: el componente se recrea en cada navegación.
-  protected readonly enMateria = estaEnVistaMateria(this.router.url);
 
   materiaId = signal<number | null>(null);
   actividadId = signal<number | null>(null);
