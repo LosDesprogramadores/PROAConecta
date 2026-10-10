@@ -26,6 +26,12 @@ export class MensajesService {
     return this.http.post<Mensaje>(this.url, mensaje);
   }
 
+  /** Thread between the user and `con` (a `Usuario.pk`) in one subject: chronological, last 200 visible. */
+  obtenerConversacion(materiaId: number, con: number): Observable<Mensaje[]> {
+    const params = new HttpParams().set('materia', materiaId).set('con', con);
+    return this.http.get<Mensaje[]>(`${this.url}conversacion/`, { params });
+  }
+
   /** Only the recipient can mark a message (idempotent). */
   marcarLeido(id: string): Observable<MensajeLeido> {
     return this.http.post<MensajeLeido>(`${this.url}${id}/leer/`, {});

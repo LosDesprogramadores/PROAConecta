@@ -1,4 +1,4 @@
-<app-modal titulo="Nuevo mensaje" ancho="md" (cerrar)="cerrar.emit()">
+<app-modal [titulo]="destinatarioInicial() !== null ? 'Responder mensaje' : 'Nuevo mensaje'" ancho="md" (cerrar)="cerrar.emit()">
   <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate class="space-y-4" id="form-nuevo-mensaje">
     <div>
       <label for="mensaje-materia" class="block text-sm font-medium text-slate-700 mb-1">Materia</label>

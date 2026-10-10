@@ -63,3 +63,9 @@ export const MAX_ASUNTO = 120;
 export const MAX_CUERPO = 2000;
 /** The sender can delete a message only during this window after sending it. */
 export const VENTANA_BORRADO_MS = 15 * 60 * 1000;
+
+/** Subject of a reply: "Re: <asunto>" (no stacked prefixes), cut to the server limit. */
+export function asuntoRespuesta(asunto: string): string {
+  const base = asunto.replace(/^(re:\s*)+/i, '');
+  return `Re: ${base}`.slice(0, MAX_ASUNTO);
+}

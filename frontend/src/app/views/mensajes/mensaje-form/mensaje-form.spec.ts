@@ -177,4 +177,46 @@ describe('MensajeForm', () => {
     enviar(c);
     http.expectNone(base);
   });
+
+  describe('reply mode (destinatarioInicial)', () => {
+    function crearRespuesta(destinatario: number): MensajeForm {
+      fixture = TestBed.createComponent(MensajeForm);
+      fixture.componentRef.setInput('materias', materias);
+      fixture.componentRef.setInput('materiaInicial', 7);
+      fixture.componentRef.setInput('destinatarioInicial', destinatario);
+      fixture.componentRef.setInput('asuntoInicial', 'Re: Consulta TP 2');
+      fixture.detectChanges();
+      return fixture.componentInstance;
+    }
+
+    it('fixes the subject, the recipient and the "Re: ..." subject, and sends through the existing endpoint', () => {
+      const c = crearRespuesta(31);
+      destinatarios(7, [
+        { id: 31, nombre_completo: 'Gómez, Lucía', rol: 'ESTUDIANTE' },
+        { id: 32, nombre_completo: 'Ruiz, Tomás', rol: 'ESTUDIANTE' },
+      ]);
+
+      expect(c.destinatarios().map((d) => d.id)).toEqual([31]);
+      expect(c.formulario.controls.materia.disabled).toBe(true);
+      expect(c.formulario.controls.destinatario.disabled).toBe(true);
+      expect(c.formulario.controls.asunto.value).toBe('Re: Consulta TP 2');
+
+      c.formulario.patchValue({ cuerpo: 'Sí, entra' });
+      c.enviar();
+      const req = http.expectOne(base);
+      expect(req.request.body).toEqual({ materia_id: 7, destinatario_id: 31, asunto: 'Re: Consulta TP 2', cuerpo: 'Sí, entra' });
+      req.flush({ id: 'm2' });
+    });
+
+    it('does not allow replying when the counterpart is no longer an allowed recipient', () => {
+      const c = crearRespuesta(99);
+      destinatarios(7, [{ id: 31, nombre_completo: 'Gómez, Lucía', rol: 'ESTUDIANTE' }]);
+
+      expect(c.destinatarios()).toEqual([]);
+      expect(c.puedeEnviar()).toBe(false);
+      c.formulario.patchValue({ cuerpo: 'Hola' });
+      c.enviar();
+      http.expectNone(base);
+    });
+  });
 });

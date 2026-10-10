@@ -59,6 +59,20 @@ def listar_enviados(usuario_id, *, materia_id=None, pagina=1, tamano=20):
     return _pagina(_filtro('remitente_id', usuario_id, materia_id), pagina, tamano)
 
 
+def listar_conversacion(usuario_id, otro_id, *, materia_id, limite=200):
+    """Mensajes visibles entre dos personas en una materia, en orden cronológico (los últimos ``limite``)."""
+    filtro = {
+        'materia_id': materia_id,
+        'fecha_baja': None,
+        '$or': [
+            {'remitente_id': usuario_id, 'destinatario_id': otro_id},
+            {'remitente_id': otro_id, 'destinatario_id': usuario_id},
+        ],
+    }
+    recientes = _coleccion().find(filtro).sort(ORDEN).limit(limite)
+    return list(reversed(list(recientes)))
+
+
 def contar_recibidos(usuario_id) -> int:
     return _coleccion().count_documents(_filtro('destinatario_id', usuario_id))
 

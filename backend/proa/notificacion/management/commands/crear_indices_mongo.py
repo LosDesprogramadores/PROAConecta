@@ -24,6 +24,10 @@ INDICES = {
         # Contador de no leídos y listado de enviados: ambos filtran por fecha_baja
         [('destinatario_id', ASCENDING), ('leido', ASCENDING), ('fecha_baja', ASCENDING)],
         [('remitente_id', ASCENDING), ('fecha_baja', ASCENDING), ('fecha_creacion', DESCENDING)],
+        # Conversación entre dos personas en una materia: cada rama del $or (A->B, B->A) usa este índice, y el
+        # orden (fecha_creacion, _id) descendente de la consulta sale del índice sin ordenar en memoria
+        [('materia_id', ASCENDING), ('remitente_id', ASCENDING), ('destinatario_id', ASCENDING),
+         ('fecha_creacion', DESCENDING), ('_id', DESCENDING)],
     ],
     COLECCION_BITACORA: [
         # Listado general y por entidad / por actor (auditoria/bitacora.py)

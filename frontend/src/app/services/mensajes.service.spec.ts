@@ -20,6 +20,17 @@ describe('MensajesService', () => {
 
   afterEach(() => http.verify());
 
+  it('asks for the thread with the subject and the counterpart', () => {
+    let recibido = 0;
+    service.obtenerConversacion(7, 12).subscribe((lista) => (recibido = lista.length));
+    const req = http.expectOne((r) => r.url === `${base}conversacion/`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('materia')).toBe('7');
+    expect(req.request.params.get('con')).toBe('12');
+    req.flush([]);
+    expect(recibido).toBe(0);
+  });
+
   it('lists a tray with page, page size and subject filter', () => {
     service.obtenerMensajes({ bandeja: 'enviados', page: 2, page_size: 10, materia: 7 }).subscribe();
     const req = http.expectOne((r) => r.url === base);
