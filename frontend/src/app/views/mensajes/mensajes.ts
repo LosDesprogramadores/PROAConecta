@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -68,6 +68,8 @@ export class MensajesComponent implements OnInit {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(MAX_CUERPO)],
   });
+  /** Group that owns the inline reply <form>: without a form directive the browser submits natively and reloads. */
+  readonly formRespuesta = new FormGroup({ cuerpo: this.respuesta });
   readonly noLeidos = this.estado.noLeidos;
 
   readonly nombreMateriaFiltro = computed(

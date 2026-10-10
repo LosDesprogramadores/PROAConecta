@@ -73,6 +73,16 @@ def listar_conversacion(usuario_id, otro_id, *, materia_id, limite=200):
     return list(reversed(list(recientes)))
 
 
+def participo_en_materia(usuario_id, materia_id) -> bool:
+    """True si el usuario es remitente o destinatario de al menos un mensaje visible de la materia."""
+    filtro = {
+        'materia_id': materia_id,
+        'fecha_baja': None,
+        '$or': [{'remitente_id': usuario_id}, {'destinatario_id': usuario_id}],
+    }
+    return _coleccion().find_one(filtro, projection={'_id': 1}) is not None
+
+
 def contar_recibidos(usuario_id) -> int:
     return _coleccion().count_documents(_filtro('destinatario_id', usuario_id))
 
