@@ -411,6 +411,8 @@ MATRIZ = [
     # ---- aula_virtual: entregas ---------------------------------------------------------------
     #                                               anon curs  libre baja  ajeno titul pajen admin inact
     F('entrega-list', 'GET', _api('entregas/'), AUTENTICADOS),
+    F('entrega-list', 'GET', _con('/api/entregas/?materia={e.m_ajena.pk}&calificada=false'), AUTENTICADOS,
+      variante='filtros'),                                                 # filtros 010: nunca amplían el alcance
     F('entrega-list', 'POST', _api('entregas/'), (U, C, C, P, P, P, P, P, U),
       lambda e: {'actividad': e.actividad2.pk, 'contenido_texto': 'mi entrega'}),
     F('entrega-detail', 'GET', _con('/api/entregas/{e.entrega.pk}/'), (U, O, N, N, N, O, N, O, U)),
@@ -436,6 +438,8 @@ MATRIZ = [
 
     # ---- notificacion -------------------------------------------------------------------------
     F('notificacion-list-create', 'GET', _api('notificaciones/'), AUTENTICADOS, mongo=True),
+    F('notificacion-list-create', 'GET', _api('notificaciones/?propias=true&vigentes=true'), AUTENTICADOS,
+      variante='propias', mongo=True),
     F('notificacion-list-create', 'POST', _api('notificaciones/'), (U, P, P, P, P, P, P, C, U),
       lambda e: {'titulo': 'Aviso nuevo', 'mensaje': 'Texto', 'alcance': 'AMBOS', 'tipo_notificacion_codigo': 'GENERAL'},
       mongo=True),
