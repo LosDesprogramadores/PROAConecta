@@ -215,11 +215,14 @@ class EntregaSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
     tipo_archivo = 'entrega'
     nota = NotaSerializer(read_only=True)
     estudiante_nombre = serializers.SerializerMethodField()
+    actividad_titulo = serializers.CharField(source='actividad.titulo', read_only=True)
+    materia_id = serializers.IntegerField(source='actividad.materia_id', read_only=True)
+    materia_titulo = serializers.CharField(source='actividad.materia.titulo', read_only=True)
 
     class Meta:
         model = Entrega
         fields = [
-            'id', 'actividad', 'estudiante', 'estudiante_nombre',
+            'id', 'actividad', 'actividad_titulo', 'materia_id', 'materia_titulo', 'estudiante', 'estudiante_nombre',
             'archivo', 'enlace', 'contenido_texto',
             'fuera_de_termino', 'estado', 'fecha_entrega', 'fecha_baja', 'nota'
         ]

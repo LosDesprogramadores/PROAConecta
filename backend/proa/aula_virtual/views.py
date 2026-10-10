@@ -1,7 +1,7 @@
 from django.db import IntegrityError, transaction
 from .notificaciones import avisar_nueva_actividad
-from django.db.models import Count, Q
-from drf_spectacular.utils import extend_schema, inline_serializer
+from django.db.models import Count, Exists, OuterRef, Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, viewsets, filters, status
 from core.exceptions import ErrorSerializer
 from core.pagination import PaginacionOpcional
@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from academico.models import Materia
+from academico.models import Inscripcion, Materia
 from academico.selectors import materias_con_acceso
 from .services import calificar_entrega, calificar_o_rectificar_estudiante, seguimiento_de_actividad
 
@@ -325,7 +325,9 @@ class ActividadViewSet(viewsets.ModelViewSet):
         actividad = self.get_object()
         verificar_profesor_materia(request.user, actividad.materia)
 
-        entregas = actividad.entregas.filter(fecha_baja__isnull=True).select_related('estudiante', 'nota__profesor')
+        entregas = actividad.entregas.filter(fecha_baja__isnull=True).select_related(
+            'actividad__materia', 'estudiante', 'nota__profesor'
+        )
         serializer = EntregaSerializer(entregas, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -366,13 +368,26 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
 class EntregaViewSet(viewsets.ModelViewSet):
     serializer_class = EntregaSerializer
+    pagination_class = PaginacionOpcional
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    @extend_schema(parameters=[
+        OpenApiParameter('materia', int, description='Id de la materia de la actividad.'),
+        OpenApiParameter(
+            'calificada', bool,
+            description='true: solo entregas con nota; false: solo entregas sin nota.',
+        ),
+    ])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         user = self.request.user
         persona, _ = obtener_persona_y_rol(user)
         actividad_id = self.request.query_params.get('actividad')
+        materia_id = self.request.query_params.get('materia')
+        calificada = self.request.query_params.get('calificada')
         en_papelera = self.request.query_params.get('papelera') == 'true'
 
         if en_papelera and es_estudiante(user):
@@ -386,11 +401,30 @@ class EntregaViewSet(viewsets.ModelViewSet):
 
         if actividad_id:
             qs = qs.filter(actividad_id=actividad_id)
+        if materia_id:
+            if not str(materia_id).isdigit():
+                raise ValidationError({'detail': 'El parámetro materia debe ser un número entero.'})
+            qs = qs.filter(actividad__materia_id=materia_id)
+        if calificada is not None:
+            if calificada not in ('true', 'false'):
+                raise ValidationError({'detail': 'El parámetro calificada debe ser true o false.'})
+            # calificada = tiene nota (igual que el estado CORREGIDO del seguimiento)
+            qs = qs.filter(nota__isnull=calificada == 'false')
 
         if es_admin(user):
             return qs
         if es_profesor(user):
-            return qs.filter(actividad__materia__profesor=persona)
+            qs = qs.filter(actividad__materia__profesor=persona)
+            if self.action == 'list':
+                # Solo el listado oculta las entregas de alumnos con la inscripción en BAJA; el detalle
+                # (retrieve, update, calificar) sigue disponible para consultar o corregir notas históricas
+                en_baja = Inscripcion.objects.filter(
+                    materia=OuterRef('actividad__materia'),
+                    estudiante=OuterRef('estudiante'),
+                    estado=Inscripcion.EstadoInscripcion.BAJA,
+                )
+                qs = qs.exclude(Exists(en_baja))
+            return qs
         if es_estudiante(user):
             # Una inscripción en BAJA saca a la materia de las entregas del estudiante
             return qs.filter(estudiante=persona, actividad__materia__in=materias_con_acceso(persona))
