@@ -13,10 +13,10 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from academico.models import Materia
 from academico.selectors import materias_con_acceso
-from .services import calificar_entrega, calificar_o_rectificar_estudiante
+from .services import calificar_entrega, calificar_o_rectificar_estudiante, seguimiento_de_actividad
 
 from .models import Unidad, Material, Actividad, Nota, Entrega
-from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer, EntregaSerializer, NotaSerializer
+from .serializer import UnidadSerializer, MaterialSerializer, ActividadSerializer, EntregaSerializer, NotaSerializer, SeguimientoSerializer
 from .helpers import (
     es_admin,
     es_profesor,
@@ -328,6 +328,14 @@ class ActividadViewSet(viewsets.ModelViewSet):
         entregas = actividad.entregas.filter(fecha_baja__isnull=True).select_related('estudiante', 'nota__profesor')
         serializer = EntregaSerializer(entregas, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @extend_schema(responses={200: SeguimientoSerializer, 403: ErrorSerializer, 404: ErrorSerializer})
+    @action(detail=True, methods=['get'], url_path='seguimiento')
+    def seguimiento(self, request, pk=None):
+        """Todos los inscriptos de la materia con el estado de su entrega en esta actividad."""
+        actividad = self.get_object()
+        datos = seguimiento_de_actividad(request.user, actividad)
+        return Response(SeguimientoSerializer(datos).data)
 
     @extend_schema(
         request=inline_serializer('CalificarEstudiante', {

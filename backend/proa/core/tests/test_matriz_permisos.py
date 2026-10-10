@@ -399,6 +399,8 @@ MATRIZ = [
     F('actividad-cambiar-estado', 'PATCH', _con('/api/actividades/{e.actividad.pk}/cambiar-estado/'),
       (U, P, P, N, N, O, N, O, U)),
     F('actividad-entregas', 'GET', _con('/api/actividades/{e.actividad.pk}/entregas/'), (U, P, P, N, N, O, N, O, U)),
+    F('actividad-seguimiento', 'GET', _con('/api/actividades/{e.actividad.pk}/seguimiento/'),
+      (U, P, P, N, N, O, N, O, U)),
     *[
         F('actividad-calificar-estudiante', metodo, _con('/api/actividades/{e.actividad.pk}/calificar-estudiante/'),
           (U, P, P, P, P, O, P, O, U),
