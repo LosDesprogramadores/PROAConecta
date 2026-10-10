@@ -1,3 +1,26 @@
+# Compartido por backend y programador: misma imagen y mismo entorno
+x-backend-build: &backend-build
+  context: ./backend
+  dockerfile: Dockerfile
+
+x-backend-entorno: &backend-entorno
+  # Settings por entorno. Un despliegue real usa proa.settings.prod (DEBUG apagado, clave y hosts obligatorios)
+  - DJANGO_SETTINGS_MODULE=proa.settings.dev
+  - DJANGO_DEBUG=True
+  # ATENCIÓN: este compose es solo para desarrollo local (proa.settings.dev). La clave de abajo es
+  # un valor de desarrollo, público en el repositorio: un despliegue de staging o producción debe
+  # definir su propia DJANGO_SECRET_KEY y nunca reutilizar este archivo tal cual. Con
+  # proa.settings.prod esta clave es rechazada y la app no arranca.
+  - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-clave-de-desarrollo-del-compose-local-no-usar-en-produccion}
+  - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend
+  - DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
+  - DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
+  - PYTHONUNBUFFERED=1
+  - DATABASE_URL=postgres://proa:${POSTGRES_PASSWORD:-proa}@db:5432/proa
+  - DB_SSL=False
+  - DATABASE_URL_MONGODB=mongodb://mongo:27017
+  - REDIS_URL=redis://redis:6379/0
+
 services:
   # PostgreSQL local (datos relacionales)
   db:
@@ -41,9 +64,8 @@ services:
       retries: 10
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: *backend-build
+    image: proa-backend:local
     container_name: django_backend
     # Sin restart: si falla migrate el backend queda detenido y el error se ve en los logs
     volumes:
@@ -59,23 +81,7 @@ services:
       - path: ./backend/.env
         required: false
     # Lo definido acá pisa lo de backend/.env: apunta a los contenedores locales
-    environment:
-      # Settings por entorno. Un despliegue real usa proa.settings.prod (DEBUG apagado, clave y hosts obligatorios)
-      - DJANGO_SETTINGS_MODULE=proa.settings.dev
-      - DJANGO_DEBUG=True
-      # ATENCIÓN: este compose es solo para desarrollo local (proa.settings.dev). La clave de abajo es
-      # un valor de desarrollo, público en el repositorio: un despliegue de staging o producción debe
-      # definir su propia DJANGO_SECRET_KEY y nunca reutilizar este archivo tal cual. Con
-      # proa.settings.prod esta clave es rechazada y la app no arranca.
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-clave-de-desarrollo-del-compose-local-no-usar-en-produccion}
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend
-      - DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
-      - DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=postgres://proa:${POSTGRES_PASSWORD:-proa}@db:5432/proa
-      - DB_SSL=False
-      - DATABASE_URL_MONGODB=mongodb://mongo:27017
-      - REDIS_URL=redis://redis:6379/0
+    environment: *backend-entorno
     depends_on:
       db:
         condition: service_healthy
@@ -103,6 +109,29 @@ services:
 
         - action: rebuild
           path: ./backend/requirements.txt
+
+  # Publica en vivo los avisos programados cuando llega su fecha (publicar_notificaciones_programadas).
+  # Si está caído, los avisos igual aparecen al recargar (la lectura filtra por fecha); solo se demora el push en vivo
+  programador:
+    build: *backend-build
+    image: proa-backend:local
+    # Sin container_name ni puertos: no se conecta nadie a este servicio
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment: *backend-entorno
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Una vuelta fallida se registra y la siguiente corre igual
+    command: >
+      sh -c 'while true; do
+      python manage.py publicar_notificaciones_programadas
+      || echo "Falló una vuelta del programador; se reintenta en 60 s";
+      sleep 60; done'
 
   frontend:
     build:

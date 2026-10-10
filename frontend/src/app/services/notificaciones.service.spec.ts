@@ -27,6 +27,13 @@ describe('NotificacionService', () => {
     req.flush([]);
   });
 
+  it('lists only the administrator own notices with propias=true', () => {
+    service.listarPropias().subscribe();
+    const req = http.expectOne((r) => r.url === base);
+    expect(req.request.params.get('propias')).toBe('true');
+    req.flush([]);
+  });
+
   it('asks for a page and returns the unread counter', () => {
     let no_leidas = -1;
     service.listarPaginado({ page: 3, page_size: 10 }).subscribe((r) => (no_leidas = r.no_leidas));

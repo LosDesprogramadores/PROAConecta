@@ -1,92 +1,89 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Anuncio } from '../../../model/anuncio.model';
-import { AnunciosService } from '../../../services/anuncios.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { Modal } from '../../../shared/modal/modal';
+import { INotificacion } from '../../../model/notificacion.model';
+import { NotificacionService } from '../../../services/notificaciones.service';
+import { NotificacionesEstadoService, idDe } from '../../../services/notificaciones-estado.service';
+import { Paginador } from '../../../shared/paginador/paginador';
+
+const TAMANO_PAGINA = 10;
+
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [Modal, CommonModule],
+  imports: [CommonModule, Paginador],
   templateUrl: './anuncios.html',
-  styleUrls: ['./anuncios.css']
 })
 export class Anuncios implements OnInit {
-  private readonly anunciosService = inject(AnunciosService);
+  private readonly api = inject(NotificacionService);
+  private readonly estado = inject(NotificacionesEstadoService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  anuncios = signal<Anuncio[]>([]);
-  anuncioSeleccionado = signal<Anuncio | null>(null);
-  cargando = signal<boolean>(true);
-  error = signal<boolean>(false);
-
-  readonly anunciosState = computed(() => ({
-    data: this.anuncios(),
-    cargando: this.cargando(),
-    error: this.error()
-  }));
+  readonly tamanoPagina = TAMANO_PAGINA;
+  readonly notificaciones = signal<INotificacion[]>([]);
+  readonly total = signal(0);
+  readonly pagina = signal(1);
+  readonly cargando = signal(true);
+  readonly error = signal(false);
+  readonly noLeidas = this.estado.noLeidas;
+  /** Ids already known (loaded or received live): a repeated live event never counts twice. */
+  private readonly vistas = new Set<string>();
 
   ngOnInit(): void {
-    this.cargarAnuncios();
+    this.cargar(1);
+    // Live: on the first page a new notification goes to the top without reloading.
+    this.estado
+      .nuevas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((noti) => {
+        const id = idDe(noti);
+        if (id) {
+          if (this.vistas.has(id)) {
+            return;
+          }
+          this.vistas.add(id);
+        }
+        this.total.update((n) => n + 1);
+        if (this.pagina() !== 1) {
+          return;
+        }
+        this.notificaciones.update((lista) => [noti, ...lista].slice(0, TAMANO_PAGINA));
+      });
   }
 
-  cargarAnuncios(): void {
+  cargar(pagina: number): void {
     this.cargando.set(true);
     this.error.set(false);
-
-    this.anunciosService.getAnuncios().subscribe({
-      next: (data) => {
-        const filtrados = data.filter((a) => {
-          if (!a.alcance) return true;
-
-          const alcance = a.alcance.toUpperCase();
-          return (
-            alcance === 'AMBOS' ||
-            alcance === 'ESTUDIANTE' ||
-            alcance === 'ALUMNOS' ||
-            alcance === 'TODOS'
-          );
+    this.api.listarPaginado({ page: pagina, page_size: TAMANO_PAGINA }).subscribe({
+      next: (respuesta) => {
+        this.notificaciones.set(respuesta.results);
+        respuesta.results.forEach((n) => {
+          const id = idDe(n);
+          if (id) this.vistas.add(id);
         });
-
-        this.anuncios.set(filtrados);
+        this.total.set(respuesta.count);
+        this.pagina.set(pagina);
         this.cargando.set(false);
       },
-      error: (err) => {
-        console.error('Error al cargar la lista de anuncios:', err);
+      error: () => {
         this.error.set(true);
         this.cargando.set(false);
-      }
+      },
     });
   }
 
-  abrirModal(anuncio: Anuncio): void {
-    this.anuncioSeleccionado.set(anuncio);
+  marcarComoLeida(noti: INotificacion): void {
+    const id = idDe(noti);
+    this.marcarLocal(id, true);
+    this.estado.marcarLeida(noti).subscribe({ error: () => this.marcarLocal(id, false) });
   }
 
-  cerrarModal(): void {
-    this.anuncioSeleccionado.set(null);
+  idDe(noti: INotificacion): string | undefined {
+    return idDe(noti);
   }
 
-  esAcademico(tipo?: string): boolean {
-    const t = tipo?.toUpperCase();
-    return t === 'ACADEMICO' || t === 'ACADÉMICO';
-  }
-
-  esUrgente(tipo?: string): boolean {
-    return tipo?.toUpperCase() === 'URGENTE';
-  }
-
-  getTipoNotificacionBadgeClass(tipo?: string): string {
-    const base = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border';
-    
-    switch (tipo?.toUpperCase()) {
-      case 'ACADEMICO':
-      case 'ACADÉMICO':
-        return `${base} bg-purple-50 text-purple-700 border-purple-200`;
-      case 'URGENTE':
-        return `${base} bg-red-50 text-red-700 border-red-200 animate-pulse`;
-      case 'GENERAL':
-      default:
-        return `${base} bg-blue-50 text-blue-700 border-blue-200`;
-    }
+  private marcarLocal(id: string | undefined, leida: boolean): void {
+    this.notificaciones.update((lista) => lista.map((n) => (idDe(n) === id ? { ...n, leida } : n)));
   }
 }

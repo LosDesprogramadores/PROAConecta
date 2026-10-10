@@ -11,6 +11,15 @@ def grupo_materia(materia_id) -> str:
     return f'materia_{int(materia_id)}'
 
 
+def grupo_materia_rol(materia_id, rol: str) -> str:
+    # Los avisos de materia respetan el alcance: cada rol de la materia tiene su propio grupo
+    return f'materia_{int(materia_id)}_rol_{rol.upper()}'
+
+
+def grupo_rol(rol: str) -> str:
+    return f'rol_{rol.upper()}'
+
+
 def publicar(grupo: str, tipo: str, datos: dict) -> None:
     """Envía un evento ``{tipo, fecha, datos}`` a todos los sockets del grupo.
 

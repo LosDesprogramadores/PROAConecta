@@ -41,7 +41,6 @@ const cargarTablaGenerica = () => import('./views/admin/tabla-generica/tabla-gen
 
 // Communication
 const cargarMensajesComponent = () => import('./views/mensajes/mensajes').then((m) => m.MensajesComponent);
-const cargarNotificacionesComponent = () => import('./views/notificaciones/notificaciones').then((m) => m.NotificacionesComponent);
 
 // Subject (view-materia)
 const cargarPortada = () => import('./views/materias-components/portada/portada').then((m) => m.Portada);
@@ -103,7 +102,7 @@ export const routes: Routes = [
         canActivate: [soloEstudiante],
         children: [
           { path: 'welcome', title: 'Inicio', loadComponent: cargarWelcome },
-          { path: 'anuncios', title: 'Anuncios', loadComponent: cargarAnuncios },
+          { path: 'anuncios', redirectTo: '/dashboard/anuncios' },
           { path: 'materias', title: 'Mis materias', loadComponent: cargarMaterias },
           { path: 'contacto', title: 'Contacto', loadComponent: cargarContacto },
         ],
@@ -121,7 +120,7 @@ export const routes: Routes = [
       { path: 'tablaGenerica', title: 'Listado', loadComponent: cargarTablaGenerica },
       // The administrator has no private inbox (the server answers 403).
       { path: 'mensajes', canActivate: [roleGuard([UserRole.DOCENTE, UserRole.ESTUDIANTE])], title: 'Mensajes', loadComponent: cargarMensajesComponent },
-      { path: 'notificaciones', title: 'Notificaciones', loadComponent: cargarNotificacionesComponent },
+      { path: 'notificaciones', redirectTo: 'anuncios' },
 
       { path: '', redirectTo: 'ingreso', pathMatch: 'full' },
     ],

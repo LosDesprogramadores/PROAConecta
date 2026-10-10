@@ -27,6 +27,9 @@ export class MensajeForm implements OnInit {
 
   readonly materias = input.required<IMateria[]>();
   readonly materiaInicial = input<number | null>(null);
+  /** Reply mode: subject and recipient are fixed (the recipient must be one of the allowed ones). */
+  readonly destinatarioInicial = input<number | null>(null);
+  readonly asuntoInicial = input('');
   readonly enviado = output<Mensaje>();
   readonly cerrar = output<void>();
 
@@ -63,9 +66,16 @@ export class MensajeForm implements OnInit {
       )
       .subscribe((lista) => this.aplicarDestinatarios(lista));
 
+    if (this.asuntoInicial()) {
+      this.formulario.controls.asunto.setValue(this.asuntoInicial());
+    }
     const inicial = this.materiaInicial();
     if (inicial && this.materias().some((m) => m.id === inicial)) {
       this.formulario.controls.materia.setValue(inicial);
+      if (this.destinatarioInicial() !== null) {
+        // Without emitEvent the lock would trigger the recipient load again.
+        this.formulario.controls.materia.disable({ emitEvent: false });
+      }
     }
   }
 
@@ -119,6 +129,10 @@ export class MensajeForm implements OnInit {
   }
 
   private aplicarDestinatarios(lista: Destinatario[]): void {
+    const fijo = this.destinatarioInicial();
+    if (fijo !== null) {
+      lista = lista.filter((d) => d.id === fijo);
+    }
     this.cargandoDestinatarios.set(false);
     this.destinatarios.set(lista);
     if (lista.length > 0) {
@@ -126,6 +140,9 @@ export class MensajeForm implements OnInit {
     }
     if (lista.length === 1) {
       this.formulario.controls.destinatario.setValue(lista[0].id);
+      if (fijo !== null) {
+        this.formulario.controls.destinatario.disable({ emitEvent: false });
+      }
     }
   }
 }

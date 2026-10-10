@@ -168,14 +168,14 @@ async def test_crear_notificacion_de_materia_llega_a_la_materia(materia_con_insc
     await comunicador.disconnect()
 
 
-async def test_crear_notificacion_personal_llega_solo_al_destinatario(estudiante, profesor, admin, api_as):
+async def test_aviso_personal_con_alcance_estudiantes_llega_solo_al_destinatario(estudiante, profesor, admin, api_as):
     destinatario = await _conectar(estudiante)
     otro = await _conectar(profesor)
     cliente = api_as(admin)
 
     respuesta = await sync_to_async(cliente.post)(
         '/api/notificaciones/',
-        {'titulo': 'Aviso', 'mensaje': 'Hola', 'usuario_destino_id': estudiante.pk},
+        {'titulo': 'Aviso', 'mensaje': 'Hola', 'alcance': 'ESTUDIANTES', 'usuario_destino_id': estudiante.pk},
         format='json',
     )
     assert respuesta.status_code == 201
@@ -207,3 +207,167 @@ async def test_cambiar_la_clave_no_cierra_el_socket_abierto(estudiante):
 
     await _no_recibe_nada(comunicador)
     await comunicador.disconnect()
+
+
+async def test_estudiante_recibe_eventos_de_su_rol_y_no_los_del_rol_ajeno(estudiante):
+    comunicador = await _conectar(estudiante)
+
+    await _publicar('rol_PROFESOR', 'notificacion.creada', {'titulo': 'Solo docentes'})
+    await _no_recibe_nada(comunicador)
+    await _publicar('rol_ESTUDIANTE', 'notificacion.creada', {'titulo': 'Para estudiantes'})
+    assert (await comunicador.receive_json_from(timeout=1))['datos'] == {'titulo': 'Para estudiantes'}
+    await comunicador.disconnect()
+
+
+async def test_profesor_recibe_eventos_de_su_rol_y_no_los_del_rol_ajeno(profesor):
+    comunicador = await _conectar(profesor)
+
+    await _publicar('rol_ESTUDIANTE', 'notificacion.creada', {'titulo': 'Solo estudiantes'})
+    await _no_recibe_nada(comunicador)
+    await _publicar('rol_PROFESOR', 'notificacion.creada', {'titulo': 'Para docentes'})
+    assert (await comunicador.receive_json_from(timeout=1))['datos'] == {'titulo': 'Para docentes'}
+    await comunicador.disconnect()
+
+
+async def test_administrador_no_se_une_a_los_grupos_de_rol(admin):
+    comunicador = await _conectar(admin)
+
+    await _publicar('rol_PROFESOR', 'notificacion.creada', {'titulo': 'x'})
+    await _publicar('rol_ESTUDIANTE', 'notificacion.creada', {'titulo': 'y'})
+    await _no_recibe_nada(comunicador)
+    await comunicador.disconnect()
+
+
+async def test_usuario_dado_de_baja_no_se_une_al_rol(estudiante):
+    from django.utils import timezone
+
+    await database_sync_to_async(
+        type(estudiante.persona).objects.filter(pk=estudiante.persona.pk).update
+    )(fecha_baja=timezone.now())
+    comunicador = await _conectar(estudiante)
+
+    await _publicar('rol_ESTUDIANTE', 'notificacion.creada', {'titulo': 'Nada'})
+    await _no_recibe_nada(comunicador)
+    await comunicador.disconnect()
+
+
+async def test_aviso_por_alcance_llega_en_vivo_solo_a_los_roles_destinatarios(estudiante, profesor, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    profesores = await _conectar(profesor)
+    cliente = api_as(admin)
+
+    respuesta = await sync_to_async(cliente.post)(
+        '/api/notificaciones/', {'titulo': 'Docentes', 'mensaje': 'Hola', 'alcance': 'PROFESORES'}, format='json'
+    )
+    assert respuesta.status_code == 201
+
+    mensaje = await profesores.receive_json_from(timeout=1)
+    assert mensaje['tipo'] == 'notificacion.creada' and mensaje['datos']['titulo'] == 'Docentes'
+    await _no_recibe_nada(estudiantes)
+    await estudiantes.disconnect()
+    await profesores.disconnect()
+
+
+async def test_aviso_para_todos_llega_en_vivo_a_profesores_y_estudiantes(estudiante, profesor, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    profesores = await _conectar(profesor)
+    cliente = api_as(admin)
+
+    await sync_to_async(cliente.post)(
+        '/api/notificaciones/', {'titulo': 'Todos', 'mensaje': 'Hola', 'alcance': 'TODOS'}, format='json'
+    )
+
+    assert (await estudiantes.receive_json_from(timeout=1))['datos']['titulo'] == 'Todos'
+    assert (await profesores.receive_json_from(timeout=1))['datos']['titulo'] == 'Todos'
+    await estudiantes.disconnect()
+    await profesores.disconnect()
+
+
+async def test_aviso_programado_no_llega_en_vivo(estudiante, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    cliente = api_as(admin)
+
+    await sync_to_async(cliente.post)(
+        '/api/notificaciones/',
+        {'titulo': 'Futuro', 'mensaje': 'Hola', 'alcance': 'TODOS', 'fecha_desde': '2999-01-01'},
+        format='json',
+    )
+
+    await _no_recibe_nada(estudiantes)
+    await estudiantes.disconnect()
+
+
+async def test_aviso_con_alcance_por_defecto_llega_en_vivo_a_ambos_roles(estudiante, profesor, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    profesores = await _conectar(profesor)
+    cliente = api_as(admin)
+
+    respuesta = await sync_to_async(cliente.post)(
+        '/api/notificaciones/', {'titulo': 'Sin alcance', 'mensaje': 'Hola'}, format='json'
+    )
+    assert respuesta.status_code == 201
+
+    assert (await estudiantes.receive_json_from(timeout=1))['datos']['titulo'] == 'Sin alcance'
+    assert (await profesores.receive_json_from(timeout=1))['datos']['titulo'] == 'Sin alcance'
+    await estudiantes.disconnect()
+    await profesores.disconnect()
+
+
+async def _aviso_de_materia(api_as, admin, materia, alcance):
+    cuerpo = {'titulo': 'Aviso', 'mensaje': 'Hola', 'materia_id': materia.id}
+    if alcance:
+        cuerpo['alcance'] = alcance
+    respuesta = await sync_to_async(api_as(admin).post)('/api/notificaciones/', cuerpo, format='json')
+    assert respuesta.status_code == 201
+
+
+async def test_aviso_de_materia_para_profesores_no_llega_en_vivo_a_los_estudiantes(
+        materia_con_inscripcion, estudiante, profesor, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    profesores = await _conectar(profesor)
+
+    await _aviso_de_materia(api_as, admin, materia_con_inscripcion, 'PROFESOR')
+
+    assert (await profesores.receive_json_from(timeout=1))['datos']['titulo'] == 'Aviso'
+    await _no_recibe_nada(estudiantes)
+    await estudiantes.disconnect()
+    await profesores.disconnect()
+
+
+async def test_aviso_de_materia_para_estudiantes_llega_tambien_al_titular(
+        materia_con_inscripcion, estudiante, profesor, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    profesores = await _conectar(profesor)
+
+    await _aviso_de_materia(api_as, admin, materia_con_inscripcion, 'ESTUDIANTE')
+
+    assert (await estudiantes.receive_json_from(timeout=1))['datos']['titulo'] == 'Aviso'
+    assert (await profesores.receive_json_from(timeout=1))['datos']['titulo'] == 'Aviso'
+    await estudiantes.disconnect()
+    await profesores.disconnect()
+
+
+async def test_aviso_de_materia_para_ambos_llega_en_vivo_a_profesor_y_estudiantes(
+        materia_con_inscripcion, estudiante, profesor, admin, api_as):
+    estudiantes = await _conectar(estudiante)
+    profesores = await _conectar(profesor)
+
+    await _aviso_de_materia(api_as, admin, materia_con_inscripcion, 'AMBOS')
+
+    assert (await estudiantes.receive_json_from(timeout=1))['datos']['titulo'] == 'Aviso'
+    assert (await profesores.receive_json_from(timeout=1))['datos']['titulo'] == 'Aviso'
+    await estudiantes.disconnect()
+    await profesores.disconnect()
+
+
+async def test_estudiante_dado_de_baja_de_la_materia_no_recibe_sus_avisos_por_rol(
+        materia_con_inscripcion, estudiante, admin, api_as):
+    await database_sync_to_async(
+        Inscripcion.objects.filter(materia=materia_con_inscripcion, estudiante=estudiante.persona).update
+    )(estado=Inscripcion.EstadoInscripcion.BAJA)
+    estudiantes = await _conectar(estudiante)
+
+    await _aviso_de_materia(api_as, admin, materia_con_inscripcion, 'AMBOS')
+
+    await _no_recibe_nada(estudiantes)
+    await estudiantes.disconnect()

@@ -18,7 +18,7 @@ from core.roles import tiene_inscripcion_activa
 
 from . import services, tickets
 from .serializer import AnuncioEntradaSerializer, NotificacionEntradaSerializer
-from .tiempo_real import grupo_materia, grupo_usuario, publicar
+from .tiempo_real import grupo_materia, publicar
 
 logger = logging.getLogger(__name__)
 
@@ -54,27 +54,13 @@ class NotificacionListCreateView(APIView):
             logger.exception("Mongo no disponible al crear una notificación")
             return _sin_servicio()
 
-        notificacion = {
-            "id": str(inserted_id),
-            "titulo": doc["titulo"],
-            "mensaje": doc["mensaje"],
-            "tipo_notificacion_codigo": doc["tipo_notificacion_codigo"],
-            "alcance": doc["alcance"],
-            "fecha_desde": str(doc.get("fecha_desde") or ""),
-            "fecha_hasta": str(doc.get("fecha_hasta") or ""),
-            "materia_id": doc.get("materia_id"),
-            "leida": False,
-        }
-        # Un anuncio de materia llega a la materia; el resto, solo a su destinatario
-        if doc["materia_id"] is not None:
-            grupo = grupo_materia(doc["materia_id"])
-        else:
-            grupo = grupo_usuario(doc["usuario_destino_id"])
-        try:
-            publicar(grupo, "notificacion.creada", notificacion)
-        except Exception:
-            # La notificación ya está guardada: un fallo del tiempo real no debe devolver error
-            logger.warning("No se pudo publicar la notificación %s en tiempo real", notificacion["id"], exc_info=True)
+        # Una programada se guarda sin publicar: la publica el comando periódico cuando llega su fecha
+        if not doc["push_pendiente"]:
+            try:
+                services.publicar_aviso(inserted_id, doc)
+            except Exception:
+                # La notificación ya está guardada: un fallo del tiempo real no debe devolver error
+                logger.warning("No se pudo publicar la notificación %s en tiempo real", inserted_id, exc_info=True)
         return Response({
             "id": str(inserted_id),
             "mensaje": "Notificación creada con éxito."
@@ -152,6 +138,7 @@ CAMPOS_ANUNCIO = {
     'materia_nombre': serializers.CharField(allow_null=True),
     'autor': serializers.CharField(allow_null=True),
     'fecha_creacion': serializers.CharField(),
+    'estado_vigencia': serializers.CharField(),
     'leida': serializers.BooleanField(),
 }
 ANUNCIO_SALIDA = inline_serializer('Anuncio', CAMPOS_ANUNCIO)

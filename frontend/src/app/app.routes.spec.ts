@@ -6,6 +6,7 @@ import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
 import { UserRole } from './core/auth/auth.model';
 import { ActividadForm } from './views/dashboard-components/actividad-form/actividad-form';
+import { Anuncios } from './views/dashboard-components/anuncios/anuncios';
 import { NotFound } from './views/not-found/not-found';
 import { Calificaciones } from './views/materias-components/materias-estudiante/calificaciones/calificaciones';
 import { CalificacionesProfesor } from './views/materias-components/calificaciones-profesor/calificaciones-profesor';
@@ -51,6 +52,17 @@ describe('app routes', () => {
     expect(router.serializeUrl(resultado as UrlTree)).toBe('/dashboard-admin');
   });
 
+  it('has a single notices page: notificaciones and estudiante/anuncios redirect to dashboard/anuncios', async () => {
+    const unica = hijosDe('dashboard').filter((r) => r.path === 'anuncios');
+    expect(unica).toHaveLength(1);
+    expect(unica[0].title).toBe('Anuncios');
+    expect(await cargar(unica[0])).toBe(Anuncios);
+
+    expect(hijosDe('dashboard').find((r) => r.path === 'notificaciones')?.redirectTo).toBe('anuncios');
+    const estudiante = routes.find((r) => r.path === 'dashboard')!.children!.find((r) => r.path === 'estudiante')!;
+    expect(estudiante.children!.find((r) => r.path === 'anuncios')?.redirectTo).toBe('/dashboard/anuncios');
+  });
+
   it('keeps the wildcard last and pointed at the 404 screen', async () => {
     const ultima = routes[routes.length - 1];
     expect(ultima.path).toBe('**');
@@ -88,7 +100,7 @@ describe('app routes', () => {
       expect(routes.find((r) => r.path === padre)?.canActivate?.length, padre).toBeGreaterThan(0);
     }
     expect(routes.find((r) => r.path === 'dashboard-admin')?.canActivate?.length).toBe(2);
-    expect(sinGuardia('dashboard').map((r) => r.path)).toEqual(['anuncios', 'materias', 'tablaGenerica', 'notificaciones']);
+    expect(sinGuardia('dashboard').map((r) => r.path)).toEqual(['anuncios', 'materias', 'tablaGenerica']);
   });
 
   it('keeps the route order: static segments before :id in dashboard and in view-materia', () => {

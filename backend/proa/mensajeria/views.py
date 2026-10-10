@@ -95,6 +95,28 @@ class MensajeListCreateView(APIView):
         return Response(mensaje, status=status.HTTP_201_CREATED)
 
 
+class ConversacionView(APIView):
+    """Hilo cronológico con una persona en una materia (los últimos 200 mensajes visibles)."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary='Conversación con una persona en una materia',
+        parameters=[
+            OpenApiParameter('materia', int, required=True),
+            OpenApiParameter('con', int, required=True, description='Id del usuario del otro participante'),
+        ],
+        responses={200: MensajeSalidaSerializer(many=True), 400: ErrorSerializer, 403: ErrorSerializer,
+                   404: ErrorSerializer, 503: ErrorSerializer},
+    )
+    def get(self, request):
+        try:
+            datos = services.conversacion(request.user, request.query_params)
+        except PyMongoError:
+            logger.exception('Mongo no disponible al leer una conversación')
+            return _sin_servicio()
+        return Response(datos, status=status.HTTP_200_OK)
+
+
 class MensajeLeerView(APIView):
     """Solo el destinatario. Idempotente; avisa al remitente con ``mensaje.leido``."""
     permission_classes = [IsAuthenticated]

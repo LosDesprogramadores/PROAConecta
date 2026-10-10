@@ -93,9 +93,9 @@
               <select id="noti-alcance" class="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
                 formControlName="alcance"
                 required>
-                <option value="AMBOS">Ambos (Estudiantes y Profesores)</option>
-                <option value="ESTUDIANTE">Solo Estudiantes</option>
-                <option value="PROFESOR">Solo Profesores</option>
+                <option value="AMBOS">Todos</option>
+                <option value="PROFESOR">Profesores</option>
+                <option value="ESTUDIANTE">Estudiantes</option>
               </select>
             </div>
             <div>
@@ -110,18 +110,20 @@
             </div>
             <div class="grid grid-cols-1 gap-4 pt-2 border-t border-gray-200">
               <div>
-                <label for="noti-desde" class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Vigente Desde <span class="text-red-500">*</span></label>
+                <label for="noti-desde" class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Vigente desde <span class="text-red-500">*</span></label>
                 <input id="noti-desde" type="date"
                   class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
                   formControlName="fecha_desde"
                   required>
+                @if (programadaPara(); as fecha) {
+                  <p class="text-xs text-amber-700 mt-1">Programada para {{ fecha }}</p>
+                }
               </div>
               <div>
-                <label for="noti-hasta" class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Vigente Hasta <span class="text-red-500">*</span></label>
+                <label for="noti-hasta" class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Vigente hasta <span class="text-gray-400 normal-case font-normal">(opcional)</span></label>
                 <input id="noti-hasta" type="date"
                   class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  formControlName="fecha_hasta"
-                  required>
+                  formControlName="fecha_hasta">
               </div>
             </div>
           </div>
@@ -184,26 +186,28 @@
               class="shrink-0 px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700 rounded-md border border-slate-200">
               {{ noti.tipo_notificacion_codigo || 'GENERAL' }}
             </span>
+            <span class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-md border" [ngClass]="claseVigencia(noti.estado_vigencia)">
+              {{ etiquetaVigencia(noti.estado_vigencia) }}
+            </span>
           </div>
           <p class="text-gray-600 text-sm mb-4 leading-relaxed">{{ noti.mensaje }}</p>
           <div
             class="text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 flex flex-col gap-1.5">
-            @if (noti.fecha_desde) {
+            @if (programadaDe(noti); as fecha) {
               <div class="flex items-center gap-2">
-                <span class="font-semibold text-gray-700">📅 Desde:</span> {{ noti.fecha_desde |
-                date:'mediumDate' }}
+                <span class="font-semibold text-gray-700">📅 Programada para {{ fecha }}</span>
+              </div>
+            } @else if (noti.fecha_desde) {
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-gray-700">📅 Desde:</span> {{ dia(noti.fecha_desde) }}
               </div>
             }
             @if (noti.fecha_hasta) {
               <div class="flex items-center gap-2">
-                <span class="font-semibold text-gray-700">⏳ Hasta:</span> {{ noti.fecha_hasta |
-                date:'mediumDate' }}
+                <span class="font-semibold text-gray-700">⏳ Hasta:</span> {{ dia(noti.fecha_hasta) }}
               </div>
-            }
-            @if (!noti.fecha_desde && !noti.fecha_hasta) {
-              <div class="text-gray-400 italic">
-                📅 Vigencia permanente en el sistema
-              </div>
+            } @else {
+              <div class="text-gray-400 italic">Sin fecha de vencimiento</div>
             }
           </div>
         </div>
@@ -211,7 +215,7 @@
           <div class="flex flex-wrap justify-between items-center pt-4 border-t border-gray-100 gap-2">
             <span
               class="px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">
-              Destinatarios: {{ noti.alcance }}
+              Destinatarios: {{ etiquetaAlcance(noti.alcance) }}
             </span>
             <div class="space-x-2">
               <button

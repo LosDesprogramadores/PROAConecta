@@ -19,6 +19,11 @@ export class NotificacionService {
     return this.http.get<INotificacion[]>(this.apiUrl);
   }
 
+  /** Admin panel: only the notices the administrator created (`propias=true`), plain list without page. */
+  listarPropias(): Observable<INotificacion[]> {
+    return this.http.get<INotificacion[]>(this.apiUrl, { params: { propias: 'true' } });
+  }
+
   /** Paginated variant: the server answers `{count, next, previous, results, no_leidas}` when `page` is sent. */
   listarPaginado(consulta: ConsultaPaginada): Observable<RespuestaNotificaciones> {
     return this.http.get<RespuestaNotificaciones>(this.apiUrl, { params: { ...consulta } });

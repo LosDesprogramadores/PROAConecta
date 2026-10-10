@@ -75,7 +75,17 @@ def test_crear_indices_mongo_crea_los_indices_esperados():
         (('materia_id', 1), ('fecha_creacion', -1)),
         (('alcance', 1), ('fecha_creacion', -1)),
         (('usuario_destino_id', 1), ('fecha_creacion', -1)),
+        (('fecha_desde', 1),),
     }
+
+
+def test_crear_indices_mongo_declara_el_indice_parcial_de_avisos_pendientes():
+    call_command('crear_indices_mongo')
+    info = mongo.obtener_coleccion(mongo.COLECCION_NOTIFICACION).index_information()
+    parciales = [v for v in info.values() if v.get('partialFilterExpression')]
+    assert [(tuple(v['key']), v['partialFilterExpression']) for v in parciales] == [
+        ((('fecha_desde', 1),), {'push_pendiente': True})
+    ]
 
 
 def test_crear_indices_mongo_es_idempotente():

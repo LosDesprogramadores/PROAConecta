@@ -3,7 +3,7 @@ import json
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-from .tiempo_real import grupo_materia, grupo_usuario
+from .tiempo_real import grupo_materia, grupo_materia_rol, grupo_rol, grupo_usuario
 
 CODIGO_NO_AUTENTICADO = 4401
 
@@ -22,7 +22,11 @@ class NotificacionConsumer(AsyncWebsocketConsumer):
         # La pertenencia se evalúa al conectar: quien pase a BAJA sigue recibiendo eventos hasta reconectar
         # (aceptado por ahora). Los grupos los decide el servidor: el cliente nunca pide a cuáles unirse
         self.grupos = [grupo_usuario(user.pk)]
-        self.grupos += [grupo_materia(m_id) for m_id in await self.obtener_materias_usuario(user)]
+        self.grupos += [grupo_rol(rol) for rol in await self.obtener_roles_usuario(user)]
+        for materia_id, rol in await self.obtener_materias_usuario(user):
+            # materia_N: eventos de la materia para todos sus miembros (anuncios, mensajes);
+            # materia_N_rol_X: avisos de la materia que respetan el alcance
+            self.grupos += [grupo_materia(materia_id), grupo_materia_rol(materia_id, rol)]
 
         for grupo in self.grupos:
             await self.channel_layer.group_add(grupo, self.channel_name)
@@ -54,10 +58,18 @@ class NotificacionConsumer(AsyncWebsocketConsumer):
         await self.close(code=CODIGO_NO_AUTENTICADO)
 
     @database_sync_to_async
+    def obtener_roles_usuario(self, user):
+        from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, obtener_persona_y_rol
+
+        # Solo profesores y estudiantes: el administrador ve sus avisos por su grupo personal
+        _, rol = obtener_persona_y_rol(user)
+        return [rol] if rol in (ROL_PROFESOR, ROL_ESTUDIANTE) else []
+
+    @database_sync_to_async
     def obtener_materias_usuario(self, user):
         from academico.models import Materia
         from academico.selectors import materias_con_acceso
-        from core.roles import obtener_persona_y_rol
+        from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, obtener_persona_y_rol
 
         persona, rol = obtener_persona_y_rol(user)
         # Sin rol (persona de baja o cuenta desactivada) no hay materias
@@ -67,4 +79,7 @@ class NotificacionConsumer(AsyncWebsocketConsumer):
         # Titular de la cátedra o inscripción que no sea BAJA (LIBRE sigue siendo parte de la materia)
         como_titular = Materia.objects.filter(profesor=persona).values_list('id', flat=True)
         como_alumno = materias_con_acceso(persona).values_list('id', flat=True)
-        return sorted(set(como_titular) | set(como_alumno))
+        titular = set(como_titular)
+        pertenencias = {(m_id, ROL_PROFESOR) for m_id in titular}
+        pertenencias |= {(m_id, ROL_ESTUDIANTE) for m_id in set(como_alumno) - titular}
+        return sorted(pertenencias)

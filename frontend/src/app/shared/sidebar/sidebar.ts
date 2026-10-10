@@ -50,7 +50,7 @@ export class Sidebar implements OnInit {
       case UserRole.ESTUDIANTE:
         this.areaPersonalPath = '/dashboard/estudiante/welcome';
         this.links = [
-          { label: 'Anuncios', path: '/dashboard/estudiante/anuncios' },
+          { label: 'Anuncios', path: '/dashboard/anuncios' },
           { label: 'Materias', path: '/dashboard/estudiante/materias' },
           { label: 'Contacto', path: '/dashboard/estudiante/contacto' },
         ];

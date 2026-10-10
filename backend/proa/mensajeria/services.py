@@ -29,12 +29,14 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 MENSAJE_PAR_NO_PERMITIDO = 'No podés enviar mensajes a este destinatario en esta materia.'
 MENSAJE_SIN_ACCESO = 'No tenés acceso a los mensajes de esta materia.'
 MENSAJE_ADMIN = 'El administrador no puede leer mensajes privados.'
+MENSAJE_CONVERSACION_NO_ENCONTRADA = 'No se encontró la conversación.'
 MENSAJE_FUERA_DE_PLAZO = 'El mensaje ya no puede eliminarse.'
 MENSAJE_NO_ENCONTRADO = 'Mensaje no encontrado.'
 
 VENTANA_BORRADO = timedelta(minutes=15)
 PAGE_SIZE_POR_DEFECTO = 20
 PAGE_SIZE_MAXIMO = 50
+LIMITE_CONVERSACION = 200
 
 
 def _nombre_completo(persona) -> str:
@@ -183,6 +185,35 @@ def listar(usuario, params, ruta) -> dict:
         'results': serializar(docs),
         'no_leidos': repositorio.contar_no_leidos(usuario.pk),
     }
+
+
+def _entero_obligatorio(params, nombre) -> int:
+    if params.get(nombre) in (None, ''):
+        raise ValidationError({nombre: ['Este parámetro es obligatorio.']})
+    return _entero(params, nombre)
+
+
+def conversacion(usuario, params) -> list:
+    """Hilo entre ``usuario`` y la persona ``con`` en la materia, en orden cronológico.
+
+    Como el resto de la lectura, no exige inscripción vigente: quien pasó a BAJA conserva su historial.
+    Solo se pide que la pareja sea profesor-estudiante; los mensajes de terceros nunca entran en la consulta.
+    """
+    if es_admin(usuario):
+        raise PermissionDenied(MENSAJE_ADMIN)
+    materia_id = _entero_obligatorio(params, 'materia')
+    otro_id = _entero_obligatorio(params, 'con')
+    if not Materia.todas.filter(pk=materia_id).exists():
+        raise NotFound('Materia no encontrada.')
+    otro = Usuario.objects.select_related('persona__rol').filter(pk=otro_id).first()
+    pareja = otro is not None and (
+        (es_profesor(usuario) and es_estudiante(otro)) or (es_estudiante(usuario) and es_profesor(otro))
+    )
+    if not pareja:
+        # Misma respuesta para "no existe" y "no es una pareja válida": no se puede sondear ids ni roles
+        raise NotFound(MENSAJE_CONVERSACION_NO_ENCONTRADA)
+    docs = repositorio.listar_conversacion(usuario.pk, otro.pk, materia_id=materia_id, limite=LIMITE_CONVERSACION)
+    return serializar(docs)
 
 
 def marcar_leido(usuario, mensaje_id):
