@@ -325,9 +325,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
         actividad = self.get_object()
         verificar_profesor_materia(request.user, actividad.materia)
 
-        entregas = actividad.entregas.filter(fecha_baja__isnull=True).select_related(
-            'actividad__materia', 'estudiante', 'nota__profesor'
-        )
+        entregas = actividad.entregas.filter(fecha_baja__isnull=True).select_related('estudiante', 'nota__profesor')
         serializer = EntregaSerializer(entregas, many=True, context={'request': request})
         return Response(serializer.data)
 
