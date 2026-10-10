@@ -8,12 +8,14 @@ from aula_virtual.models import Nota
 from auditoria.bitacora import registrar_evento
 from .models import Materia, Inscripcion
 from .selectors import alumnos_de_materia, materias_con_acceso, materias_con_resumen
+from .services import inscribir
 from core.permissions import EsAdministrador
 from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin as _es_admin, obtener_persona_y_rol
 from .serializer import (
     AlumnoMateriaSerializer,
     AsignarProfesorSerializer,
     DesinscribirSerializer,
+    InscribirEstudiantesSerializer,
     InscribirLoteSerializer,
     InscripcionSerializer,
     MateriaSerializer,
@@ -30,6 +32,14 @@ from aula_virtual.services import obtener_rendimiento_estudiante, obtener_rendim
 
 
 MENSAJE_LOTE = inline_serializer('MensajeLote', {'mensaje': serializers.CharField()})
+INSCRIPCION_ESTUDIANTES = inline_serializer('InscripcionEstudiantes', {
+    'mensaje': serializers.CharField(),
+    'materia_id': serializers.IntegerField(),
+    'cantidad': serializers.IntegerField(help_text='Inscripciones creadas o reactivadas.'),
+    'omitidos': serializers.ListField(
+        child=serializers.IntegerField(), help_text='Estudiantes que ya estaban inscriptos (no BAJA).'
+    ),
+})
 
 
 def _entero_o_400(valor, campo):
@@ -307,7 +317,8 @@ class InscripcionViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['fecha_inscripcion', 'estado']
     acciones_de_administrador = {
-        'create', 'update', 'partial_update', 'destroy', 'inscribir_lote', 'desinscribir_estudiante',
+        'create', 'update', 'partial_update', 'destroy', 'inscribir_lote', 'inscribir_estudiantes',
+        'desinscribir_estudiante',
     }
 
     def get_permissions(self):
@@ -353,34 +364,29 @@ class InscripcionViewSet(viewsets.ModelViewSet):
         estudiante_id = entrada.validated_data['estudiante_id'].id
         materia_ids = entrada.validated_data['materia_ids']
 
-        inscripciones_creadas = []
-        with transaction.atomic():
-            for m_id in materia_ids:
-                obj, created = Inscripcion.objects.get_or_create(
-                    estudiante_id=estudiante_id,
-                    materia_id=m_id,
-                    defaults={'estado': Inscripcion.EstadoInscripcion.CURSANDO}
-                )
-                estado_previo = None
-                if not created and obj.estado == Inscripcion.EstadoInscripcion.BAJA:
-                    # Se reactiva la misma fila: no se duplica la inscripción
-                    estado_previo = obj.estado
-                    obj.estado = Inscripcion.EstadoInscripcion.CURSANDO
-                    obj.save(update_fields=['estado'])
-                    created = True
-                if created:
-                    inscripciones_creadas.append(obj)
-                    datos = {'despues': {'estado': obj.estado, 'estudiante_id': estudiante_id}}
-                    if estado_previo:
-                        datos['antes'] = {'estado': estado_previo}
-                    registrar_evento(
-                        'INSCRIPCION_CREADA', request.user, 'inscripcion', datos, entidad_id=obj.pk, materia_id=m_id,
-                    )
+        creadas, _ = inscribir(request.user, [(estudiante_id, m_id) for m_id in materia_ids])
 
         return Response({
-            'mensaje': f'Se inscribió al alumno en {len(inscripciones_creadas)} materias.',
+            'mensaje': f'Se inscribió al alumno en {len(creadas)} materias.',
             'estudiante_id': estudiante_id,
-            'cantidad': len(inscripciones_creadas)
+            'cantidad': len(creadas)
+        }, status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=InscribirEstudiantesSerializer, responses={201: INSCRIPCION_ESTUDIANTES, 400: ErrorSerializer})
+    @action(detail=False, methods=['post'], url_path='inscribir-estudiantes')
+    def inscribir_estudiantes(self, request):
+        entrada = InscribirEstudiantesSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        materia = entrada.validated_data['materia_id']
+        estudiante_ids = entrada.validated_data['estudiante_ids']
+
+        creadas, omitidos = inscribir(request.user, [(e, materia.id) for e in estudiante_ids])
+
+        return Response({
+            'mensaje': f'Se inscribió a {len(creadas)} estudiantes en la materia.',
+            'materia_id': materia.id,
+            'cantidad': len(creadas),
+            'omitidos': [estudiante_id for estudiante_id, _ in omitidos],
         }, status=status.HTTP_201_CREATED)
 
     @extend_schema(request=DesinscribirSerializer, responses={200: MENSAJE_LOTE, 400: ErrorSerializer, 404: ErrorSerializer})

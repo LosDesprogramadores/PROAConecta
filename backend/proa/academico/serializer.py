@@ -5,6 +5,7 @@ from core.privacidad import PrivacidadPersonaMixin
 from core.roles import ROL_ESTUDIANTE, ROL_PROFESOR, es_admin
 from .models import Materia, Inscripcion
 
+MAXIMO_ESTUDIANTES_POR_LOTE = 200
 MENSAJE_MATERIA_DUPLICADA = 'Ya existe una materia con ese título, curso y año.'
 
 # Información básica de la persona para mostrar en la lista sea profesor o Estudiante
@@ -219,6 +220,46 @@ class InscribirLoteSerializer(serializers.Serializer):
 
     def validate_materia_ids(self, value):
         return _ids_de_materias_validos(value)
+
+
+class InscribirEstudiantesSerializer(serializers.Serializer):
+    materia_id = serializers.PrimaryKeyRelatedField(
+        queryset=Materia.objects.all(),
+        error_messages={
+            'required': 'Este campo es obligatorio.',
+            'does_not_exist': 'No existe una materia con id {pk_value}.',
+            'incorrect_type': 'El id debe ser un número entero.',
+        },
+    )
+    estudiante_ids = serializers.ListField(
+        child=serializers.IntegerField(
+            min_value=1,
+            error_messages={'invalid': 'Cada id de estudiante debe ser un número entero.'},
+        ),
+        allow_empty=False,
+        max_length=MAXIMO_ESTUDIANTES_POR_LOTE,
+        error_messages={
+            'required': 'Debes enviar un array estudiante_ids con al menos un ID.',
+            'null': 'Debes enviar un array estudiante_ids con al menos un ID.',
+            'not_a_list': 'Debes enviar un array estudiante_ids con al menos un ID.',
+            'empty': 'Debes enviar un array estudiante_ids con al menos un ID.',
+            'max_length': f'No se pueden inscribir más de {MAXIMO_ESTUDIANTES_POR_LOTE} estudiantes a la vez.',
+        },
+    )
+
+    def validate_estudiante_ids(self, value):
+        repetidos = sorted({e for e in value if value.count(e) > 1})
+        if repetidos:
+            raise serializers.ValidationError(
+                f'No se pueden repetir estudiantes: {", ".join(map(str, repetidos))}.'
+            )
+        personas = {p.id: p for p in Persona.objects.select_related('rol').filter(id__in=value)}
+        faltantes = [e for e in value if e not in personas]
+        if faltantes:
+            raise serializers.ValidationError(f'No existen personas con id: {", ".join(map(str, faltantes))}.')
+        for persona_id in value:
+            _persona_con_rol(personas[persona_id], ROL_ESTUDIANTE, 'Estudiante')
+        return value
 
 
 class DesinscribirSerializer(serializers.Serializer):

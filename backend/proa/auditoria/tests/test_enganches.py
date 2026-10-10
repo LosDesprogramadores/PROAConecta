@@ -10,6 +10,7 @@ from django.db import transaction
 
 from academico.models import Inscripcion, Materia
 from academico.tests.factories import InscripcionFactory, MateriaFactory
+from auditoria import bitacora
 from aula_virtual.models import Actividad, Nota
 from aula_virtual.services import calificar_o_rectificar_estudiante
 from mensajeria import services as mensajes
@@ -90,7 +91,7 @@ def test_inscribir_a_quien_ya_cursa_no_registra_nada(api_as, admin, estudiante, 
 
 def test_inscribir_con_rollback_no_deja_eventos(api_as, admin, estudiante, confirmar):
     m1, m2 = MateriaFactory(), MateriaFactory(curso='2do B')
-    original = Inscripcion.objects.get_or_create
+    original = bitacora.registrar_evento
     llamadas = []
 
     def falla_en_la_segunda(*args, **kwargs):
@@ -100,7 +101,7 @@ def test_inscribir_con_rollback_no_deja_eventos(api_as, admin, estudiante, confi
         return original(*args, **kwargs)
 
     with confirmar():
-        with mock.patch.object(type(Inscripcion.objects), 'get_or_create', side_effect=falla_en_la_segunda):
+        with mock.patch('academico.services.registrar_evento', side_effect=falla_en_la_segunda):
             cliente = api_as(admin)
             cliente.raise_request_exception = False
             r = cliente.post('/api/inscripciones/inscribir/', {
