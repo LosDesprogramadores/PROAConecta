@@ -1,8 +1,26 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { NotificacionService } from '../../../services/notificaciones.service';
-import { INotificacion, NotificacionEntrada } from '../../../model/notificacion.model';
+import { EstadoVigencia, INotificacion, NotificacionEntrada } from '../../../model/notificacion.model';
 import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+
+const ETIQUETAS_ALCANCE: Record<string, string> = {
+  AMBOS: 'Todos',
+  PROFESOR: 'Profesores',
+  ESTUDIANTE: 'Estudiantes',
+};
+
+/** Local date as AAAA-MM-DD (the value of an `<input type="date">`). */
+function hoyISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** AAAA-MM-DD -> dd/mm/aaaa without going through Date (no timezone shifts). */
+function formatearDia(iso: string): string {
+  const [anio, mes, dia] = iso.slice(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
+}
 
 @Component({
   selector: 'app-notificacion',
@@ -34,8 +52,8 @@ export class Notificacion implements OnInit {
     mensaje: ['', Validators.required],
     tipo_notificacion_codigo: ['GENERAL', Validators.required],
     alcance: ['AMBOS', Validators.required],
-    fecha_desde: ['', Validators.required],
-    fecha_hasta: ['', Validators.required],
+    fecha_desde: [hoyISO(), Validators.required],
+    fecha_hasta: [''],
   });
 
   constructor() {
@@ -50,7 +68,7 @@ export class Notificacion implements OnInit {
 
   cargarNotificaciones(): void {
     this.cargando = true;
-    this.notificacionService.obtenerNotificaciones().subscribe({
+    this.notificacionService.listarPropias().subscribe({
       next: (data) => {
         this.notificaciones = data;
         this.cargando = false;
@@ -73,7 +91,7 @@ guardarNotificacion(): void {
     const valores = this.formulario.getRawValue();
     const notificacionData: NotificacionEntrada = {
       ...valores,
-      fecha_desde: valores.fecha_desde.trim() !== '' ? valores.fecha_desde : null,
+      fecha_desde: valores.fecha_desde,
       fecha_hasta: valores.fecha_hasta.trim() !== '' ? valores.fecha_hasta : null,
     };
 
@@ -113,8 +131,8 @@ guardarNotificacion(): void {
       mensaje: noti.mensaje,
       tipo_notificacion_codigo: noti.tipo_notificacion_codigo || 'GENERAL',
       alcance: noti.alcance || 'AMBOS',
-      fecha_desde: noti.fecha_desde ? noti.fecha_desde.slice(0, 16) : '',
-      fecha_hasta: noti.fecha_hasta ? noti.fecha_hasta.slice(0, 16) : '',
+      fecha_desde: noti.fecha_desde ? noti.fecha_desde.slice(0, 10) : hoyISO(),
+      fecha_hasta: noti.fecha_hasta ? noti.fecha_hasta.slice(0, 10) : '',
     });
     this.mostrarFormulario = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,7 +171,41 @@ guardarNotificacion(): void {
   }
 
   private limpiarFormulario(): void {
-    this.formulario.reset();
+    this.formulario.reset({ fecha_desde: hoyISO() });
+  }
+
+  /** `dd/mm/aaaa` when the form is set to start in the future, `null` otherwise. */
+  programadaPara(): string | null {
+    const desde = this.formulario.controls.fecha_desde.value;
+    return desde && desde > hoyISO() ? formatearDia(desde) : null;
+  }
+
+  /** Date label of a listed notice: "Programada para …" while it has not started. */
+  programadaDe(noti: INotificacion): string | null {
+    return noti.estado_vigencia === 'PROGRAMADA' && noti.fecha_desde ? formatearDia(noti.fecha_desde) : null;
+  }
+
+  dia(valor: string): string {
+    return formatearDia(valor);
+  }
+
+  etiquetaAlcance(alcance: string): string {
+    return ETIQUETAS_ALCANCE[alcance] ?? alcance;
+  }
+
+  etiquetaVigencia(estado?: EstadoVigencia): string {
+    return estado === 'PROGRAMADA' ? 'Programada' : estado === 'VENCIDA' ? 'Vencida' : 'Vigente';
+  }
+
+  claseVigencia(estado?: EstadoVigencia): string {
+    switch (estado) {
+      case 'PROGRAMADA':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'VENCIDA':
+        return 'bg-slate-100 text-slate-600 border-slate-200';
+      default:
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    }
   }
 
   private mostrarExito(msg: string): void {

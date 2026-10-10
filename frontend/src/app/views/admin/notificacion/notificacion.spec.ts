@@ -5,6 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificacionService } from '../../../services/notificaciones.service';
 import { Notificacion } from './notificacion';
 
+/** Local date as AAAA-MM-DD, the same one the form uses as default. */
+const hoy = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 describe('Notificacion (admin)', () => {
   let component: Notificacion;
   let fixture: ComponentFixture<Notificacion>;
@@ -12,7 +18,7 @@ describe('Notificacion (admin)', () => {
 
   beforeEach(async () => {
     servicio = {
-      obtenerNotificaciones: vi.fn(() => of([])),
+      listarPropias: vi.fn(() => of([])),
       crearNotificacion: vi.fn(() => of({})),
       actualizarNotificacion: vi.fn(() => of({})),
       eliminarNotificacion: vi.fn(() => of({})),
@@ -32,11 +38,63 @@ describe('Notificacion (admin)', () => {
     expect(component).toBeTruthy();
   });
 
-  it('starts with the defaults and is invalid until the required fields are filled', () => {
+  it('starts with the defaults, "Vigente desde" is today and it is invalid until title and message are filled', () => {
     expect(component.formulario.getRawValue()).toEqual({
-      titulo: '', mensaje: '', tipo_notificacion_codigo: 'GENERAL', alcance: 'AMBOS', fecha_desde: '', fecha_hasta: '',
+      titulo: '', mensaje: '', tipo_notificacion_codigo: 'GENERAL', alcance: 'AMBOS', fecha_desde: hoy(), fecha_hasta: '',
     });
     expect(component.formulario.valid).toBe(false);
+  });
+
+  it('asks only for the notices created by the administrator (propias)', () => {
+    expect(servicio['listarPropias']).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves without an end date (hasta is optional) and sends it as null', () => {
+    component.formulario.patchValue({ titulo: 'Aviso', mensaje: 'Texto' });
+    expect(component.formulario.valid).toBe(true);
+    component.guardarNotificacion();
+    expect(servicio['crearNotificacion']).toHaveBeenCalledWith(
+      expect.objectContaining({ fecha_desde: hoy(), fecha_hasta: null }),
+    );
+  });
+
+  it('requires "Vigente desde"', () => {
+    component.formulario.patchValue({ titulo: 'Aviso', mensaje: 'Texto', fecha_desde: '' });
+    expect(component.formulario.controls.fecha_desde.hasError('required')).toBe(true);
+  });
+
+  it('shows "Programada para dd/mm/aaaa" in the form only for a future date', () => {
+    expect(component.programadaPara()).toBeNull();
+    component.formulario.patchValue({ fecha_desde: '2999-03-05' });
+    expect(component.programadaPara()).toBe('05/03/2999');
+    component.mostrarFormulario = true;
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Programada para 05/03/2999');
+  });
+
+  it('shows the validity badge and the scheduled date of each notice', async () => {
+    servicio['listarPropias'].mockReturnValue(of([
+      { id: 'a', titulo: 'Futuro', mensaje: 'm', alcance: 'AMBOS', leida: false, fecha_desde: '2999-03-05', estado_vigencia: 'PROGRAMADA' },
+      { id: 'b', titulo: 'Activo', mensaje: 'm', alcance: 'PROFESOR', leida: false, fecha_desde: '2026-10-01', estado_vigencia: 'VIGENTE' },
+    ]));
+    component.cargarNotificaciones();
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    const texto = fixture.nativeElement.textContent as string;
+    expect(texto).toContain('Programada para 05/03/2999');
+    expect(texto).toContain('Vigente');
+    expect(texto).toContain('Profesores');
+  });
+
+  it('offers the scopes Todos / Profesores / Estudiantes mapped to the backend values', () => {
+    component.mostrarFormulario = true;
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    const opciones = Array.from(fixture.nativeElement.querySelectorAll('#noti-alcance option')) as HTMLOptionElement[];
+    expect(opciones.map((o) => [o.value, o.textContent?.trim()])).toEqual([
+      ['AMBOS', 'Todos'], ['PROFESOR', 'Profesores'], ['ESTUDIANTE', 'Estudiantes'],
+    ]);
   });
 
   it('refuses to save an incomplete form', () => {
@@ -64,7 +122,7 @@ describe('Notificacion (admin)', () => {
       id: 'n1', titulo: 'A', mensaje: 'B', alcance: 'AMBOS', leida: false,
       fecha_desde: '2026-10-01T00:00:00', fecha_hasta: '2026-10-31T00:00:00',
     });
-    expect(component.formulario.getRawValue().fecha_desde).toBe('2026-10-01T00:00');
+    expect(component.formulario.getRawValue().fecha_desde).toBe('2026-10-01');
 
     component.guardarNotificacion();
     expect(servicio['actualizarNotificacion']).toHaveBeenCalledWith('n1', expect.objectContaining({ titulo: 'A' }));

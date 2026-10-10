@@ -1,5 +1,8 @@
 import { RespuestaPaginada } from '../core/models/api-response.interface';
 
+/** Validity of a notice computed by the server per day (Buenos Aires). */
+export type EstadoVigencia = 'PROGRAMADA' | 'VIGENTE' | 'VENCIDA';
+
 export interface INotificacion {
   id?: string;
   _id?: string;
@@ -7,8 +10,9 @@ export interface INotificacion {
   mensaje: string;
   tipo_notificacion_codigo?: string;
   alcance: string;
-  fecha_desde?: string;
-  fecha_hasta?: string;
+  fecha_desde?: string | null;
+  fecha_hasta?: string | null;
+  estado_vigencia?: EstadoVigencia;
   /** Creation date set by the server (ISO 8601, UTC). */
   fecha_creacion?: string;
   leida: boolean;
