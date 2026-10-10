@@ -34,6 +34,7 @@ const cargarContacto = () => import('./views/dashboard-components/contacto/conta
 // Professor dashboard and activities
 const cargarWelcomeProfesor = () => import('./views/dashboard-components/welcome-profesor/welcome-profesor').then((m) => m.WelcomeProfesor);
 const cargarActividadesDashboard = () => import('./views/dashboard-components/actividades-dashboard/actividades-dashboard').then((m) => m.ActividadesDashboard);
+const cargarEntregasProfesor = () => import('./views/dashboard-components/entregas-profesor/entregas-profesor').then((m) => m.EntregasProfesor);
 const cargarActividadForm = () => import('./views/dashboard-components/actividad-form/actividad-form').then((m) => m.ActividadForm);
 const cargarActividadDetalleComponent = () => import('./views/dashboard-components/actividad-detalle/actividad-detalle').then((m) => m.ActividadDetalleComponent);
 const cargarActividadEntregasComponent = () => import('./views/dashboard-components/actividad-entregas/actividad-entregas').then((m) => m.ActividadEntregasComponent);
@@ -115,6 +116,7 @@ export const routes: Routes = [
       { path: 'actividades/editar/:id', canActivate: [soloProfesor], title: 'Editar actividad', loadComponent: cargarActividadForm },
       { path: 'actividades/:id', canActivate: [soloProfesor], title: 'Detalle de actividad', loadComponent: cargarActividadDetalleComponent },
       { path: 'actividades/:id/entregas', canActivate: [soloProfesor], title: 'Entregas', loadComponent: cargarActividadEntregasComponent },
+      { path: 'entregas', canActivate: [soloProfesor], title: 'Entregas', loadComponent: cargarEntregasProfesor },
       { path: 'anuncios', title: 'Anuncios', loadComponent: cargarAnuncios },
       { path: 'materias', title: 'Mis materias', loadComponent: cargarMaterias },
       { path: 'tablaGenerica', title: 'Listado', loadComponent: cargarTablaGenerica },
