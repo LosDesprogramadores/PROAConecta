@@ -2,7 +2,7 @@
 venv/
 env/
 .venv/
-env.example/
+env.example
 
 # Archivos de Python
 __pycache__/
