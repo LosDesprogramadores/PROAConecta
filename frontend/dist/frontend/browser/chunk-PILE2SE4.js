@@ -1,0 +1,1 @@
+import{a}from"./chunk-S5GCKMY7.js";import"./chunk-Q3CAQ4KH.js";import"./chunk-DAK6NT5K.js";import"./chunk-VHGNDZBB.js";import"./chunk-SXWPKH2W.js";import"./chunk-JXHNFKBW.js";import"./chunk-YG7O6BAQ.js";export{a as Materias};

@@ -1,0 +1,1 @@
+import{a}from"./chunk-6LDXUZYO.js";import"./chunk-BRQLO4LX.js";import"./chunk-OSXQ6GPH.js";import"./chunk-HBZM7APC.js";import"./chunk-DCJZ6LOK.js";import"./chunk-KQCYZTGF.js";import"./chunk-6RZJN3GR.js";import"./chunk-VHGNDZBB.js";import"./chunk-JXHNFKBW.js";import"./chunk-YG7O6BAQ.js";export{a as TablaGenerica};
