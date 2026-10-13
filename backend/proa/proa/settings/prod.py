@@ -22,9 +22,9 @@ DEBUG = False
 SECRET_KEY = clave_secreta(DEBUG)
 
 # Sin variables las listas quedan vacías y Django rechaza todos los pedidos (falla cerrada)
-ALLOWED_HOSTS = hosts_permitidos(DEBUG)
-CORS_ALLOWED_ORIGINS = origenes_cors(DEBUG)
-CSRF_TRUSTED_ORIGINS = origenes_csrf(DEBUG)
+ALLOWED_HOSTS = proaconecta-backend.onrender.com
+CORS_ALLOWED_ORIGINS = https://proaconecta.onrender.com/
+CSRF_TRUSTED_ORIGINS = https://proaconecta.onrender.com/
 
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured(
