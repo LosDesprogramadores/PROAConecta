@@ -59,7 +59,7 @@ Tus datos de acceso para iniciar sesión son:
 - Contraseña provisoria: {clave_temporal}
 
 Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
-{getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
+{getattr(settings, 'FRONTEND_URL', 'https://proaconecta.onrender.com')}/login
 
 Saludos cordiales,
 Equipo Directivo PROA Conecta.

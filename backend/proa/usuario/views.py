@@ -398,7 +398,7 @@ class SolicitarRecuperacionPasswordView(LimiteDeIntentosMixin, APIView):
         if usuario:
             uid = urlsafe_base64_encode(force_bytes(usuario.pk))
             token = default_token_generator.make_token(usuario)
-            frontend_url = getattr(settings, 'FRONTEND_URL','http://localhost:4200')
+            frontend_url = getattr(settings, 'FRONTEND_URL','https://proaconecta.onrender.com')
             enlace = f"{frontend_url}/restablecer-password?uid={uid}&token={token}"
 
             # Se envía en segundo plano: la respuesta no espera al SMTP ni delata por la demora si el correo existe
