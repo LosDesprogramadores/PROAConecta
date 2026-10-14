@@ -2,8 +2,7 @@ import logging
 from types import SimpleNamespace
 
 from django.conf import settings
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
+from django.core.mail import EmailMessage
 
 from integraciones.fondo import ejecutar_en_segundo_plano
 
@@ -12,27 +11,16 @@ logger = logging.getLogger(__name__)
 
 def _enviar(asunto, cuerpo, destinatario):
     try:
-        # Configurar la API Key de Brevo
-        configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key['api-key'] = getattr(settings, 'BREVO_API_KEY', '')
-
-        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-        
-        # El remitente será tu correo personal u oficial configurado en Brevo
-        remitente_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'entornojob@gmail.com')
-        
-        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-            to=[{"email": destinatario}],
-            sender={"name": "PROA Conecta", "email": remitente_email},
+        email = EmailMessage(
             subject=asunto,
-            text_content=cuerpo
+            body=cuerpo,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[destinatario],
         )
-
-        api_response = api_instance.send_transac_email(send_smtp_email)
-        logger.info(f"Correo enviado exitosamente con Brevo: {api_response}")
-        
-    except ApiException as e:
-        logger.error(f"Error al enviar correo con Brevo: {e}")
+        email.send(fail_silently=False)
+        logger.info(f"Correo enviado exitosamente a {destinatario}")
+    except Exception as e:
+        logger.error(f"Error al enviar correo: {e}")
         raise e
 
 
@@ -62,7 +50,7 @@ Tus datos de acceso para iniciar sesión son:
 - Contraseña provisoria: {clave_temporal}
 
 Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
-{getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
+{getattr(settings, 'FRONTEND_URL', 'https://proaconecta.onrender.com/')}/login
 
 Saludos cordiales,
 Equipo Directivo PROA Conecta.
@@ -99,11 +87,7 @@ Atentamente,
 Equipo Proa Conecta.
 """
     destinatario = usuario.persona.email
-    
-    # ---- PRUEBA DIRECTA (SIN SEGUNDO PLANO) ----
-    try:
-        _enviar(asunto, cuerpo, destinatario)
-        logger.info("Correo de recuperacion ejecutado directamente con exito.")
-    except Exception as e:
-        logger.error(f"FALLO CRITICO ENVIANDO CORREO DIRECTO: {e}")
-        raise e
+    ejecutar_en_segundo_plano(
+        lambda: _enviar(asunto, cuerpo, destinatario),
+        descripcion=f'correo de recuperación del usuario {usuario.pk}',
+    )
