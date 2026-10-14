@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 
 from integraciones.fondo import ejecutar_en_segundo_plano
 
