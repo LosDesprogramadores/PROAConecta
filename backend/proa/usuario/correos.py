@@ -1,9 +1,8 @@
 import logging
 from types import SimpleNamespace
-
 from django.conf import settings
-from django.core.mail import EmailMessage
-
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 from integraciones.fondo import ejecutar_en_segundo_plano
 
 logger = logging.getLogger(__name__)
@@ -11,16 +10,26 @@ logger = logging.getLogger(__name__)
 
 def _enviar(asunto, cuerpo, destinatario):
     try:
-        email = EmailMessage(
+        configuration = sib_api_v3_sdk.Configuration()
+        # Lee la clave API v3 de forma segura desde las settings (cargadas de Render)
+        configuration.api_key['api-key'] = getattr(settings, 'BREVO_API_KEY', '')
+
+        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+        
+        remitente_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'entornojob@gmail.com')
+        
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+            to=[{"email": destinatario}],
+            sender={"name": "PROA Conecta", "email": remitente_email},
             subject=asunto,
-            body=cuerpo,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[destinatario],
+            text_content=cuerpo
         )
-        email.send(fail_silently=False)
-        logger.info(f"Correo enviado exitosamente a {destinatario}")
-    except Exception as e:
-        logger.error(f"Error al enviar correo: {e}")
+
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        logger.info(f"Correo enviado exitosamente con Brevo (API): {api_response}")
+        
+    except ApiException as e:
+        logger.error(f"Error al enviar correo con Brevo API: {e}")
         raise e
 
 
@@ -50,7 +59,7 @@ Tus datos de acceso para iniciar sesión son:
 - Contraseña provisoria: {clave_temporal}
 
 Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
-{getattr(settings, 'FRONTEND_URL', 'https://proaconecta.onrender.com/')}/login
+{getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
 
 Saludos cordiales,
 Equipo Directivo PROA Conecta.
