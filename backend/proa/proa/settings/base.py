@@ -154,7 +154,7 @@ DATABASES = {
 }
 # Correo y Discord salen en un hilo después del commit (integraciones/fondo.py). Con True corren en
 # línea: lo usan los tests para ser deterministas
-SEGUNDO_PLANO_SINCRONO = False
+SEGUNDO_PLANO_SINCRONO = True
 
 # --- Discord
 DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
