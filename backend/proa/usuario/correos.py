@@ -96,10 +96,14 @@ Para crear una nueva clave, ingresá al siguiente enlace:
 Este enlace es de uso único y tiene validez temporal. Si no solicitaste este cambio, podés desestimar este mensaje.
 
 Atentamente,
-Equipo PROA Conecta.
+Equipo Proa Conecta.
 """
     destinatario = usuario.persona.email
-    ejecutar_en_segundo_plano(
-        lambda: _enviar(asunto, cuerpo, destinatario),
-        descripcion=f'correo de recuperación del usuario {usuario.pk}',
-    )
+    
+    # ---- PRUEBA DIRECTA (SIN SEGUNDO PLANO) ----
+    try:
+        _enviar(asunto, cuerpo, destinatario)
+        logger.info("Correo de recuperacion ejecutado directamente con exito.")
+    except Exception as e:
+        logger.error(f"FALLO CRITICO ENVIANDO CORREO DIRECTO: {e}")
+        raise e
