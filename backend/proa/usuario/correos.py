@@ -10,14 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 def _enviar(asunto, cuerpo, destinatario):
-    send_mail(
+    email = EmailMessage(
         subject=asunto,
-        message=cuerpo,
+        body=cuerpo,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[destinatario],
-        fail_silently=False,
+        to=[destinatario],
     )
-
+    email.send(fail_silently=False)
 
 def _avisar_fallo_al_administrador(solicitante_pk, nombre_completo):
     # Mongo, no el ORM: corre en el hilo de fondo. El aviso es solo del administrador (alcance interno
@@ -49,7 +48,7 @@ def enviar_credenciales(persona, clave_temporal, solicitante=None):
             - Contraseña provisoria: {clave_temporal}
 
             Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
-            {getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
+            {getattr(settings, 'FRONTEND_URL', 'https://proaconecta.onrender.com')}/login
 
             Saludos cordiales,
             Equipo Directivo PROA Conecta.
