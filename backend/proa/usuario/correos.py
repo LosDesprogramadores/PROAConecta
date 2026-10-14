@@ -2,27 +2,33 @@ import logging
 from types import SimpleNamespace
 
 from django.conf import settings
-from django.core.mail import send_mail
-from django.core.mail import EmailMessage
-
-from integraciones.fondo import ejecutar_en_segundo_plano
+import resend
 
 logger = logging.getLogger(__name__)
 
+# Configurar la API key de Resend
+resend.api_key = getattr(settings, 'RESEND_API_KEY', '')
+
 
 def _enviar(asunto, cuerpo, destinatario):
-    email = EmailMessage(
-        subject=asunto,
-        body=cuerpo,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[destinatario],
-    )
-    email.send(fail_silently=False)
+    try:
+        remitente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'PROA Conecta <onboarding@resend.dev>')
+        
+        params = {
+            "from": remitente,
+            "to": [destinatario],
+            "subject": asunto,
+            "text": cuerpo,
+        }
+        
+        response = resend.Emails.send(params)
+        logger.info(f"Correo enviado exitosamente con Resend: {response}")
+    except Exception as e:
+        logger.error(f"Error al enviar correo con Resend: {e}")
+        raise e
+
 
 def _avisar_fallo_al_administrador(solicitante_pk, nombre_completo):
-    # Mongo, no el ORM: corre en el hilo de fondo. El aviso es solo del administrador (alcance interno
-    # ADMINISTRADOR: ni estudiantes ni profesores lo ven) y no lleva ni la clave ni el correo
-    # services.crear solo lee .pk del autor: alcanza con un sustituto sin ORM
     from notificacion import services
 
     services.crear(SimpleNamespace(pk=solicitante_pk), {
@@ -38,27 +44,25 @@ def _avisar_fallo_al_administrador(solicitante_pk, nombre_completo):
 
 
 def enviar_credenciales(persona, clave_temporal, solicitante=None):
-    """Correo de bienvenida con la clave provisoria. El alta no depende de que salga."""
     asunto = 'Bienvenido a PROA Conecta - Credenciales de acceso'
     cuerpo = f"""Hola {persona.nombre},
 
-            Has sido registrado en la plataforma educativa PROA Conecta.
+Has sido registrado en la plataforma educativa PROA Conecta.
 
-            Tus datos de acceso para iniciar sesión son:
-            - DNI (Usuario): {persona.dni}
-            - Contraseña provisoria: {clave_temporal}
+Tus datos de acceso para iniciar sesión son:
+- DNI (Usuario): {persona.dni}
+- Contraseña provisoria: {clave_temporal}
 
-            Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
-            {getattr(settings, 'FRONTEND_URL', 'https://proaconecta.onrender.com')}/login
+Por cuestiones de seguridad, en tu primer ingreso deberás cambiar obligatoriamente esta clave provisoria:
+{getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')}/login
 
-            Saludos cordiales,
-            Equipo Directivo PROA Conecta.
-            """
+Saludos cordiales,
+Equipo Directivo PROA Conecta.
+"""
     destinatario = persona.email
     nombre_completo = f'{persona.apellido}, {persona.nombre}'
     al_fallar = None
     if solicitante is not None and getattr(solicitante, 'is_authenticated', False):
-        # Ningún objeto del ORM ni del request cruza al hilo de fondo: solo el id y textos ya leídos
         solicitante_pk = solicitante.pk
 
         def al_fallar(_error):
@@ -72,21 +76,20 @@ def enviar_credenciales(persona, clave_temporal, solicitante=None):
 
 
 def enviar_recuperacion(usuario, enlace):
-    """Correo con el enlace de restablecimiento. La respuesta del endpoint no depende de que salga."""
     nombre = usuario.persona.nombre if usuario.persona else 'Usuario'
     asunto = 'PROA Conecta - Recuperación de contraseña'
     cuerpo = f"""Hola {nombre},
 
-            Recibimos una solicitud para restablecer la contraseña de tu cuenta institucional en PROA Conecta.
+Recibimos una solicitud para restablecer la contraseña de tu cuenta institucional en PROA Conecta.
 
-            Para crear una nueva clave, ingresá al siguiente enlace:
-            {enlace}
+Para crear una nueva clave, ingresá al siguiente enlace:
+{enlace}
 
-            Este enlace es de uso único y tiene validez temporal. Si no solicitaste este cambio, podés desestimar este mensaje.
+Este enlace es de uso único y tiene validez temporal. Si no solicitaste este cambio, podés desestimar este mensaje.
 
-            Atentamente,
-            Equipo PROA Conecta.
-            """
+Atentamente,
+Equipo PROA Conecta.
+"""
     destinatario = usuario.persona.email
     ejecutar_en_segundo_plano(
         lambda: _enviar(asunto, cuerpo, destinatario),
