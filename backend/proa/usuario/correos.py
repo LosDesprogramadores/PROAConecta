@@ -2,29 +2,37 @@ import logging
 from types import SimpleNamespace
 
 from django.conf import settings
-import resend
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+
+from integraciones.fondo import ejecutar_en_segundo_plano
 
 logger = logging.getLogger(__name__)
-
-# Configurar la API key de Resend
-resend.api_key = getattr(settings, 'RESEND_API_KEY', '')
 
 
 def _enviar(asunto, cuerpo, destinatario):
     try:
-        remitente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'PROA Conecta <onboarding@resend.dev>')
+        # Configurar la API Key de Brevo
+        configuration = sib_api_v3_sdk.Configuration()
+        configuration.api_key['api-key'] = getattr(settings, 'BREVO_API_KEY', '')
+
+        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
         
-        params = {
-            "from": remitente,
-            "to": [destinatario],
-            "subject": asunto,
-            "text": cuerpo,
-        }
+        # El remitente será tu correo personal u oficial configurado en Brevo
+        remitente_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'entornojob@gmail.com')
         
-        response = resend.Emails.send(params)
-        logger.info(f"Correo enviado exitosamente con Resend: {response}")
-    except Exception as e:
-        logger.error(f"Error al enviar correo con Resend: {e}")
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+            to=[{"email": destinatario}],
+            sender={"name": "PROA Conecta", "email": remitente_email},
+            subject=asunto,
+            text_content=cuerpo
+        )
+
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        logger.info(f"Correo enviado exitosamente con Brevo: {api_response}")
+        
+    except ApiException as e:
+        logger.error(f"Error al enviar correo con Brevo: {e}")
         raise e
 
 
