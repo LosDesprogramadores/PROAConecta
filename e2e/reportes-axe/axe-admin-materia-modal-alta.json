@@ -1,0 +1,29 @@
+{
+  "pantalla": "admin-materia-modal-alta",
+  "url": "http://localhost:4200/dashboard-admin/materias",
+  "timestamp": "2026-10-16T04:18:30.166Z",
+  "totalViolaciones": 1,
+  "violacionesCriticasOSerias": 1,
+  "detalleViolaciones": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright",
+      "tags": [
+        "wcag2aa",
+        "wcag143"
+      ],
+      "nodosAfectados": [
+        {
+          "html": "<p class=\"text-sm text-slate-500 mt-1\">Listado de asignaturas, cursos y criterios curriculares.</p>",
+          "target": [
+            "p"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.14 (foreground color: #62748e, background color: #f1efe8, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+        }
+      ]
+    }
+  ]
+}

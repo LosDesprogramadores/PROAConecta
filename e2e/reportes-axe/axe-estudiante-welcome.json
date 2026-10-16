@@ -1,0 +1,36 @@
+{
+  "pantalla": "estudiante-welcome",
+  "url": "http://localhost:4200/dashboard/estudiante/welcome",
+  "timestamp": "2026-10-16T04:18:31.792Z",
+  "totalViolaciones": 1,
+  "violacionesCriticasOSerias": 1,
+  "detalleViolaciones": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright",
+      "tags": [
+        "wcag2aa",
+        "wcag143"
+      ],
+      "nodosAfectados": [
+        {
+          "html": "<p class=\"text-xs text-slate-600 mt-1 font-medium\"> 1ro A · 2026 </p>",
+          "target": [
+            ".bg-red-300 > .mt-1.text-slate-600"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.95 (foreground color: #45556c, background color: #ffa2a2, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+        },
+        {
+          "html": "<p class=\"text-xs text-slate-600 mt-1 font-medium\"> 1ro A · 2026 </p>",
+          "target": [
+            ".bg-blue-300 > .mt-1.text-slate-600"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.18 (foreground color: #45556c, background color: #8ec5ff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+        }
+      ]
+    }
+  ]
+}
