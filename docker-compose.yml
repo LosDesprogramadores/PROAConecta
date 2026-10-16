@@ -89,7 +89,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: sh -c "python manage.py migrate --noinput && uvicorn proa.asgi:application --host 0.0.0.0 --port 8000"
+    # Se agregaron tus comandos secuenciales antes de levantar uvicorn con --noinput
+    command: >
+      sh -c "python manage.py migrate academico --fake &&
+             python manage.py migrate --noinput &&
+             python manage.py seed_demo --actualizar-claves &&
+             uvicorn proa.asgi:application --host 0.0.0.0 --port 8000"
     # La imagen no trae curl: se usa python. urlopen lanza error con 4xx/5xx, así que un 503 (PostgreSQL caído) falla
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health/', timeout=5)"]
@@ -106,7 +111,6 @@ services:
           ignore:
             - "**/__pycache__/**"
             - "**/*.pyc"
-
         - action: rebuild
           path: ./backend/requirements.txt
 
@@ -146,10 +150,8 @@ services:
     restart: unless-stopped
     develop:
       watch:
-
         - action: rebuild
           path: ./frontend/src
-
         - action: rebuild
           path: ./frontend/package.json
 
