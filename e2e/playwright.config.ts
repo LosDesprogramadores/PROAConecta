@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // The stack is started outside Playwright (docker-compose.e2e.yml); this file only points at it.
-const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:14200';
+const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:4200';
 
 export default defineConfig({
   testDir: './tests',

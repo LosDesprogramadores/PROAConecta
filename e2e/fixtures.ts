@@ -1,8 +1,8 @@
 import { expect, test as base, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
 // Dummy values for the throwaway E2E stack. They must match docker-compose.e2e.yml (SEED_DEMO_PASSWORD).
-export const DEMO_PASSWORD = process.env.E2E_PASSWORD ?? 'E2e-Demo-Pass-2026';
-export const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? 'http://localhost:18025';
+export const DEMO_PASSWORD = process.env.E2E_PASSWORD ?? '12345678';
+export const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? 'http://localhost:4200';
 
 export type Rol = 'admin' | 'profesor' | 'estudiante';
 
