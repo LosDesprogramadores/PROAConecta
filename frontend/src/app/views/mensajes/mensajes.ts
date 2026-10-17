@@ -82,11 +82,16 @@ export class MensajesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarMaterias();
-    // `?materia=<id>` (from the subject menu) filters the inbox by that subject.
+    // Leemos el queryParam de forma reactiva pero controlada
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = Number(params.get('materia'));
-      this.materiaFiltro.set(Number.isInteger(id) && id > 0 ? id : null);
-      this.cargar(1);
+      const nuevoFiltro = Number.isInteger(id) && id > 0 ? id : null;
+      
+      // Solo recargamos si realmente cambió el filtro para evitar renders innecesarios
+      if (this.materiaFiltro() !== nuevoFiltro) {
+        this.materiaFiltro.set(nuevoFiltro);
+        this.cargar(1);
+      }
     });
     this.escucharEventos();
     const reloj = setInterval(() => this.refrescarReloj(), 30_000);
@@ -305,10 +310,13 @@ export class MensajesComponent implements OnInit {
     }
   }
 
-  quitarFiltroMateria(): void {
-    // The query param drives the filter: removing it reloads the inbox through the subscription.
-    this.router.navigate([], { relativeTo: this.route, queryParams: { materia: null }, queryParamsHandling: 'merge' });
-  }
+quitarFiltroMateria(): void {
+  this.router.navigate([], {
+    relativeTo: this.route,
+    queryParams: { materia: null },
+    queryParamsHandling: 'merge'
+  });
+}
 
   contraparte(mensaje: Mensaje): string {
     const persona = this.bandeja() === 'recibidos' ? mensaje.remitente : mensaje.destinatario;

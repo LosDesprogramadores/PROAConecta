@@ -93,9 +93,9 @@
                 }
               </div>
 
-              <div class="p-2 bg-slate-50 text-center border-t border-slate-100">
-                <a routerLink="/dashboard/mensajes" (click)="closeMenus()" class="text-xs text-sky-600 font-medium hover:underline">Ver todos los mensajes</a>
-              </div>
+             <div class="p-2 bg-slate-50 text-center border-t border-slate-100">
+  <a routerLink="/dashboard/mensajes" [queryParams]="{ materia: null }" queryParamsHandling="merge" (click)="closeMenus()" class="text-xs text-sky-600 font-medium hover:underline">Ver todos los mensajes</a>
+</div>
             </div>
           </div>
 
