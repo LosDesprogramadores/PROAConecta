@@ -1,0 +1,36 @@
+/* Altura fija compacta para las celdas */
+::ng-deep app-proximas-entregas .cal-month-view .cal-day-cell {
+  min-height: 34px !important;
+  height: 34px !important;
+}
+
+::ng-deep app-proximas-entregas .cal-month-view .cal-cell-row {
+  height: 34px !important;
+}
+
+/* Eliminar completamente el desplegable negro nativo */
+::ng-deep app-proximas-entregas .cal-month-view .cal-open-day-events {
+  display: none !important;
+}
+
+/* Ocultar badges y elementos nativos no deseados */
+::ng-deep app-proximas-entregas .cal-month-view .cal-day-badge,
+::ng-deep app-proximas-entregas .cal-month-view .cal-event-title,
+::ng-deep app-proximas-entregas .cal-month-view .cal-events,
+::ng-deep app-proximas-entregas .cal-month-view .cal-day-number {
+  display: none !important;
+}
+
+/* Fondo transparente y bordes suaves */
+::ng-deep app-proximas-entregas .cal-month-view {
+  background-color: #ffffff !important;
+  border: none !important;
+}
+
+::ng-deep app-proximas-entregas .cal-month-view .cal-cell-row {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+::ng-deep app-proximas-entregas .cal-month-view .cal-day-cell:not(:last-child) {
+  border-right: 1px solid #f1f5f9 !important;
+}

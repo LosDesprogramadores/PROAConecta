@@ -1,5 +1,16 @@
+import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+
+import { Actividad } from '../../../model/actividad-model';
+import { ActividadesService } from '../../../services/actividades.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { ToastService } from '../../../services/toast.service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { crearRutaFalsa } from '../../../testing/ruta-falsa';
 import { Actividades } from './actividades';
 
 describe('Actividades', () => {
@@ -8,7 +19,8 @@ describe('Actividades', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Actividades]
+      imports: [Actividades],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     })
     .compileComponents();
 
@@ -19,5 +31,34 @@ describe('Actividades', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows an error toast when deleting an activity fails', () => {
+    vi.spyOn(TestBed.inject(ConfirmDialogService), 'confirmar').mockReturnValue(of(true));
+    vi.spyOn(TestBed.inject(ActividadesService), 'eliminarActividad').mockReturnValue(throwError(() => new Error('boom')));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error = vi.spyOn(TestBed.inject(ToastService), 'error').mockImplementation(() => undefined);
+
+    component.eliminarActividad({ id: 1, titulo: 'T', materia: 1 } as Actividad);
+
+    expect(error).toHaveBeenCalledWith('No se pudo eliminar la actividad. Intenta nuevamente.');
+  });
+});
+
+describe('Actividades subscription cleanup', () => {
+  it('stops listening to the route params once the view is destroyed', () => {
+    const ruta = crearRutaFalsa({ id: '7' });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [Actividades],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), ruta.provider],
+    });
+    const fixture = TestBed.createComponent(Actividades);
+    fixture.detectChanges();
+    expect(ruta.observado()).toBe(true);
+
+    fixture.destroy();
+
+    expect(ruta.observado()).toBe(false);
   });
 });

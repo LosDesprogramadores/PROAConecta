@@ -1,11 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { initFlowbite } from 'flowbite';
+import { ConfirmDialog } from './shared/confirm-dialog/confirm-dialog';
 import { Toast } from './shared/toast/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Toast],
+  imports: [RouterOutlet, ConfirmDialog, Toast],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

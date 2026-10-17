@@ -3,9 +3,29 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import Rol, Persona, Usuario
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import secrets
+from core.privacidad import PrivacidadPersonaMixin
+from core.roles import es_admin
+from .correos import enviar_credenciales
+from .validators import error_de_clave_nueva
 
 
-class UsuarioSerializer(serializers.ModelSerializer):
+class SoloLecturaParaNoAdminMixin:
+    # Los campos de privilegio solo los escribe un administrador. Sin request en el contexto
+    # se asume que no lo es (denegar por defecto)
+    campos_de_privilegio = ()
+
+    def get_fields(self):
+        campos = super().get_fields()
+        request = self.context.get('request')
+        if not (request and es_admin(request.user)):
+            for nombre in self.campos_de_privilegio:
+                campos[nombre].read_only = True
+        return campos
+
+
+class UsuarioSerializer(SoloLecturaParaNoAdminMixin, serializers.ModelSerializer):
+    campos_de_privilegio = ('activo',)
     persona_id = serializers.PrimaryKeyRelatedField(
         queryset=Persona.objects.all(),
         source='persona',
@@ -23,6 +43,16 @@ class UsuarioSerializer(serializers.ModelSerializer):
         if hasattr(persona, 'usuario') and persona.usuario is not None:
             raise serializers.ValidationError('Esta persona ya tiene un usuario asociado.')
         return persona
+
+    def validate(self, attrs):
+        persona = attrs.get('persona')
+        password = attrs.get('password')
+        if persona is None or password is None:
+            return attrs
+        error = error_de_clave_nueva(password, Usuario(username=persona.dni, persona=persona))
+        if error:
+            raise serializers.ValidationError({'password': [error]})
+        return attrs
 
     def create(self, validated_data):
         persona = validated_data.pop('persona')
@@ -60,41 +90,52 @@ class DNITokenObtainPairSerializer(TokenObtainPairSerializer):
                 code='authorization',
             )
 
-        if not usuario.activo:
-            raise serializers.ValidationError(
-                'El usuario está inactivo.',
-                code='authorization',
-            )
-
         refresh = self.get_token(usuario)
 
         return {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
+            'debe_cambiar_password': usuario.debe_cambiar_password
         }
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
-        fields = '__all__'
+        fields = ['id', 'nombre', 'descripcion']
 
 
-class  PersonaSerializer(serializers.ModelSerializer):
+class PersonaSerializer(PrivacidadPersonaMixin, SoloLecturaParaNoAdminMixin, serializers.ModelSerializer):
+    campos_de_privilegio = ('rol', 'dni', 'email', 'fecha_baja')
+    # Lo que ve un no administrador de otra persona: sin DNI, email, teléfono ni fecha de nacimiento
+    campos_publicos = ('id', 'nombre', 'apellido', 'rol')
+
     class Meta:
         model = Persona
-        fields = '__all__'
+        fields = [
+            'id', 'rol', 'nombre', 'apellido', 'dni', 'fecha_nacimiento',
+            'tel_contacto', 'email', 'fecha_ingreso', 'fecha_baja',
+        ]
+        read_only_fields = ['id', 'fecha_ingreso']
 
     def create(self, validated_data):
-        password = validated_data.get('dni')
         dni = validated_data.get('dni')
+        clave_temporal = secrets.token_urlsafe(8)
+        
         with transaction.atomic():
             persona = Persona.objects.create(**validated_data)
 
-            usuario = Usuario.objects.create_user(
+            Usuario.objects.create_user(
                 username=dni,
-                password=password,
+                password=clave_temporal,
                 persona=persona,
+                debe_cambiar_password=True
             )
+
+            # El correo sale después del commit y fuera del request: si falla, la cuenta queda creada
+            # y el administrador recibe un aviso (usuario/correos.py)
+            request = self.context.get('request')
+            enviar_credenciales(persona, clave_temporal, solicitante=getattr(request, 'user', None))
+
         return persona
 
     

@@ -2,6 +2,9 @@ import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { IPersona, Persona, RolId } from "../model/Persona.model";
 import { PersonaService } from "./persona.service";
+import { MateriaService } from "./materia.service";
+import { IMateria } from "../model/materia.model";
+import { ConsultaPaginada, RespuestaPaginada } from "../core/models/api-response.interface";
 
 
 @Injectable({
@@ -11,11 +14,16 @@ import { PersonaService } from "./persona.service";
 export class EstudianteService {
 
 private readonly personaService = inject(PersonaService);
+private readonly materiaService = inject(MateriaService);
 
 
 obtenerEstudiates():Observable<Persona[]>{
     return this.personaService.obtenerPersonas(RolId.ESTUDIANTE);
 
+}
+
+listarPaginado(consulta: ConsultaPaginada): Observable<RespuestaPaginada<Persona>> {
+    return this.personaService.listarPaginado(RolId.ESTUDIANTE, consulta);
 }
 
 crearEstudiates(nuevoEstudiante:IPersona):Observable<Persona>{
@@ -32,5 +40,10 @@ actualizarEstudiante(estudianteId: number, estudianteActualizado: IPersona) {
 eliminarEstudiante(id: number): Observable<void> {
   return this.personaService.eliminarPersona(id);       
 }
+
+obtenerMateriasEstudiante(estudianteId: number): Observable<IMateria[]> {
+  return this.materiaService.obteberMateriasPorEstudiante(estudianteId);  
+  }
+
 
 }

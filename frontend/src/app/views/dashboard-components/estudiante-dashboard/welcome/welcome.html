@@ -1,0 +1,28 @@
+<section class="max-w-7xl mx-auto p-6">
+  <!-- Grilla Principal de 3 Columnas -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+    <!-- Sección Izquierda: Materias Resumen (Ocupa 2 Columnas) -->
+    <div class="lg:col-span-2 space-y-4">
+      <app-materias></app-materias>
+    </div>
+
+    <!-- Sección Derecha: Información, Anuncios y Próximas Entregas (1 Columna) -->
+    <div class="lg:col-span-1 space-y-6">
+
+      <!-- 1. Información de la institución/carrera -->
+      <div class="space-y-4">
+        <app-informacion></app-informacion>
+      </div>
+      <!-- 2. Última Novedad -->
+      <div class="space-y-4">
+        <app-anuncios-resumen></app-anuncios-resumen>
+      </div>
+      <!-- 3. Calendario / Próximas Entregas -->
+      <div class="space-y-4">
+        <app-proximas-entregas></app-proximas-entregas>
+      </div>
+    </div>
+
+  </div>
+</section>

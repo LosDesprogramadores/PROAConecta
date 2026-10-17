@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, signal, inject, OnInit} from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { IPersona, Persona, RolId } from '../../../model/Persona.model';
@@ -8,21 +7,33 @@ import { IMateria} from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
 import { ToastService } from '../../../services/toast.service';
+import { Modal } from '../../../shared/modal/modal';
+import { ExportarListado } from '../../../shared/exportar-listado/exportar-listado';
+import { environment } from '../../../../environments/environment';
+import { mensajeErrorCampo } from '../../../shared/utils/form-errors';
+import { Paginador } from '../../../shared/paginador/paginador';
 
+
+const TAMANO_PAGINA = 20;
 
 @Component({
   selector: 'app-profesor',
-  imports: [ReactiveFormsModule, RouterModule, CommonModule, TablaGenerica],
+  imports: [Modal, ReactiveFormsModule, RouterModule, TablaGenerica, ExportarListado, Paginador],
   templateUrl: './profesor.html',
   styleUrl: './profesor.css',
 })
 export class Profesor implements OnInit {
+  protected readonly urlExportarPersonas = `${environment.apiUrl}personas/exportar/`;
+  protected readonly rolProfesor = RolId.PROFESOR;
   private fb = inject(FormBuilder);
   private materiaService = inject(MateriaService);
   private profesorService = inject(ProfesorService)
   private toastService = inject(ToastService)
 
   profesores = signal<Persona[]>([])
+  readonly tamanoPagina = TAMANO_PAGINA;
+  total = signal<number>(0);
+  pagina = signal<number>(1);
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   selectedId = signal<number | null>(null);
@@ -60,17 +71,27 @@ export class Profesor implements OnInit {
   });
 
 
+  protected errorCampo(campo: string): string | null {
+    return mensajeErrorCampo(this.form.get(campo), { minlength: 'El DNI debe tener al menos 7 caracteres.' });
+  }
+
   ngOnInit(): void {
     this.cargarProfesores()
   }
 
-  cargarProfesores(): void {
+  /** Loads one server page. A page that emptied out (last row deleted) falls back to the previous one. */
+  cargarProfesores(pagina: number = this.pagina()): void {
     this.isLoading.set(true);
-    this.profesorService.obtenerProfesores().subscribe({
-      next: (data) => {
-        this.profesores.set(data);
+    this.profesorService.listarPaginado({ page: pagina, page_size: TAMANO_PAGINA }).subscribe({
+      next: (respuesta) => {
+        if (respuesta.results.length === 0 && pagina > 1) {
+          this.cargarProfesores(pagina - 1);
+          return;
+        }
+        this.profesores.set(respuesta.results);
+        this.total.set(respuesta.count);
+        this.pagina.set(pagina);
         this.isLoading.set(false);
-        console.log(data)
       },
       error: (err) => {
         console.error('Error al cargar profesores:', err)
@@ -108,7 +129,6 @@ export class Profesor implements OnInit {
     if (this.isEditing() && this.selectedId()) {
       this.profesorService.actualizarProfesor(this.selectedId()!, formValues).subscribe({
         next: (res: Persona) => {
-          console.log('Profesor actualizado con éxito:', res);
           this.toastService.success('Profesor actualizado con éxito.');
           this.profesores.update(lista => lista.map(p => p.id === res.id ? res : p));
           this.closeModal();
@@ -127,10 +147,10 @@ export class Profesor implements OnInit {
       };
 
       this.profesorService.crearProfesores(nuevoProfesor).subscribe({
-        next: (res: Persona) => {
-          console.log('Profesor creado con éxito:', res);
+        next: () => {
           this.toastService.success("Profesor se creo correctamente.")
-          this.profesores.update(lista => [...lista, res]);
+          // Jump to the last page: that is where the new row appears.
+          this.cargarProfesores(Math.max(1, Math.ceil((this.total() + 1) / TAMANO_PAGINA)));
           this.closeModal();
         },
         error: (err) => {
@@ -139,7 +159,6 @@ export class Profesor implements OnInit {
         }
       });
     }
-    this.closeModal();
   }
 
   eliminar(): void {
@@ -151,10 +170,9 @@ export class Profesor implements OnInit {
     this.materiasProfesorSeleccionado.set([]);
 
     this.profesorService.eliminarProfesor(id).subscribe({
-      next: (res) => {
-        console.log('Profesor eliminado con éxito:', res);
+      next: () => {
         this.toastService.success("Profesor eliminado correctamente.");
-        this.profesores.update(lista => lista.filter(p => p.id !== id));
+        this.cargarProfesores();
         this.closeModal();
       },
       error: (err) => {
@@ -167,7 +185,6 @@ export class Profesor implements OnInit {
   asignar(profesor: Persona): void {
     this.profesorSeleccionado.set(null);
     this.materiasProfesorSeleccionado.set([]);
-    console.log('Asignando materias al profesor:', profesor);
     this.profesorParaAsignar.set(profesor);
     this.selectedMateriaIds.set([]);
     this.isLoadingMaterias.set(true);
@@ -190,8 +207,6 @@ export class Profesor implements OnInit {
 
 
   consultar(profesor: Persona): void {
-    console.log('1. Click en Consultar. Objeto recibido:', profesor);
-
     const actual = this.profesorSeleccionado();
     if (actual && actual.id === profesor.id) {
 
@@ -200,13 +215,11 @@ export class Profesor implements OnInit {
 
     this.profesorSeleccionado.set(profesor);
     this.isLoadingConsulta.set(true);
-    console.log('3. Señal profesorSeleccionado actualizada a:', this.profesorSeleccionado());
 
     this.materiasProfesorSeleccionado.set([]);
 
     this.materiaService.obtenerMateriasPorProfesor(profesor.id).subscribe({
       next: (materias) => {
-        console.log('4. Materias recibidas con éxito:', materias);
         this.materiasProfesorSeleccionado.set(materias);
         this.isLoadingConsulta.set(false);
       },
@@ -228,8 +241,7 @@ export class Profesor implements OnInit {
 
     if (!profesor || ids.length === 0) return;
     this.materiaService.asignarProfesorAMaterias(profesor.id, ids).subscribe({
-      next: (res) => {
-        console.log('Asignación completada:', res);
+      next: () => {
         this.toastService.success("Las materias si asignaron correctamente")
         this.cerrarModalAsignar();
 

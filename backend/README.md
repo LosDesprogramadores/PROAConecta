@@ -24,17 +24,7 @@ Asegúrate de tener instalado:
 
 ## Roles, Personas y Usuarios en DB de Prueba actuales en la DB
 
-Rol 1- Administrador Ana Gomez: 
-DNI(username): 12345678
-PASS: 12345678
-
-Rol 2- profesor Alan Profesor:
-DNI(username): 35785659
-PASS: 35785659
-
-Rol 3- Estudiante Julio Estudiante:
-DNI(username): 333111333
-PASS: 333111333
+Los usuarios de prueba se crean con seed_demo y las contraseñas salen del .env
 
 
 ## En los siguientes pasos siempre deben tener en consideraciòn la posiciòn donde estàn y donde se encuentra el archivo a ajecutar.

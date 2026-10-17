@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "lint": "eslint . --max-warnings=60",
+    "lint:fix": "eslint . --fix"
   },
   "prettier": {
     "printWidth": 100,
@@ -23,13 +25,15 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "dependencies": {
-    "@angular/common": "^21.1.0",
-    "@angular/compiler": "^21.1.0",
-    "@angular/core": "^21.1.0",
-    "@angular/forms": "^21.1.0",
-    "@angular/platform-browser": "^21.1.0",
-    "@angular/router": "^21.1.0",
+    "@angular/common": "^21.2.25",
+    "@angular/compiler": "^21.2.25",
+    "@angular/core": "^21.2.25",
+    "@angular/forms": "^21.2.25",
+    "@angular/platform-browser": "^21.2.25",
+    "@angular/router": "^21.2.25",
     "@tailwindcss/postcss": "^4.3.3",
+    "angular-calendar": "^0.32.2",
+    "date-fns": "^4.4.0",
     "flowbite": "^4.0.2",
     "postcss": "^8.5.26",
     "rxjs": "~7.8.0",
@@ -40,9 +44,12 @@
   "devDependencies": {
     "@angular/build": "^21.1.1",
     "@angular/cli": "^21.1.1",
-    "@angular/compiler-cli": "^21.1.0",
+    "@angular/compiler-cli": "^21.2.25",
+    "angular-eslint": "^22.5.0",
+    "eslint": "^9.39.5",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
+    "typescript-eslint": "^8.71.1",
     "vitest": "^4.0.8"
   }
 }

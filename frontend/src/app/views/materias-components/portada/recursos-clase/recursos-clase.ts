@@ -1,25 +1,31 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { Component, Input, OnInit, SimpleChanges, inject, signal, OnChanges } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { MaterialesService } from '../../../../services/materiales.service';
 import { Material } from '../../../../model/unidad-material.model';
 
+import { Modal } from '../../../../shared/modal/modal';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
+import { filter } from 'rxjs';
+import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
 @Component({
   selector: 'app-recursos-clase',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [Modal, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './recursos-clase.html',
   styleUrl: './recursos-clase.css',
 })
-export class RecursosClaseComponent implements OnInit {
+export class RecursosClaseComponent implements OnInit, OnChanges {
   @Input() materiaId: number | string | null = null;
 
   private materialesService = inject(MaterialesService);
+
+  private confirmDialog = inject(ConfirmDialogService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  private fb = inject(NonNullableFormBuilder);
 
   recursos = signal<Material[]>([]);
   cargando = signal(false);
@@ -34,10 +40,12 @@ export class RecursosClaseComponent implements OnInit {
 
   recursoEditandoId: number | string | null = null;
 
-  nuevoTipoRecurso = 'DOCUMENTO';
-  nuevoTituloRecurso = '';
-  nuevoUrlRecurso = '';
-  nuevoMaterialVisible = true;
+  readonly formulario = this.fb.group({
+    tipo: 'DOCUMENTO',
+    titulo: '',
+    url: '',
+    visible: true,
+  });
 
   archivoSeleccionado: File | null = null;
 
@@ -49,6 +57,13 @@ export class RecursosClaseComponent implements OnInit {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
 
     if (this.materiaId !== null && this.materiaId !== '') {
+      this.cargarRecursos();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['materiaId'] && changes['materiaId'].currentValue) {
+      this.materiaId = changes['materiaId'].currentValue;
       this.cargarRecursos();
     }
   }
@@ -84,10 +99,7 @@ export class RecursosClaseComponent implements OnInit {
   abrirFormularioRecurso(): void {
     this.recursoEditandoId = null;
 
-    this.nuevoTipoRecurso = 'DOCUMENTO';
-    this.nuevoTituloRecurso = '';
-    this.nuevoUrlRecurso = '';
-    this.nuevoMaterialVisible = true;
+    this.formulario.reset();
 
     this.archivoSeleccionado = null;
 
@@ -101,10 +113,12 @@ export class RecursosClaseComponent implements OnInit {
   prepararEditarRecurso(material: Material): void {
     this.recursoEditandoId = material.id ?? null;
 
-    this.nuevoTipoRecurso = material.tipo || 'DOCUMENTO';
-    this.nuevoTituloRecurso = material.titulo || '';
-    this.nuevoUrlRecurso = material.enlace || '';
-    this.nuevoMaterialVisible = material.visible ?? true;
+    this.formulario.setValue({
+      tipo: material.tipo || 'DOCUMENTO',
+      titulo: material.titulo || '',
+      url: material.enlace || '',
+      visible: material.visible ?? true,
+    });
 
     this.archivoSeleccionado = null;
 
@@ -133,10 +147,7 @@ export class RecursosClaseComponent implements OnInit {
     this.recursoEditandoId = null;
     this.archivoSeleccionado = null;
 
-    this.nuevoTipoRecurso = 'DOCUMENTO';
-    this.nuevoTituloRecurso = '';
-    this.nuevoUrlRecurso = '';
-    this.nuevoMaterialVisible = true;
+    this.formulario.reset();
   }
 
   // ==============================
@@ -149,12 +160,14 @@ export class RecursosClaseComponent implements OnInit {
       return;
     }
 
-    if (!this.nuevoTituloRecurso.trim()) {
+    const valores = this.formulario.getRawValue();
+
+    if (!valores.titulo.trim()) {
       this.toastService.error('El título es requerido');
       return;
     }
 
-    const url = this.nuevoUrlRecurso.trim();
+    const url = valores.url.trim();
 
     if (!url && !this.archivoSeleccionado) {
       this.toastService.error('Debes ingresar una URL o seleccionar un archivo');
@@ -170,10 +183,10 @@ export class RecursosClaseComponent implements OnInit {
     const payload: Partial<Material> = {
       materia: this.materiaId,
       unidad: null,
-      tipo: this.nuevoTipoRecurso.toUpperCase(),
-      titulo: this.nuevoTituloRecurso.trim(),
+      tipo: valores.tipo.toUpperCase(),
+      titulo: valores.titulo.trim(),
       enlace: urlFormateada || undefined,
-      visible: this.nuevoMaterialVisible,
+      visible: valores.visible,
     };
 
     // ==============================
@@ -263,14 +276,13 @@ export class RecursosClaseComponent implements OnInit {
     if (!material.id) {
       return;
     }
+    const materialId = material.id;
 
-    if (!confirm('¿Estás seguro de que deseas eliminar este recurso?')) {
-      return;
-    }
+    this.confirmDialog.confirmar('¿Estás seguro de que deseas eliminar este recurso?').pipe(filter(Boolean)).subscribe(() => {
 
-    this.materialesService.eliminarMaterial(material.id).subscribe({
+    this.materialesService.eliminarMaterial(materialId).subscribe({
       next: () => {
-        this.recursos.update((lista) => lista.filter((m) => m.id !== material.id));
+        this.recursos.update((lista) => lista.filter((m) => m.id !== materialId));
 
         this.toastService.success('Recurso eliminado');
       },
@@ -280,6 +292,7 @@ export class RecursosClaseComponent implements OnInit {
 
         this.toastService.error('Error al eliminar el recurso');
       },
+    });
     });
   }
 

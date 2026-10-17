@@ -1,66 +1,104 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { finalize, filter } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { UnidadesService } from '../../../../services/unidades.service';
 import { MaterialesService } from '../../../../services/materiales.service';
 import { Unidad, Material } from '../../../../model/unidad-material.model';
 
+import { Modal } from '../../../../shared/modal/modal';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
+import { ArchivoProtegidoDirective } from '../../../../core/http/archivo-protegido.directive';
 @Component({
   selector: 'app-unidades-material',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule],
+  imports: [Modal, RouterModule, ReactiveFormsModule, ArchivoProtegidoDirective],
   templateUrl: './unidades-material.html',
   styleUrl: './unidades-material.css',
 })
 export class UnidadesMaterial implements OnInit {
   private unidadesService = inject(UnidadesService);
+  private confirmDialog = inject(ConfirmDialogService);
   private materialesService = inject(MaterialesService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private fb = inject(NonNullableFormBuilder);
 
   unidades = signal<Unidad[]>([]);
   esDocente = signal<boolean>(false);
   unidadExpandida = signal<string | number | null>(null);
   mostrarFormularioUnidad = signal(false);
+  guardando = signal(false);
+
+  // CONTROL DE DESCRIPCIONES EXPANDIDAS
+  descripcionesExpandidas = signal<Set<string | number>>(new Set());
 
   // ESTADO DE UNIDADES
   unidadEditandoId: string | number | null = null;
-  nuevoNombreUnidad = '';
-  nuevoDescripcionUnidad = '';
-  nuevoOrdenUnidad: number = 1;
+  readonly formularioUnidad = this.fb.group({
+    titulo: '',
+    orden: 1,
+    descripcion: '',
+    visible: true,
+  });
   materiaId: string | number = '';
-  visible = true;
 
   // ESTADO DE RECURSOS / MATERIALES
   mostrarFormularioRecurso = signal<boolean>(false);
   unidadSeleccionadaId = signal<string | number | null>(null);
   recursoEditandoId: string | number | null = null;
   archivoSeleccionado: File | null = null;
-  nuevoTipoRecurso = 'DOCUMENTO';
-  nuevoTituloRecurso = '';
-  nuevoUrlRecurso = '';
-  nuevoMaterialVisible = true;
+  readonly formularioRecurso = this.fb.group({
+    tipo: 'DOCUMENTO',
+    titulo: '',
+    url: '',
+    visible: true,
+  });
 
   ngOnInit() {
     this.esDocente.set(this.authService.currentUser()?.rolNombre === 'Profesor');
 
-    this.materiaId = this.route.snapshot.paramMap.get('id')
-      ?? this.route.parent?.snapshot.paramMap.get('id')
-      ?? '';
+    let materiaIdParam: string | null = null;
+    for (const route of this.route.pathFromRoot) {
+      if (route.snapshot.paramMap.has('id')) {
+        materiaIdParam = route.snapshot.paramMap.get('id');
+        break;
+      }
+    }
+
+    this.materiaId = Number(materiaIdParam);
 
     if (this.materiaId) {
       this.cargarUnidades();
     }
   }
 
+  // --- LÓGICA DE DESCRIPCIONES EXPANDIBLES ---
+
+  descripcionExpandida(id: string | number): boolean {
+    return this.descripcionesExpandidas().has(id);
+  }
+
+  toggleDescripcion(id: string | number, event: Event): void {
+    event.stopPropagation();
+    this.descripcionesExpandidas.update((set) => {
+      const nuevoSet = new Set(set);
+      if (nuevoSet.has(id)) {
+        nuevoSet.delete(id);
+      } else {
+        nuevoSet.add(id);
+      }
+      return nuevoSet;
+    });
+  }
+
   cargarUnidades() {
     this.unidadesService.obtenerUnidadesPorMateria(this.materiaId).subscribe({
       next: (data) => this.unidades.set(data),
-      error: () => this.toastService.error('Error al cargar las unidades')
+      error: () => this.toastService.error('Error al cargar las unidades'),
     });
   }
 
@@ -77,11 +115,11 @@ export class UnidadesMaterial implements OnInit {
   cargarMaterialesDeUnidad(unidadId: string | number) {
     this.materialesService.obtenerMaterialesPorUnidad(unidadId).subscribe({
       next: (materiales) => {
-        this.unidades.update(lista =>
-          lista.map(u => u.id === unidadId ? { ...u, contenidos: materiales } : u)
+        this.unidades.update((lista) =>
+          lista.map((u) => (u.id === unidadId ? { ...u, contenidos: materiales } : u)),
         );
       },
-      error: () => this.toastService.error('Error al cargar materiales de la unidad')
+      error: () => this.toastService.error('Error al cargar materiales de la unidad'),
     });
   }
 
@@ -89,61 +127,66 @@ export class UnidadesMaterial implements OnInit {
 
   abrirFormularioUnidad() {
     this.unidadEditandoId = null;
-    this.nuevoNombreUnidad = '';
-    this.nuevoDescripcionUnidad = '';
-    this.nuevoOrdenUnidad = 1;
-    this.visible = true;
+    this.formularioUnidad.reset();
     this.mostrarFormularioUnidad.set(true);
   }
 
   prepararEditarUnidad(unidad: Unidad, event: Event) {
     event.stopPropagation();
     this.unidadEditandoId = unidad.id ?? null;
-    this.nuevoNombreUnidad = unidad.titulo;
-    this.nuevoDescripcionUnidad = unidad.descripcion || '';
-    this.nuevoOrdenUnidad = unidad.orden ?? 1;
-    this.visible = unidad.visible ?? true;
+    this.formularioUnidad.setValue({
+      titulo: unidad.titulo,
+      orden: unidad.orden ?? 1,
+      descripcion: unidad.descripcion || '',
+      visible: unidad.visible ?? true,
+    });
     this.mostrarFormularioUnidad.set(true);
   }
 
   cancelarFormularioUnidad() {
     this.mostrarFormularioUnidad.set(false);
     this.unidadEditandoId = null;
-    this.nuevoNombreUnidad = '';
-    this.nuevoDescripcionUnidad = '';
-    this.nuevoOrdenUnidad = 1;
-    this.visible = true;
+    this.formularioUnidad.reset();
   }
 
   guardarUnidad() {
-    if (!this.nuevoNombreUnidad.trim()) return;
+    const valores = this.formularioUnidad.getRawValue();
+    if (this.guardando() || !valores.titulo.trim()) return;
 
     const payload = {
       materia: this.materiaId,
-      titulo: this.nuevoNombreUnidad,
-      descripcion: this.nuevoDescripcionUnidad,
-      orden: Number(this.nuevoOrdenUnidad) || 1,
-      visible: this.visible
+      titulo: valores.titulo,
+      descripcion: valores.descripcion,
+      orden: Number(valores.orden) || 1,
+      visible: valores.visible,
     };
 
+    this.guardando.set(true);
+
     if (this.unidadEditandoId) {
-      this.unidadesService.actualizarUnidad(this.unidadEditandoId, payload).subscribe({
-        next: () => {
-          this.toastService.success('Unidad actualizada correctamente');
-          this.cargarUnidades();
-          this.cancelarFormularioUnidad();
-        },
-        error: () => this.toastService.error('Error al actualizar la unidad')
-      });
+      this.unidadesService
+        .actualizarUnidad(this.unidadEditandoId, payload)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => {
+            this.toastService.success('Unidad actualizada correctamente');
+            this.cargarUnidades();
+            this.cancelarFormularioUnidad();
+          },
+          error: () => this.toastService.error('Error al actualizar la unidad'),
+        });
     } else {
-      this.unidadesService.crearUnidad(payload).subscribe({
-        next: () => {
-          this.toastService.success('Unidad creada correctamente');
-          this.cargarUnidades();
-          this.cancelarFormularioUnidad();
-        },
-        error: () => this.toastService.error('Error al crear la unidad')
-      });
+      this.unidadesService
+        .crearUnidad(payload)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => {
+            this.toastService.success('Unidad creada correctamente');
+            this.cargarUnidades();
+            this.cancelarFormularioUnidad();
+          },
+          error: () => this.toastService.error('Error al crear la unidad'),
+        });
     }
   }
 
@@ -155,22 +198,22 @@ export class UnidadesMaterial implements OnInit {
         this.toastService.success(res.mensaje);
         this.cargarUnidades();
       },
-      error: () => this.toastService.error('Error al cambiar la visibilidad')
+      error: () => this.toastService.error('Error al cambiar la visibilidad'),
     });
   }
 
   eliminarUnidad(unidadId: string | number, event: Event) {
     event.stopPropagation();
 
-    if (confirm('¿Estás seguro de eliminar esta unidad y sus contenidos?')) {
+    this.confirmDialog.confirmar('¿Estás seguro de eliminar esta unidad y sus contenidos?').pipe(filter(Boolean)).subscribe(() => {
       this.unidadesService.eliminarUnidad(unidadId).subscribe({
         next: () => {
           this.toastService.success('Unidad enviada a la papelera');
           this.cargarUnidades();
         },
-        error: () => this.toastService.error('Error al eliminar la unidad')
+        error: () => this.toastService.error('Error al eliminar la unidad'),
       });
-    }
+    });
   }
 
   // --- LÓGICA DE RECURSOS / MATERIALES ---
@@ -179,10 +222,7 @@ export class UnidadesMaterial implements OnInit {
     if (event) event.stopPropagation();
     this.unidadSeleccionadaId.set(unidadId);
     this.recursoEditandoId = null;
-    this.nuevoTipoRecurso = 'DOCUMENTO';
-    this.nuevoTituloRecurso = '';
-    this.nuevoUrlRecurso = '';
-    this.nuevoMaterialVisible = true;
+    this.formularioRecurso.reset();
     this.archivoSeleccionado = null;
     this.mostrarFormularioRecurso.set(true);
   }
@@ -191,10 +231,12 @@ export class UnidadesMaterial implements OnInit {
     if (event) event.stopPropagation();
     this.recursoEditandoId = material.id ?? null;
     this.unidadSeleccionadaId.set(material.unidad ?? null);
-    this.nuevoTipoRecurso = material.tipo || 'DOCUMENTO';
-    this.nuevoTituloRecurso = material.titulo || '';
-    this.nuevoUrlRecurso = material.enlace || '';
-    this.nuevoMaterialVisible = material.visible ?? true;
+    this.formularioRecurso.setValue({
+      tipo: material.tipo || 'DOCUMENTO',
+      titulo: material.titulo || '',
+      url: material.enlace || '',
+      visible: material.visible ?? true,
+    });
     this.archivoSeleccionado = null;
     this.mostrarFormularioRecurso.set(true);
   }
@@ -215,9 +257,10 @@ export class UnidadesMaterial implements OnInit {
 
   guardarRecurso() {
     const unidadId = this.unidadSeleccionadaId();
-    if (!this.nuevoTituloRecurso.trim()) return;
+    const valores = this.formularioRecurso.getRawValue();
+    if (this.guardando() || !valores.titulo.trim()) return;
 
-    let urlFormateada = this.nuevoUrlRecurso.trim();
+    let urlFormateada = valores.url.trim();
     if (urlFormateada && !/^https?:\/\//i.test(urlFormateada)) {
       urlFormateada = `https://${urlFormateada}`;
     }
@@ -225,39 +268,38 @@ export class UnidadesMaterial implements OnInit {
     const payload: Partial<Material> = {
       materia: this.materiaId,
       unidad: unidadId || undefined,
-      tipo: this.nuevoTipoRecurso.toUpperCase(),
-      titulo: this.nuevoTituloRecurso,
+      tipo: valores.tipo.toUpperCase(),
+      titulo: valores.titulo,
       enlace: urlFormateada || undefined,
-      visible: this.nuevoMaterialVisible
+      visible: valores.visible,
     };
 
+    this.guardando.set(true);
+
     if (this.recursoEditandoId) {
-      // ✏️ ACTUALIZAR RECURSO
-      this.materialesService.actualizarMaterial(
-        this.recursoEditandoId, 
-        payload, 
-        this.archivoSeleccionado || undefined
-      ).subscribe({
-        next: () => {
-          this.toastService.success('Recurso actualizado correctamente');
-          if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
-          this.cancelarFormularioRecurso();
-        },
-        error: () => this.toastService.error('Error al actualizar el recurso')
-      });
+      this.materialesService
+        .actualizarMaterial(this.recursoEditandoId, payload, this.archivoSeleccionado || undefined)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => {
+            this.toastService.success('Recurso actualizado correctamente');
+            if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
+            this.cancelarFormularioRecurso();
+          },
+          error: () => this.toastService.error('Error al actualizar el recurso'),
+        });
     } else {
-      // ➕ CREAR RECURSO
-      this.materialesService.crearMaterial(
-        payload as Material, 
-        this.archivoSeleccionado || undefined
-      ).subscribe({
-        next: () => {
-          this.toastService.success('Recurso agregado correctamente');
-          if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
-          this.cancelarFormularioRecurso();
-        },
-        error: () => this.toastService.error('Error al guardar el recurso')
-      });
+      this.materialesService
+        .crearMaterial(payload as Material, this.archivoSeleccionado || undefined)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => {
+            this.toastService.success('Recurso agregado correctamente');
+            if (unidadId) this.cargarMaterialesDeUnidad(unidadId);
+            this.cancelarFormularioRecurso();
+          },
+          error: () => this.toastService.error('Error al guardar el recurso'),
+        });
     }
   }
 
@@ -273,21 +315,22 @@ export class UnidadesMaterial implements OnInit {
       error: (err) => {
         material.visible = estadoAnterior;
         console.error('Error al cambiar la visibilidad del material', err);
-      }
+      },
     });
   }
 
   eliminarMaterial(materialId: number | string, unidad: Unidad): void {
-    if (!confirm('¿Estás seguro de que deseas eliminar este material?')) return;
+    this.confirmDialog.confirmar('¿Estás seguro de que deseas eliminar este material?').pipe(filter(Boolean)).subscribe(() => {
 
     this.materialesService.eliminarMaterial(materialId).subscribe({
       next: () => {
         if (unidad.contenidos) {
           unidad.contenidos = unidad.contenidos.filter((m: Material) => m.id !== materialId);
         }
-        this.toastService.success('Material eliminado');
+        this.toastService.success('Material eliminado correctamente');
       },
-      error: (err) => console.error('Error al eliminar el material', err)
+      error: () => this.toastService.error('Error al eliminar el material'),
+    });
     });
   }
 }

@@ -1,0 +1,307 @@
+"""
+Configuración compartida por todos los entornos (T059).
+
+No define DEBUG, SECRET_KEY, ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS ni CSRF_TRUSTED_ORIGINS: los fija cada
+entorno (``dev``, ``prod``, ``test``). El módulo se elige con ``DJANGO_SETTINGS_MODULE``.
+
+Documentación de Django: https://docs.djangoproject.com/en/6.0/ref/settings/
+"""
+
+from pathlib import Path
+from datetime import timedelta
+import os
+import dj_database_url
+from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
+
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+load_dotenv(BASE_DIR.parent / '.env')
+load_dotenv(BASE_DIR / '.env')
+
+
+#API DE GOOGLE
+#GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+
+AUTH_USER_MODEL = 'usuario.Usuario'
+
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'drf_spectacular',
+    'core',
+    'academico',
+    'usuario',
+    'foro',
+    'aula_virtual',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist', 
+    'corsheaders',   
+    'channels',
+    'notificacion',
+    'mensajeria',
+    'auditoria',
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
+]
+
+# La medición de consultas y tiempos (core/middleware.py) se agrega solo en settings/dev.py
+
+AUTHENTICATION_BACKENDS = [
+    'usuario.backends.DNIBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'core.authentication.JWTConCambioDeClave',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Un solo formato de error en toda la API: {'detail': ...} o errores por campo (core/exceptions.py)
+    'EXCEPTION_HANDLER': 'core.exceptions.manejador_de_excepciones',
+    # Throttling (core/throttling.py). Con más de un worker de uvicorn el contador debe vivir en Redis
+    # (REDIS_URL): con la caché en memoria cada proceso cuenta por separado y el límite se multiplica.
+    # Cantidad de proxies de confianza delante de la app (solo nginx): DRF toma la IP que ese proxy agregó
+    # al final de X-Forwarded-For y no los valores que envía el cliente. nginx debe PISAR la cabecera.
+    'NUM_PROXIES': int(os.getenv('NUM_PROXIES', '1')),
+    # Por IP (login, recuperacion, recuperacion_confirmar) y por cuenta (login_dni, recuperacion_email)
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '5/min',
+        'recuperacion': '3/hour',
+        'recuperacion_confirmar': '5/hour',
+        'login_dni': '10/hour',
+        'recuperacion_email': '3/hour',
+        'mensajes': '30/min',
+    },
+}
+
+# Documentación de la API (/api/schema/, swagger-ui y redoc). Apagada por defecto (producción y tests): la UI
+# del navegador no puede mandar el JWT en la cabecera, así que "solo administradores" sería inalcanzable y un
+# esquema público delata toda la superficie de la API (SEC-25). proa.settings.dev la enciende.
+DOCS_API_PUBLICAS = False
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PROAConecta API',
+    'DESCRIPTION': 'Documentación interactiva de materias, asignaciones e inscripciones',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+}
+
+SIMPLE_JWT = {
+    # El access vive poco y el frontend lo renueva en silencio con el refresh (que rota)
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_MINUTES', '15'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_DAYS', '7'))),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+ROOT_URLCONF = 'proa.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'proa.wsgi.application'
+
+
+# Database
+# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        # DB_SSL=False en el compose local (Postgres sin TLS); por defecto sigue exigiendo SSL (base en la nube)
+        ssl_require=os.getenv('DB_SSL', 'True').lower() in ('true', '1', 'yes'),
+    )
+}
+# Correo y Discord salen en un hilo después del commit (integraciones/fondo.py). Con True corren en
+# línea: lo usan los tests para ser deterministas
+SEGUNDO_PLANO_SINCRONO = False
+
+# --- Discord
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
+
+# --- Nueva configuración MongoDB Atlas ---
+
+MONGO_URI = os.getenv("DATABASE_URL_MONGODB")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "proa_conecta")
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Password validation
+# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+PASSWORD_RESET_TIMEOUT = 900
+
+# ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS y CSRF_TRUSTED_ORIGINS los fija cada entorno (dev, prod, test)
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) +[
+    'authorization',
+    'content-type',
+    'x-csrftoken',
+]
+
+# El navegador solo deja leer estas cabeceras de medición si se exponen (solo existen con DEBUG)
+# Content-Disposition: sin esto el navegador no deja leer el nombre del archivo en las descargas entre orígenes
+CORS_EXPOSE_HEADERS = ['X-Query-Count', 'X-Response-Time-ms', 'Content-Disposition']
+
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
+
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Las cookies seguras y SECURE_PROXY_SSL_HEADER viven en settings/prod.py
+
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Internationalization
+# https://docs.djangoproject.com/en/6.0/topics/i18n/
+
+LANGUAGE_CODE = 'es-ar'
+
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
+
+USE_I18N = True
+
+USE_TZ = True
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/6.0/howto/static-files/
+
+STATIC_URL = 'static/'
+
+ASGI_APPLICATION = 'proa.asgi.application'
+# --- CONFIGURACIÓN DE CORREO ELECTRÓNICO ---
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f"PROA Conecta <{EMAIL_HOST_USER or 'noreply@proaconecta.edu.ar'}>")
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
+
+# URL base del cliente frontend 
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:4200')
+
+# Con REDIS_URL (compose) los WebSockets funcionan entre procesos; sin ella queda en memoria
+REDIS_URL = os.getenv('REDIS_URL')
+
+# La caché guarda los tickets del WebSocket: con Redis es compartida entre procesos, sin él es local
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+
+
+# Registros a consola (los recoge docker logs). Nivel único para root y django: DJANGO_LOG_LEVEL (INFO por defecto).
+# Un valor inválido hace fallar el arranque de logging con un error claro en vez de silenciarse
+DJANGO_LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO').strip().upper() or 'INFO'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'estructurado': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'consola': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'estructurado',
+        },
+    },
+    'root': {
+        'handlers': ['consola'],
+        'level': DJANGO_LOG_LEVEL,
+    },
+    'loggers': {
+        'django': {'level': DJANGO_LOG_LEVEL},
+    },
+}

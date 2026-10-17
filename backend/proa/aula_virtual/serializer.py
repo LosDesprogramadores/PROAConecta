@@ -1,6 +1,36 @@
+from django.db import IntegrityError, transaction
+from .notificaciones import avisar_nueva_actividad
+from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
+from django.urls import reverse
 from rest_framework import serializers
-from .models import Unidad, Material, Actividad
-from .helpers import verificar_profesor_materia
+from rest_framework.exceptions import PermissionDenied
+from .models import Unidad, Material, Actividad, Entrega, Nota
+from .services import ESTADOS_SEGUIMIENTO
+from .helpers import es_admin, es_estudiante, es_profesor, obtener_persona_y_rol, verificar_profesor_materia, verificar_estudiante_materia, validar_rango_nota
+
+MENSAJE_UNIDAD_DUPLICADA = 'Ya existe una unidad con ese título en esta materia.'
+MENSAJE_ACTIVIDAD_FIJA = 'No se puede cambiar la actividad de una entrega existente.'
+
+
+class RutaDeDescargaMixin:
+    """Devuelve en el campo de archivo la ruta de descarga autorizada en lugar de la URL de ``/media/``.
+
+    Es una ruta relativa a la raíz del sitio (``/api/archivos/<tipo>/<id>/``): el frontend la resuelve
+    contra su URL de API y la pide con el token. La subida sigue recibiendo el archivo en ese mismo campo.
+    """
+
+    campo_archivo = 'archivo'
+    tipo_archivo = ''
+
+    def to_representation(self, instance):
+        datos = super().to_representation(instance)
+        if getattr(instance, self.campo_archivo):
+            datos[self.campo_archivo] = reverse('aula_virtual:descarga-archivo', args=[self.tipo_archivo, instance.pk])
+        else:
+            datos[self.campo_archivo] = None
+        return datos
 
 
 class UnidadSerializer(serializers.ModelSerializer):
@@ -15,10 +45,36 @@ class UnidadSerializer(serializers.ModelSerializer):
         if request and 'materia' in attrs:
             verificar_profesor_materia(request.user, attrs['materia'])
 
+        # No puede haber dos unidades activas con el mismo título en la materia (doble clic en Guardar)
+        materia = attrs.get('materia', getattr(self.instance, 'materia', None))
+        titulo = attrs.get('titulo', getattr(self.instance, 'titulo', None))
+        if materia is not None and titulo is not None:
+            duplicadas = Unidad.objects.filter(materia=materia, titulo=titulo, fecha_baja__isnull=True)
+            if self.instance is not None:
+                duplicadas = duplicadas.exclude(pk=self.instance.pk)
+            if duplicadas.exists():
+                raise serializers.ValidationError({'titulo': MENSAJE_UNIDAD_DUPLICADA})
+
         return attrs
 
+    def _guardar_sin_duplicar(self, guardar):
+        # Dos envíos simultáneos pueden pasar validate(): la restricción de la base es la última barrera
+        try:
+            with transaction.atomic():
+                return guardar()
+        except IntegrityError:
+            raise serializers.ValidationError({'titulo': MENSAJE_UNIDAD_DUPLICADA})
 
-class MaterialSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        return self._guardar_sin_duplicar(lambda: super(UnidadSerializer, self).create(validated_data))
+
+    def update(self, instance, validated_data):
+        return self._guardar_sin_duplicar(lambda: super(UnidadSerializer, self).update(instance, validated_data))
+
+
+class MaterialSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
+    tipo_archivo = 'material'
+
     class Meta:
         model = Material
         fields = [
@@ -68,11 +124,13 @@ class MaterialSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class ActividadSerializer(serializers.ModelSerializer):
+class ActividadSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
+    campo_archivo = 'archivo_adjunto'
+    tipo_archivo = 'actividad'
     materia_titulo = serializers.CharField(source='materia.titulo', read_only=True)
     unidad_titulo = serializers.CharField(source='unidad.titulo', read_only=True, default=None)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    cantidad_entregas = serializers.IntegerField(source='entregas.count', read_only=True)
+    cantidad_entregas = serializers.SerializerMethodField()
 
     class Meta:
         model = Actividad
@@ -83,6 +141,14 @@ class ActividadSerializer(serializers.ModelSerializer):
                     'estado_display', 'cantidad_entregas', 'fecha_creacion', 'fecha_baja'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'fecha_baja']
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_cantidad_entregas(self, obj):
+        # El listado trae la cuenta anotada (ActividadViewSet.get_queryset); el alta y la edición la calculan acá.
+        # Las entregas dadas de baja no cuentan
+        if hasattr(obj, 'cantidad_entregas'):
+            return obj.cantidad_entregas
+        return obj.entregas.filter(fecha_baja__isnull=True).count()
 
     def validate(self, attrs):
         request = self.context.get('request')
@@ -113,3 +179,143 @@ class ActividadSerializer(serializers.ModelSerializer):
             })
         
         return attrs
+
+    # --- Aviso a Discord -------------------------------------------------
+    def create(self, validated_data):
+        actividad = super().create(validated_data)
+        self._notificar_si_corresponde(actividad, estado_previo=None)
+        return actividad
+
+    def update(self, instance, validated_data):
+        estado_previo = instance.estado
+        actividad = super().update(instance, validated_data)
+        self._notificar_si_corresponde(actividad, estado_previo)
+        return actividad
+
+    def _notificar_si_corresponde(self, actividad, estado_previo):
+        # Avisa solo cuando pasa a PUBLICADA (nueva o desde borrador),
+        # no en cada edición posterior
+        if (actividad.estado == Actividad.EstadoActividad.PUBLICADA
+                and estado_previo != Actividad.EstadoActividad.PUBLICADA):
+            transaction.on_commit(lambda: avisar_nueva_actividad(actividad))
+
+
+class NotaSerializer(serializers.ModelSerializer):
+    profesor_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Nota
+        fields = ['id', 'calificacion', 'descripcion', 'profesor_nombre', 'fecha_publicacion']
+
+    def get_profesor_nombre(self, obj):
+        return f"{obj.profesor.nombre} {obj.profesor.apellido}".strip() if obj.profesor else None
+
+
+class EntregaSerializer(RutaDeDescargaMixin, serializers.ModelSerializer):
+    tipo_archivo = 'entrega'
+    nota = NotaSerializer(read_only=True)
+    estudiante_nombre = serializers.SerializerMethodField()
+    actividad_titulo = serializers.CharField(source='actividad.titulo', read_only=True)
+    materia_id = serializers.IntegerField(source='actividad.materia_id', read_only=True)
+    materia_titulo = serializers.CharField(source='actividad.materia.titulo', read_only=True)
+
+    class Meta:
+        model = Entrega
+        fields = [
+            'id', 'actividad', 'actividad_titulo', 'materia_id', 'materia_titulo', 'estudiante', 'estudiante_nombre',
+            'archivo', 'enlace', 'contenido_texto',
+            'fuera_de_termino', 'estado', 'fecha_entrega', 'fecha_baja', 'nota'
+        ]
+        read_only_fields = ['id', 'estudiante', 'fuera_de_termino', 'estado', 'fecha_entrega', 'fecha_baja', 'nota']
+
+    def get_estudiante_nombre(self, obj):
+        return f"{obj.estudiante.nombre} {obj.estudiante.apellido}".strip() if obj.estudiante else None
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        # La actividad se fija al crear: cambiarla saltearía la verificación de inscripción
+        # y chocaría con la restricción única (actividad, estudiante)
+        if self.instance is not None and 'actividad' in attrs and attrs['actividad'] != self.instance.actividad:
+            raise serializers.ValidationError({'actividad': MENSAJE_ACTIVIDAD_FIJA})
+
+        actividad = attrs.get('actividad', getattr(self.instance, 'actividad', None))
+
+        if not actividad or actividad.fecha_baja is not None:
+            raise serializers.ValidationError({"actividad": "La actividad no existe o fue dada de baja."})
+
+        if actividad.estado != Actividad.EstadoActividad.PUBLICADA and not (user and es_admin(user)):
+            raise serializers.ValidationError({"actividad": "No se pueden realizar entregas en actividades en borrador."})
+
+        ahora = timezone.now()
+        plazo_vencido = bool(actividad.fecha_limite and ahora > actividad.fecha_limite)
+
+        if self.instance is not None:
+            if user and es_estudiante(user):
+                if self.instance.estado == Entrega.EstadoEntrega.CORREGIDO:
+                    raise serializers.ValidationError("Esta entrega ya ha sido calificada y no se puede modificar.")
+
+                if plazo_vencido and not actividad.permitir_entrega_tardia:
+                    raise serializers.ValidationError("El plazo límite de la actividad finalizó. No puedes modificar ni reemplazar los archivos.")
+
+        else:
+            # Solo un estudiante inscripto entrega: ni el profesor ni el administrador crean entregas a su nombre
+            if user:
+                if es_admin(user):
+                    raise PermissionDenied("Solo un estudiante inscripto en la materia puede realizar entregas.")
+                verificar_estudiante_materia(user, actividad.materia)
+
+            if plazo_vencido and not actividad.permitir_entrega_tardia:
+                raise serializers.ValidationError("El plazo de entrega ha vencido y no se aceptan entregas fuera de término.")
+
+            if user:
+                persona, _ = obtener_persona_y_rol(user)
+                if not persona:
+                    raise serializers.ValidationError("El usuario autenticado no posee un perfil asociado.")
+                if Entrega.objects.filter(actividad=actividad, estudiante=persona, fecha_baja__isnull=True).exists():
+                    raise serializers.ValidationError("Ya tienes una entrega activa para esta actividad.")
+
+        archivo = attrs.get('archivo', getattr(self.instance, 'archivo', None))
+        enlace = attrs.get('enlace', getattr(self.instance, 'enlace', None))
+        contenido_texto = attrs.get('contenido_texto', getattr(self.instance, 'contenido_texto', None))
+
+        if not any([archivo, enlace, contenido_texto]):
+            raise serializers.ValidationError("Debes enviar al menos un archivo, enlace o texto.")
+
+        return attrs
+
+
+class SeguimientoNotaSerializer(serializers.Serializer):
+    calificacion = serializers.DecimalField(max_digits=4, decimal_places=2)
+    descripcion = serializers.CharField(allow_blank=True)
+
+
+class SeguimientoEstudianteSerializer(serializers.Serializer):
+    estudiante_id = serializers.IntegerField()
+    apellido = serializers.CharField()
+    nombre = serializers.CharField()
+    dni = serializers.CharField()
+    estado = serializers.ChoiceField(choices=ESTADOS_SEGUIMIENTO)
+    entrega_id = serializers.IntegerField(allow_null=True)
+    fecha_entrega = serializers.DateTimeField(allow_null=True)
+    nota = SeguimientoNotaSerializer(allow_null=True)
+
+
+class SeguimientoActividadSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    titulo = serializers.CharField()
+    fecha_limite = serializers.DateTimeField(allow_null=True)
+
+
+class SeguimientoMateriaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    titulo = serializers.CharField()
+
+
+class SeguimientoSerializer(serializers.Serializer):
+    """Respuesta de ``GET /api/actividades/<id>/seguimiento/`` (solo lectura)."""
+
+    actividad = SeguimientoActividadSerializer()
+    materia = SeguimientoMateriaSerializer()
+    resumen = serializers.DictField(child=serializers.IntegerField())
+    estudiantes = SeguimientoEstudianteSerializer(many=True)

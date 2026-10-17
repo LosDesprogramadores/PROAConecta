@@ -1,18 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, computed, inject, signal, OnInit } from '@angular/core';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ActividadesService } from '../../../services/actividades.service';
+import { Actividad } from '../../../model/actividad-model';
 import { UserRole } from '../../../core/auth/auth.model';
 
-interface Actividad {
-  id: number;
-  titulo: string;
-  descripcion: string;
-  materia: string;
-  fechaLimite: string;
-  estado: 'Pendiente' | 'Entregada' | 'Vencida';
-}
-
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { ToastService } from '../../../services/toast.service';
+import { filter } from 'rxjs';
 @Component({
   selector: 'app-actividades',
   standalone: true,
@@ -20,68 +17,161 @@ interface Actividad {
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
-export class Actividades {
-
+export class Actividades implements OnInit {
   private authService = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
+  private toastService = inject(ToastService);
+  private actividadesService = inject(ActividadesService);
+  private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
   currentUser = this.authService.currentUser;
-
-  esEstudiante = computed(() =>
-    this.currentUser()?.rolId === UserRole.ESTUDIANTE
-  );
 
   esDocente = computed(() =>
     this.currentUser()?.rolId === UserRole.DOCENTE
   );
 
-  actividades = signal<Actividad[]>([
-    {
-      id: 1,
-      titulo: 'Trabajo Práctico N° 1',
-      descripcion: 'Resolución de ejercicios sobre funciones y ecuaciones.',
-      materia: 'Matemática I',
-      fechaLimite: '30/08/2026',
-      estado: 'Pendiente'
-    },
-    {
-      id: 2,
-      titulo: 'Análisis de texto',
-      descripcion: 'Realizar un análisis sintáctico del texto trabajado en clase.',
-      materia: 'Lengua',
-      fechaLimite: '02/09/2026',
-      estado: 'Pendiente'
-    },
-    {
-      id: 3,
-      titulo: 'Introducción a la programación',
-      descripcion: 'Resolver las actividades correspondientes a la unidad 2.',
-      materia: 'Programación',
-      fechaLimite: '25/08/2026',
-      estado: 'Entregada'
-    },
-    {
-      id: 4,
-      titulo: 'Revolución Industrial',
-      descripcion: 'Investigar las principales consecuencias sociales y económicas.',
-      materia: 'Historia',
-      fechaLimite: '20/08/2026',
-      estado: 'Vencida'
-    }
-  ]);
-
-  actividadesPendientes = computed(() =>
-    this.actividades().filter(a => a.estado === 'Pendiente')
+  esEstudiante = computed(() =>
+    this.currentUser()?.rolId === UserRole.ESTUDIANTE
   );
 
-  actividadesEntregadas = computed(() =>
-    this.actividades().filter(a => a.estado === 'Entregada')
+  // Señales
+  materiaId = signal<number | null>(null);
+  materiaTitulo = signal<string>('');
+  actividades = signal<Actividad[]>([]);
+  cargando = signal(false);
+  error = signal<string | null>(null);
+
+  // Computed para estados
+  actividadesPublicadas = computed(() =>
+    this.actividades().filter(a => a.estado === 'PUBLICADA')
   );
+
+  actividadesBorrador = computed(() =>
+    this.actividades().filter(a => a.estado === 'BORRADOR')
+  );
+
+  actividadesActivas = computed(() => {
+    const hoy = new Date();
+    return this.actividadesPublicadas().filter(a => {
+      const fecha = new Date(a.fecha_limite);
+      return fecha >= hoy;
+    });
+  });
+
+  actividadesVencidas = computed(() => {
+    const hoy = new Date();
+    return this.actividadesPublicadas().filter(a => {
+      const fecha = new Date(a.fecha_limite);
+      return fecha < hoy;
+    });
+  });
+
+  ngOnInit(): void {
+    this.route.parent?.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const id = params['id'] || this.route.snapshot.queryParams['materiaId'];
+      if (id) {
+        this.materiaId.set(Number(id));
+        this.cargarActividades(Number(id));
+      }
+    });
+  }
+
+  private cargarActividades(materiaId: number): void {
+    this.cargando.set(true);
+    this.error.set(null);
+
+    this.actividadesService.getActividadesPorMateria(materiaId).subscribe({
+      next: (data: Actividad[]) => {
+        this.actividades.set(data);
+        if (data.length > 0) {
+          this.materiaTitulo.set(data[0].materia_titulo);
+        }
+        this.cargando.set(false);
+      },
+      error: (err: any) => {
+        console.error('Error cargando actividades:', err);
+        this.error.set('No se pudieron cargar las actividades. Intenta más tarde.');
+        this.cargando.set(false);
+      },
+    });
+  }
 
   nuevaActividad(): void {
-    console.log('Crear nueva actividad');
+    const idMat = this.materiaId();
+    if (idMat) {
+      this.router.navigate(['/view-materia', idMat, 'actividades', 'nueva']);
+    } else {
+      this.router.navigate(['/dashboard/actividades/nueva']);
+    }
   }
 
   verActividad(actividad: Actividad): void {
-    console.log('Ver actividad:', actividad);
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'detalle']);
+  }
+
+  gestionarActividad(actividad: Actividad): void {
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'editar']);
+  }
+
+  entregarActividad(actividad: Actividad): void {
+    const idMat = actividad.materia || this.materiaId();
+    // Students submit from the estudiante activities view (submission modal).
+    this.router.navigate(['/view-materia', idMat, 'estudiante', 'actividades']);
+  }
+
+  verEntregas(actividad: Actividad): void {
+    const idMat = actividad.materia || this.materiaId();
+    this.router.navigate(['/view-materia', idMat, 'actividades', actividad.id, 'entregas']);
+  }
+
+  // 👈 MÉTODO DE ELIMINACIÓN CON TIPADO CORRECTO
+  eliminarActividad(actividad: Actividad): void {
+    this.confirmDialog.confirmar(`¿Estás seguro de que deseas eliminar la actividad "${actividad.titulo}"?`).pipe(filter(Boolean)).subscribe(() => {
+      this.actividadesService.eliminarActividad(actividad.id).subscribe({
+        next: () => {
+          this.actividades.update(acts => acts.filter(a => a.id !== actividad.id));
+        },
+        error: (err: any) => {
+          console.error('Error al eliminar la actividad:', err);
+          this.toastService.error('No se pudo eliminar la actividad. Intenta nuevamente.');
+        }
+      });
+    });
+  }
+
+  recargar(): void {
+    const id = this.materiaId();
+    if (id) {
+      this.cargarActividades(id);
+    }
+  }
+
+  getEstadoBadge(actividad: Actividad): { estado: string; clase: string } {
+    if (actividad.estado === 'BORRADOR') {
+      return { estado: 'Borrador', clase: 'bg-slate-100 text-slate-700 border-slate-200' };
+    }
+
+    const hoy = new Date();
+    const fecha = new Date(actividad.fecha_limite);
+
+    if (fecha < hoy) {
+      return { estado: 'Vencida', clase: 'bg-red-50 text-red-700 border-red-200' };
+    } else {
+      return { estado: 'Activa', clase: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    }
+  }
+
+  puedeEntregar(actividad: Actividad): boolean {
+    if (!this.esEstudiante()) return false;
+    if (actividad.estado !== 'PUBLICADA') return false;
+
+    const hoy = new Date();
+    const fecha = new Date(actividad.fecha_limite);
+
+    return fecha >= hoy || actividad.permitir_entrega_tardia;
   }
 }

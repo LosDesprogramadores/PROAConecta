@@ -21,10 +21,12 @@ export interface User {
     rolId: UserRole;
     rolNombre?: string;
     persona:Persona;
+    debe_cambiar_password: boolean;
 }
 
 export interface AuthResponse {
     access: string;
     refresh: string;
+    debe_cambiar_password: boolean;
     user?: User; // Opcional
 }

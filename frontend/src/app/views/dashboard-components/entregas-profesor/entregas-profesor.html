@@ -1,0 +1,128 @@
+<section class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+
+  <!-- HEADER -->
+  <header>
+    <p class="text-sm text-slate-500 mb-1">Dashboard</p>
+    <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">Entregas</h1>
+    <p class="text-sm text-slate-500 mt-1">Las entregas de los alumnos de todas tus materias</p>
+  </header>
+
+  <!-- FILTROS -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div class="flex gap-2 flex-wrap">
+      @for (p of pestanas; track p.clave) {
+        <button
+          type="button"
+          (click)="setPestana(p.clave)"
+          [attr.aria-pressed]="pestana() === p.clave"
+          [class]="pestana() === p.clave ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 hover:bg-slate-50'"
+          class="px-4 py-2 rounded-lg font-medium text-sm transition-all border border-slate-200">
+          {{ p.etiqueta }}
+        </button>
+      }
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label for="filtro-materia" class="text-sm font-semibold text-slate-700">Materia</label>
+      <select
+        id="filtro-materia"
+        (change)="onMateriaChange($any($event.target).value)"
+        class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+        <option value="">Todas las materias</option>
+        @for (m of materias(); track m.id) {
+          <option [value]="m.id">{{ m.titulo }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- LISTADO -->
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-slate-800">Listado de entregas</h2>
+      <span class="text-xs text-slate-400">{{ total() }} entregas</span>
+    </div>
+
+    @if (cargando()) {
+      <p class="text-sm text-slate-500" role="status">Cargando entregas...</p>
+    } @else if (error()) {
+      <div class="space-y-2">
+        <p class="text-sm text-red-600" role="alert">{{ error() }}</p>
+        <button
+          type="button"
+          data-testid="reintentar"
+          (click)="cargar()"
+          class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition">
+          Reintentar
+        </button>
+      </div>
+    } @else if (entregas().length === 0) {
+      <div class="py-10 text-center">
+        <h3 class="font-semibold text-slate-700">{{ mensajeVacio() }}</h3>
+      </div>
+    } @else {
+      <div class="border border-slate-100 rounded-xl overflow-x-auto">
+        <div class="min-w-[48rem]">
+          <div class="bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider grid grid-cols-6 gap-2">
+            <span>Materia</span>
+            <span>Actividad</span>
+            <span>Estudiante</span>
+            <span>Fecha</span>
+            <span>Estado / Nota</span>
+            <span>Acciones</span>
+          </div>
+
+          <div class="divide-y divide-slate-100 text-sm text-slate-600">
+            @for (e of entregas(); track e.id) {
+              <div class="px-4 py-4 grid grid-cols-6 gap-2 items-center" data-testid="fila-entrega">
+                <span class="font-medium text-slate-800">{{ e.materia_titulo }}</span>
+                <span>{{ e.actividad_titulo }}</span>
+                <span>{{ e.estudiante_nombre }}</span>
+                <span class="text-xs text-slate-400">{{ e.fecha_entrega | date: 'yyyy-MM-dd HH:mm' }}</span>
+                <span>
+                  @if (e.nota) {
+                    <span class="inline-flex items-center gap-2">
+                      <span class="text-xs font-semibold text-green-700">{{ estadoDe(e) }}</span>
+                      <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-primary font-bold">
+                        {{ e.nota.calificacion | number: '1.0-2' }}
+                      </span>
+                    </span>
+                  } @else {
+                    <span class="text-xs font-semibold" [class]="e.fuera_de_termino ? 'text-amber-600' : 'text-slate-500'">
+                      {{ estadoDe(e) }}
+                    </span>
+                  }
+                </span>
+                <span>
+                  <a
+                    [routerLink]="['/view-materia', e.materia_id, 'actividades', e.actividad, 'entregas']"
+                    class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold hover:bg-primary/20 transition">
+                    Ver entregas
+                  </a>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <nav class="flex items-center justify-between gap-2" aria-label="Paginación" data-testid="paginacion">
+        <button
+          type="button"
+          (click)="irAPagina(pagina() - 1)"
+          [disabled]="pagina() <= 1"
+          class="px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50">
+          Anterior
+        </button>
+        <span class="text-sm text-slate-500">Página {{ pagina() }} de {{ totalPaginas() }}</span>
+        <button
+          type="button"
+          (click)="irAPagina(pagina() + 1)"
+          [disabled]="pagina() >= totalPaginas()"
+          class="px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50">
+          Siguiente
+        </button>
+      </nav>
+    }
+  </div>
+</section>

@@ -1,0 +1,103 @@
+<div class="contenido-unidad-container">
+
+  <!-- ========================================== -->
+  <!-- HEADER DE LA UNIDAD -->
+  <!-- ========================================== -->
+
+  <div class="mb-6">
+
+    <div class="flex items-center justify-between gap-4">
+
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">
+          {{ unidad.nombre }}
+        </h2>
+
+        @if (unidad.descripcion) {
+          <p class="text-gray-600 mt-2">
+            {{ unidad.descripcion }}
+          </p>
+        }
+      </div>
+
+      @if (esDocente()) {
+
+        <button
+          (click)="mostrarFormularioNuevo()"
+          class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm whitespace-nowrap"
+        >
+          ➕ Agregar Contenido
+        </button>
+
+      }
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- LISTA DE CONTENIDOS -->
+  <!-- ========================================== -->
+
+  <div class="contenidos-section">
+
+    <div class="flex items-center justify-between mb-4">
+
+      <h3 class="text-xl font-semibold text-slate-700">
+        Contenidos
+      </h3>
+
+    </div>
+
+
+    <!-- SIN CONTENIDOS -->
+
+    @if (unidad.contenidos.length === 0) {
+
+      <div
+        class="p-4 bg-white rounded-lg border-l-4 border-gray-300 text-gray-600 text-center"
+      >
+        No hay contenido cargado aún.
+      </div>
+
+    }
+
+
+    <!-- CONTENIDOS -->
+
+    <div class="contenidos-list space-y-3 mb-6">
+
+
+      @for (contenido of unidad.contenidos; track contenido.id) {
+
+        <app-contenido-item
+          [contenido]="contenido"
+          [esDocente]="esDocente()"
+          (editar)="editarContenido($event)"
+          (cambiarVisibilidad)="cambiarVisibilidad($event)"
+          (eliminar)="eliminarContenido($event)"
+        />
+
+      }
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- FORMULARIO -->
+  <!-- ========================================== -->
+
+  @if (mostrarFormulario()) {
+
+    <app-contenido-form
+      [contenido]="contenidoEnEdicion()"
+      (guardar)="guardarContenido($event)"
+      (cancelar)="cancelarFormulario()"
+    />
+
+  }
+
+</div>

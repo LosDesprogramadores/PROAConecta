@@ -1,161 +1,91 @@
-<section class="p-6 space-y-6">
-  <!-- Encabezado -->
-  <div>
-    <h2 class="text-2xl font-bold text-primary">Anuncios</h2>
-    <p class="text-slate-600 mt-1">Avisos y novedades generales</p>
-  </div>
+<section class="max-w-4xl mx-auto" aria-labelledby="anuncios-titulo">
+  <header class="mb-6">
+    <h1 id="anuncios-titulo" class="text-2xl font-bold text-slate-800">Anuncios de la materia</h1>
+    <p class="text-sm text-slate-500">Novedades publicadas por el profesor a cargo.</p>
+  </header>
 
-  <!-- Buscador -->
-  <div class="relative">
-    <input
-      type="text"
-      placeholder="Buscar en los anuncios"
-      class="w-full pl-4 pr-12 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 placeholder-slate-400 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-      (input)="buscar($event)"
-    />
-    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"></circle>
-        <path d="m21 21-4.35-4.35"></path>
-      </svg>
-    </button>
-  </div>
+  @if (esTitular()) {
+    <form [formGroup]="formulario" (ngSubmit)="publicar()" novalidate
+      class="mb-6 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4"
+      aria-labelledby="nuevo-anuncio-titulo">
+      <h2 id="nuevo-anuncio-titulo" class="text-lg font-semibold text-slate-800">Nuevo anuncio</h2>
 
-  <!-- Estado cargando -->
-  @if (cargando()) {
-    <div class="text-center py-12">
-      <p class="text-slate-500">Cargando anuncios...</p>
-    </div>
-  }
+      <div>
+        <label for="anuncio-titulo" class="block text-sm font-medium text-slate-700 mb-1">Título</label>
+        <input id="anuncio-titulo" type="text" formControlName="titulo" [maxlength]="maxTitulo"
+          [attr.aria-invalid]="errorDe('titulo') ? 'true' : null"
+          [attr.aria-describedby]="errorDe('titulo') ? 'anuncio-titulo-error' : null"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+        @if (errorDe('titulo'); as mensaje) {
+          <p id="anuncio-titulo-error" class="mt-1 text-xs text-red-600" role="alert">{{ mensaje }}</p>
+        }
+      </div>
 
-  <!-- Tabla de anuncios -->
-  @if (!cargando() && anunciosFiltrados().length > 0) {
-    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden overflow-x-auto">
-      <table class="w-full min-w-[640px]">
-        <thead>
-          <tr class="bg-slate-50 border-b border-slate-200">
-            <th class="w-12 px-4 py-3"></th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Aviso</th>
-            <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Publicado por</th>
-            <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Último mensaje</th>
-            <th class="w-20 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Réplicas</th>
-            <th class="w-12 px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (anuncio of anunciosFiltrados(); track trackByAnuncioId($index, anuncio)) {
-            <tr
-              class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition cursor-pointer"
-              (click)="abrirAnuncio(anuncio)">
-
-              <!-- Icono importante/bloqueado -->
-              <td class="px-4 py-4 text-center">
-                @if (anuncio.importante) {
-                  <svg class="w-5 h-5 text-primary mx-auto" viewBox="0 0 24 24" fill="currentColor" title="Anuncio fijado">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m1 15h-2v-2h2v2m0-4h-2V7h2v6z"></path>
-                  </svg>
-                }
-                @if (anuncio.bloqueado) {
-                  <svg class="w-5 h-5 text-danger mx-auto mt-1" viewBox="0 0 24 24" fill="currentColor" title="Anuncio bloqueado">
-                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5s-5 2.24-5 5v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"></path>
-                  </svg>
-                }
-              </td>
-
-              <!-- Título -->
-              <td class="px-6 py-4">
-                <div class="flex flex-col gap-1">
-                  <h3 class="text-sm font-medium text-slate-800 hover:text-primary transition">
-                    {{ anuncio.titulo }}
-                  </h3>
-                  @if (anuncio.bloqueado) {
-                    <span class="inline-block w-fit px-2 py-0.5 bg-red-100 text-danger text-xs font-semibold rounded">
-                      Bloqueado
-                    </span>
-                  }
-                </div>
-              </td>
-
-              <!-- Autor -->
-              <td class="hidden md:table-cell px-6 py-4">
-                <div class="flex items-center gap-3">
-                  @if (anuncio.avatarUrl) {
-                    <img [src]="anuncio.avatarUrl" alt="{{ anuncio.autor }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                  } @else {
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                      {{ anuncio.autor.charAt(0).toUpperCase() }}
-                    </div>
-                  }
-                  <div>
-                    <p class="text-sm font-medium text-slate-800">{{ anuncio.autor }}</p>
-                    <p class="text-xs text-slate-500">{{ formatearFecha(anuncio.fechaCreacion) }}</p>
-                  </div>
-                </div>
-              </td>
-
-              <!-- Último mensaje -->
-              <td class="hidden md:table-cell px-6 py-4">
-                @if (anuncio.ultimaRespuesta) {
-                  <div class="flex items-center gap-3">
-                    @if (anuncio.ultimaRespuesta.avatarUrl) {
-                      <img [src]="anuncio.ultimaRespuesta.avatarUrl" alt="{{ anuncio.ultimaRespuesta.autor }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                    } @else {
-                      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {{ anuncio.ultimaRespuesta.autor.charAt(0).toUpperCase() }}
-                      </div>
-                    }
-                    <div>
-                      <p class="text-sm font-medium text-slate-800">{{ anuncio.ultimaRespuesta.autor }}</p>
-                      <p class="text-xs text-slate-500">{{ formatearFecha(anuncio.ultimaRespuesta.fecha) }}</p>
-                    </div>
-                  </div>
-                }
-              </td>
-
-              <!-- Réplicas -->
-              <td class="px-4 py-4 text-center">
-                <span class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold text-slate-700 bg-slate-100 rounded">
-                  {{ anuncio.cantidadReplicas }}
-                </span>
-              </td>
-
-              <!-- Acciones -->
-              <td class="px-4 py-4 text-center">
-                <button
-                  type="button"
-                  class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition"
-                  (click)="$event.stopPropagation()">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="2"></circle>
-                    <circle cx="12" cy="12" r="2"></circle>
-                    <circle cx="12" cy="19" r="2"></circle>
-                  </svg>
-                </button>
-              </td>
-            </tr>
+      <div>
+        <label for="anuncio-mensaje" class="block text-sm font-medium text-slate-700 mb-1">Mensaje</label>
+        <textarea id="anuncio-mensaje" rows="4" formControlName="mensaje" [maxlength]="maxMensaje"
+          [attr.aria-invalid]="errorDe('mensaje') ? 'true' : null"
+          [attr.aria-describedby]="errorDe('mensaje') ? 'anuncio-mensaje-error' : null"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        <div class="flex justify-between">
+          @if (errorDe('mensaje'); as mensaje) {
+            <p id="anuncio-mensaje-error" class="mt-1 text-xs text-red-600" role="alert">{{ mensaje }}</p>
+          } @else {
+            <span></span>
           }
-        </tbody>
-      </table>
-    </div>
+          <span class="mt-1 text-xs text-slate-400">{{ formulario.controls.mensaje.value.length }}/{{ maxMensaje }}</span>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" [disabled]="enviando()"
+          class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed">
+          {{ enviando() ? 'Publicando...' : 'Publicar anuncio' }}
+        </button>
+      </div>
+    </form>
   }
 
-  <!-- Sin resultados de búsqueda -->
-  @if (!cargando() && anunciosFiltrados().length === 0 && filtroTexto().length > 0) {
-    <div class="flex flex-col items-center justify-center py-16 text-center">
-      <svg class="w-16 h-16 text-slate-300 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-      </svg>
-      <p class="text-slate-500 text-lg">No hay anuncios que coincidan con tu búsqueda</p>
-    </div>
-  }
+  <div class="mb-4">
+    <label for="anuncios-buscar" class="sr-only">Buscar anuncios por título</label>
+    <input id="anuncios-buscar" type="search" placeholder="Buscar en esta página..." (input)="buscar($event)"
+      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+  </div>
 
-  <!-- Sin anuncios en general -->
-  @if (!cargando() && anuncios().length === 0 && filtroTexto().length === 0) {
-    <div class="flex flex-col items-center justify-center py-16 text-center">
-      <svg class="w-16 h-16 text-slate-300 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-      </svg>
-      <p class="text-slate-500 text-lg">No hay anuncios publicados aún</p>
+  @if (cargando()) {
+    <div class="text-center py-12 bg-white rounded-2xl border border-slate-200" role="status" aria-live="polite">
+      <p class="text-sm text-slate-500">Cargando anuncios...</p>
     </div>
+  } @else if (error()) {
+    <div class="text-center py-12 bg-white rounded-2xl border border-red-200" role="alert">
+      <p class="text-sm text-red-700 mb-3">No se pudieron cargar los anuncios.</p>
+      <button type="button" (click)="cargarAnuncios(pagina())"
+        class="text-xs font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-xl transition">
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    <ul class="space-y-3">
+      @for (anuncio of anunciosFiltrados(); track trackByAnuncioId($index, anuncio)) {
+        <li class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-800">{{ anuncio.titulo }}</h3>
+          <p class="mt-1 text-sm text-slate-600 whitespace-pre-line">{{ anuncio.mensaje }}</p>
+          <p class="mt-2 text-[11px] text-slate-400">
+            @if (anuncio.autor) { {{ anuncio.autor }} · }
+            {{ anuncio.fecha_creacion | date: 'medium' }}
+          </p>
+        </li>
+      } @empty {
+        <li class="text-center py-12 bg-white rounded-2xl border border-slate-200 list-none">
+          <p class="text-sm text-slate-500">Todavía no hay anuncios en esta materia.</p>
+        </li>
+      }
+    </ul>
+
+    @if (total() > tamanoPagina) {
+      <div class="mt-4 rounded-2xl border border-slate-200 overflow-hidden">
+        <app-paginador [total]="total()" [pagina]="pagina()" [tamano]="tamanoPagina" (paginaCambiada)="cargarAnuncios($event)" />
+      </div>
+    }
   }
 </section>

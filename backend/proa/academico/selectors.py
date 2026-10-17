@@ -1,0 +1,41 @@
+from django.db.models import Count, Q
+
+from .models import Inscripcion, Materia
+
+
+def alumnos_de_materia(materia, estado=None, search=None):
+    # Sin filtro de estado cuentan todos los inscriptos menos la baja administrativa
+    # (CURSANDO, REGULAR, PROMOCIONADO y LIBRE siguen siendo alumnos de la materia)
+    # Pendiente de decisión de producto con el equipo: si LIBRE debe contarse como alumno activo (ver backend.md, A3)
+    inscripciones = Inscripcion.objects.filter(materia=materia).select_related('estudiante')
+
+    if estado:
+        inscripciones = inscripciones.filter(estado=estado)
+    else:
+        inscripciones = inscripciones.exclude(estado=Inscripcion.EstadoInscripcion.BAJA)
+
+    if search:
+        inscripciones = inscripciones.filter(
+            Q(estudiante__apellido__icontains=search) | Q(estudiante__nombre__icontains=search)
+        )
+
+    return inscripciones.order_by('estudiante__apellido', 'estudiante__nombre', 'id')
+
+
+def materias_con_acceso(persona):
+    # Materias a las que un estudiante tiene acceso: toda inscripción menos BAJA (LIBRE incluida)
+    inscripciones = Inscripcion.objects.filter(estudiante=persona).exclude(estado=Inscripcion.EstadoInscripcion.BAJA)
+    return Materia.objects.filter(id__in=inscripciones.values('materia_id'))
+
+
+def materias_con_resumen(en_papelera=False):
+    # Materias listas para serializar sin consultas por fila: el profesor y su rol llegan con un JOIN y
+    # total_estudiantes se calcula en la misma consulta (la baja no cuenta; LIBRE sí).
+    # Por defecto solo las activas; la papelera (solo administrador) muestra las dadas de baja
+    base = Materia.todas.filter(fecha_baja__isnull=False) if en_papelera else Materia.objects.all()
+    return base.select_related('profesor__rol').annotate(
+        total_estudiantes=Count(
+            'inscripciones',
+            filter=~Q(inscripciones__estado=Inscripcion.EstadoInscripcion.BAJA),
+        )
+    )

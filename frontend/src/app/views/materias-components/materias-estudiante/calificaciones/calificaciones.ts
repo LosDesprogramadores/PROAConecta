@@ -1,0 +1,151 @@
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { UserRole } from '../../../../core/auth/auth.model';
+import {CalificacionesService, RendimientoEstudiante,} from '../../../../services/calificaciones.service';
+import { ToastService } from '../../../../services/toast.service';
+import { FileDownloadService } from '../../../../core/http/file-download';
+import { environment } from '../../../../../environments/environment';
+
+interface CalificacionEstudiante {
+  id: number;
+  actividad: string;
+  calificacion: string | number | null;
+  devolucion: string | null;
+}
+
+@Component({
+  selector: 'app-calificaciones',
+  standalone: true,
+  imports: [],
+  templateUrl: './calificaciones.html',
+  styleUrl: './calificaciones.css',
+})
+export class Calificaciones implements OnInit {
+  private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
+  private calificacionesService = inject(CalificacionesService);
+  private toastService = inject(ToastService);
+  private descargas = inject(FileDownloadService);
+
+  private currentUser = this.authService.currentUser;
+
+  // =========================
+  // ESTUDIANTE
+  // =========================
+
+  esEstudiante = computed(() => this.currentUser()?.rolId === UserRole.ESTUDIANTE);
+
+  misCalificaciones = signal<CalificacionEstudiante[]>([]);
+
+  promedio = signal<string | number | null>(null);
+
+  materiaTitulo = signal('');
+
+  curso = signal('');
+
+  anio = signal<number | null>(null);
+
+  nombreEstudiante = signal('');
+
+  totalEvaluaciones = signal(0);
+
+  cargando = signal(false);
+
+  error = signal('');
+
+  descargando = signal(false);
+
+  ngOnInit(): void {
+    if (!this.esEstudiante()) {
+      return;
+    }
+
+    /*
+     * La ruta de calificaciones es hija de:
+     *
+     * view-materia/:id
+     *
+     * Por eso el parámetro "id" está en la ruta padre.
+     */
+    let materiaIdParam: string | null = null;
+  for (const route of this.route.pathFromRoot) {
+    if (route.snapshot.paramMap.has('id')) {
+      materiaIdParam = route.snapshot.paramMap.get('id');
+      break;
+    }
+  }
+
+  const materiaId = Number(materiaIdParam);
+
+    if (!materiaId) {
+      this.error.set('No se pudo identificar la materia.');
+      return;
+    }
+
+    this.cargarRendimiento(materiaId);
+  }
+
+  private cargarRendimiento(materiaId: number): void {
+    this.cargando.set(true);
+    this.error.set('');
+
+    this.calificacionesService.obtenerMiRendimiento(materiaId).subscribe({
+      next: (data: RendimientoEstudiante) => {
+        this.materiaTitulo.set(data.materia_titulo);
+
+        this.curso.set(data.curso);
+
+        this.anio.set(data.anio);
+
+        this.nombreEstudiante.set(data.estudiante?.nombre_completo ?? '');
+
+        this.totalEvaluaciones.set(data.total_evaluaciones ?? 0);
+
+        this.promedio.set(data.promedio);
+
+        this.misCalificaciones.set(
+          data.actividades.map((actividad) => ({
+            id: actividad.actividad_id,
+            actividad: actividad.titulo,
+            calificacion: actividad.calificacion,
+            devolucion: actividad.devolucion,
+          })),
+        );
+
+        this.cargando.set(false);
+      },
+
+      error: (error) => {
+        console.error('Error al cargar las calificaciones:', error);
+
+        this.error.set('No se pudieron cargar las calificaciones de la materia.');
+
+        this.cargando.set(false);
+      },
+    });
+  }
+
+  descargarBoletin(): void {
+    if (this.descargando()) {
+      return;
+    }
+    this.descargando.set(true);
+
+    this.descargas
+      .descargar(`${environment.apiUrl}materias/mi-boletin/exportar/`, {}, 'boletin.pdf')
+      .subscribe({
+        next: () => {
+          this.descargando.set(false);
+          this.toastService.success('El boletín se generó correctamente.');
+        },
+        error: (err) => {
+          this.descargando.set(false);
+          this.toastService.error(
+            this.toastService.readable_message_extraction(err),
+            'No se pudo descargar el boletín',
+          );
+        },
+      });
+  }
+}

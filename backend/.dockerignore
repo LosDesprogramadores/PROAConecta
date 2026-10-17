@@ -8,3 +8,15 @@ venv/
 .venv/
 *.sqlite3
 .git
+
+# Secretos: nunca entran a la imagen (se inyectan con env_file o variables)
+.env
+.env.*
+!.env.example
+
+# Archivos subidos y artefactos de pruebas
+proa/media/
+.pytest_cache/
+.coverage
+htmlcov/
+requirements-dev.txt

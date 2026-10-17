@@ -1,10 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
-import { IMateria } from '../../../model/materia.model';
+import { IMateria, IInscripcion } from '../../../model/materia.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { InscripcionesService } from '../../../services/inscripciones.service';
+
+interface IMateriaConInscripcion extends IMateria {
+  fecha_inscripcion?: string;
+}
 
 @Component({
   selector: 'app-materias',
@@ -14,9 +18,26 @@ import { InscripcionesService } from '../../../services/inscripciones.service';
   styleUrl: './materias.css',
 })
 export class Materias implements OnInit {
-  materias = signal<IMateria[]>([]);
+  private readonly inscripcionesService = inject(InscripcionesService);
+  private readonly authService = inject(AuthService);
+
+  materias = signal<IMateriaConInscripcion[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
+
+  // Filtro de año: 'actual' o 'todas'
+  filtroAnio = signal<'actual' | 'todas'>('actual');
+  anioActual = new Date().getFullYear();
+
+  // Computada que aplica el filtro dinámicamente
+  materiasFiltradas = computed(() => {
+    const lista = this.materias();
+    if (this.filtroAnio() === 'todas') {
+      return lista;
+    }
+
+    return lista.filter((materia) => materia.anio === this.anioActual);
+  });
 
   private readonly colores = [
     'bg-red-300',
@@ -28,13 +49,13 @@ export class Materias implements OnInit {
     'bg-teal-300',
   ];
 
-  constructor(
-    private readonly inscripcionesService: InscripcionesService,
-    private readonly authService: AuthService,
-  ) {}
-
   ngOnInit(): void {
     this.cargarMaterias();
+  }
+
+  cambiarFiltro(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    this.filtroAnio.set(selectElement.value as 'actual' | 'todas');
   }
 
   private cargarMaterias(): void {
@@ -44,9 +65,6 @@ export class Materias implements OnInit {
     const usuario = this.authService.currentUser();
     const estudianteId = usuario?.persona?.id;
 
-    console.log('Usuario autenticado:', usuario);
-    console.log('ID del estudiante:', estudianteId);
-
     if (estudianteId === undefined || estudianteId === null) {
       this.error.set('No se pudo identificar al estudiante.');
       this.cargando.set(false);
@@ -54,12 +72,13 @@ export class Materias implements OnInit {
     }
 
     this.inscripcionesService.obtenerInscripcionesPorEstudiante(estudianteId).subscribe({
-      next: (inscripciones) => {
-        const materias: IMateria[] = inscripciones.map((inscripcion) => ({
+      next: (inscripciones: IInscripcion[]) => {
+        const materiasMapped: IMateriaConInscripcion[] = inscripciones.map((inscripcion) => ({
           id: inscripcion.materia,
           titulo: inscripcion.materia_titulo,
           curso: inscripcion.materia_curso,
           anio: inscripcion.materia_anio,
+          fecha_inscripcion: inscripcion.fecha_inscripcion,
           descripcion: null,
           criterios_evaluacion: null,
           activo: true,
@@ -68,17 +87,12 @@ export class Materias implements OnInit {
           total_estudiantes: undefined,
         }));
 
-        this.materias.set(materias);
+        this.materias.set(materiasMapped);
         this.cargando.set(false);
-
-        console.log('Materias inscriptas del estudiante:', materias);
       },
-
       error: (err) => {
         console.error('Error cargando materias del estudiante:', err);
-
         this.error.set('No se pudieron cargar tus materias.');
-
         this.cargando.set(false);
       },
     });
@@ -93,6 +107,6 @@ export class Materias implements OnInit {
       return ['/dashboard/materias'];
     }
 
-    return ['/view-materia', materia.id.toString(), 'portada'];
+    return ['/view-materia', materia.id.toString()];
   }
 }

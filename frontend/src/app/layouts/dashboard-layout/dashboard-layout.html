@@ -2,16 +2,16 @@
     <!-- Navbar arriba -->
     <app-navbar></app-navbar>
 
-    <!-- Contenedor principal: sidebar + contenido -->
+    <!-- Contenedor central (Sidebar + Contenido) -->
     <div class="flex flex-1 overflow-hidden">
-        <!-- Sidebar --> 
-        <app-sidebar></app-sidebar>
 
-        <!-- Main content -->
+        <!-- Ámbito con scroll propio para las vistas -->
         <main class="flex-1 overflow-y-auto p-6">
             <router-outlet></router-outlet>
         </main>
 
-        <app-footer></app-footer>
     </div>
+
+    <!-- Footer abajo -->
+    <app-footer></app-footer>
 </div>

@@ -1,143 +1,89 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-interface Noticia {
-  id: number;
-  titulo: string;
-  autor: string;
-  fecha: string;
-  hora: string;
-  contenido: string;
-  categoria?: 'Institucional' | 'Académica' | 'Recordatorio' | 'Sistema';
-}
+import { INotificacion } from '../../../model/notificacion.model';
+import { NotificacionService } from '../../../services/notificaciones.service';
+import { NotificacionesEstadoService, idDe } from '../../../services/notificaciones-estado.service';
+import { Paginador } from '../../../shared/paginador/paginador';
+
+const TAMANO_PAGINA = 10;
 
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, Paginador],
   templateUrl: './anuncios.html',
 })
 export class Anuncios implements OnInit {
-  noticias = signal<Noticia[]>([]);
-  anuncioSeleccionado = signal<Noticia | null>(null);
+  private readonly api = inject(NotificacionService);
+  private readonly estado = inject(NotificacionesEstadoService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  vistaDetalle = computed(() => this.anuncioSeleccionado() !== null);
-
-  constructor(private readonly route: ActivatedRoute) {}
+  readonly tamanoPagina = TAMANO_PAGINA;
+  readonly notificaciones = signal<INotificacion[]>([]);
+  readonly total = signal(0);
+  readonly pagina = signal(1);
+  readonly cargando = signal(true);
+  readonly error = signal(false);
+  readonly noLeidas = this.estado.noLeidas;
+  /** Ids already known (loaded or received live): a repeated live event never counts twice. */
+  private readonly vistas = new Set<string>();
 
   ngOnInit(): void {
-    this.loadNoticias();
-
-    this.route.queryParams.subscribe((params) => {
-      const idParam = params['id'];
-      if (idParam) {
-        const id = Number(idParam);
-        const encontrada = this.noticias().find((n) => n.id === id);
-        if (encontrada) {
-          this.anuncioSeleccionado.set(encontrada);
+    this.cargar(1);
+    // Live: on the first page a new notification goes to the top without reloading.
+    this.estado
+      .nuevas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((noti) => {
+        const id = idDe(noti);
+        if (id) {
+          if (this.vistas.has(id)) {
+            return;
+          }
+          this.vistas.add(id);
         }
-      }
+        this.total.update((n) => n + 1);
+        if (this.pagina() !== 1) {
+          return;
+        }
+        this.notificaciones.update((lista) => [noti, ...lista].slice(0, TAMANO_PAGINA));
+      });
+  }
+
+  cargar(pagina: number): void {
+    this.cargando.set(true);
+    this.error.set(false);
+    this.api.listarPaginado({ page: pagina, page_size: TAMANO_PAGINA }).subscribe({
+      next: (respuesta) => {
+        this.notificaciones.set(respuesta.results);
+        respuesta.results.forEach((n) => {
+          const id = idDe(n);
+          if (id) this.vistas.add(id);
+        });
+        this.total.set(respuesta.count);
+        this.pagina.set(pagina);
+        this.cargando.set(false);
+      },
+      error: () => {
+        this.error.set(true);
+        this.cargando.set(false);
+      },
     });
   }
 
-  private loadNoticias(): void {
-    this.noticias.set([
-      {
-        id: 1,
-        titulo: 'Inicio del ciclo lectivo',
-        autor: 'Dirección',
-        fecha: '20/08/2026',
-        hora: '08:00',
-        categoria: 'Institucional',
-        contenido: `El ciclo lectivo comienza oficialmente el lunes 24 de agosto.
-
-Las actividades académicas se iniciarán en horario de 8:00 de la mañana. 
-Por favor, confirmar asistencia en la plataforma antes del viernes.
-
-Recordar traer:
-- Documentación completa
-- Libreta de calificaciones
-- Materiales básicos para cada materia`,
-      },
-      {
-        id: 2,
-        titulo: 'Taller de Robótica',
-        autor: 'Profesor Gómez',
-        fecha: '19/08/2026',
-        hora: '15:30',
-        categoria: 'Académica',
-        contenido: `Se dictará un taller de robótica para alumnos de 5° año en el laboratorio.
-
-Fecha: 28 de agosto de 2026
-Horario: 15:00 a 17:00
-Lugar: Laboratorio de Informática
-
-El taller cubrirá:
-- Introducción a Arduino
-- Sensores y actuadores
-- Programación básica
-- Proyecto integrador
-
-Inscripción obligatoria. Cupos limitados a 20 participantes.`,
-      },
-      {
-        id: 3,
-        titulo: 'Cierre de calificaciones',
-        autor: 'Coordinación Académica',
-        fecha: '18/08/2026',
-        hora: '10:15',
-        categoria: 'Recordatorio',
-        contenido: `Recordamos que el cierre de calificaciones del período anterior será el 30 de agosto.
-
-Todos los docentes deben completar sus calificaciones antes de esa fecha.
-Los estudiantes podrán visualizar sus notas a partir del 31 de agosto.
-
-En caso de dudas, contactar a coordinacion@proa.edu.ar`,
-      },
-      {
-        id: 4,
-        titulo: 'Mantenimiento del sistema',
-        autor: 'Equipo de Sistemas',
-        fecha: '17/08/2026',
-        hora: '14:45',
-        categoria: 'Sistema',
-        contenido: `Aviso de mantenimiento programado.
-
-Fecha: Sábado 24 de agosto de 2026
-Horario: 22:00 a 06:00 (domingo)
-
-Durante este período, la plataforma ProA Conecta no estará disponible.
-Se recomienda realizar todas las tareas pendientes antes de esa fecha.
-
-Disculpamos las molestias.`,
-      },
-    ]);
+  marcarComoLeida(noti: INotificacion): void {
+    const id = idDe(noti);
+    this.marcarLocal(id, true);
+    this.estado.marcarLeida(noti).subscribe({ error: () => this.marcarLocal(id, false) });
   }
 
-  seleccionarAnuncio(noticia: Noticia): void {
-    this.anuncioSeleccionado.set(noticia);
+  idDe(noti: INotificacion): string | undefined {
+    return idDe(noti);
   }
 
-  volver(): void {
-    this.anuncioSeleccionado.set(null);
-  }
-
-  getCategoryBadgeClass(categoria?: string): string {
-    const baseClass =
-      'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border';
-
-    switch (categoria) {
-      case 'Institucional':
-        return `${baseClass} bg-blue-50 text-blue-700 border-blue-200`;
-      case 'Académica':
-        return `${baseClass} bg-purple-50 text-purple-700 border-purple-200`;
-      case 'Recordatorio':
-        return `${baseClass} bg-amber-50 text-amber-700 border-amber-200`;
-      case 'Sistema':
-        return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
-      default:
-        return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
-    }
+  private marcarLocal(id: string | undefined, leida: boolean): void {
+    this.notificaciones.update((lista) => lista.map((n) => (idDe(n) === id ? { ...n, leida } : n)));
   }
 }

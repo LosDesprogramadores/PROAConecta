@@ -6,14 +6,17 @@
       <p class="text-sm text-slate-500 mt-1">Gestión integral de alumnos matriculados y datos de contacto</p>
     </div>
     
-    <button 
+    <div class="flex flex-wrap items-center gap-3">
+      <app-exportar-listado [url]="urlExportarPersonas" [params]="{ rol: rolEstudiante }" recurso="estudiantes" />
+      <button 
       (click)="openCreateModal()" 
-      class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#155dfc] hover:bg-[#114cc9] text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition-all duration-200 cursor-pointer">
+      class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition-all duration-200 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
       </svg>
       Nuevo Estudiante
     </button>
+    </div>
   </div>
 
   <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
@@ -34,7 +37,7 @@
               <td colspan="5" class="py-16 text-center">
                 <div class="inline-flex flex-col items-center justify-center gap-3">
                   <svg 
-                    class="w-8 h-8 animate-spin text-[#155dfc]" 
+                    class="w-8 h-8 animate-spin text-primary" 
                     xmlns="http://www.w3.org/2000/svg" 
                     fill="none" 
                     viewBox="0 0 24 24"
@@ -115,94 +118,74 @@
         </tbody>
       </table>
     </div>
+    @if (total() > tamanoPagina) {
+      <app-paginador [total]="total()" [pagina]="pagina()" [tamano]="tamanoPagina" (paginaCambiada)="cargarEstudiantes($event)" />
+    }
   </div>
 
   <!-- Modal Adaptado -->
   @if (isModalOpen()) {
-    <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="bg-white border border-slate-200 w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-6">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-          <h2 class="text-lg font-bold text-slate-800">
-            {{ isEditing() ? 'Editar Estudiante' : 'Registrar Nuevo Estudiante' }}
-          </h2>
-          <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">✕</button>
-        </div>
-
-        <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+  <app-modal [titulo]="isEditing() ? 'Editar Estudiante' : 'Registrar Nuevo Estudiante'" (cerrar)="closeModal()">
+    <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nombre</label>
-              <input formControlName="nombre" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-nombre" class="block text-xs font-semibold text-slate-600 mb-1.5">Nombre</label>
+              <input id="est-nombre" formControlName="nombre" aria-required="true" [attr.aria-invalid]="errorCampo('nombre') ? 'true' : null" [attr.aria-describedby]="errorCampo('nombre') ? 'est-nombre-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('nombre'); as msg) {<p id="est-nombre-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Apellido</label>
-              <input formControlName="apellido" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-apellido" class="block text-xs font-semibold text-slate-600 mb-1.5">Apellido</label>
+              <input id="est-apellido" formControlName="apellido" aria-required="true" [attr.aria-invalid]="errorCampo('apellido') ? 'true' : null" [attr.aria-describedby]="errorCampo('apellido') ? 'est-apellido-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('apellido'); as msg) {<p id="est-apellido-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">DNI</label>
-              <input formControlName="dni" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-dni" class="block text-xs font-semibold text-slate-600 mb-1.5">DNI</label>
+              <input id="est-dni" formControlName="dni" aria-required="true" [attr.aria-invalid]="errorCampo('dni') ? 'true' : null" [attr.aria-describedby]="errorCampo('dni') ? 'est-dni-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('dni'); as msg) {<p id="est-dni-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Fecha de Nacimiento</label>
-              <input formControlName="fecha_nacimiento" type="date" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+              <label for="est-fecha_nacimiento" class="block text-xs font-semibold text-slate-600 mb-1.5">Fecha de Nacimiento</label>
+              <input id="est-fecha_nacimiento" formControlName="fecha_nacimiento" aria-required="true" [attr.aria-invalid]="errorCampo('fecha_nacimiento') ? 'true' : null" [attr.aria-describedby]="errorCampo('fecha_nacimiento') ? 'est-fecha_nacimiento-error' : null" type="date" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('fecha_nacimiento'); as msg) {<p id="est-fecha_nacimiento-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
-            <input formControlName="email" type="email" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+            <label for="est-email" class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
+            <input id="est-email" formControlName="email" aria-required="true" [attr.aria-invalid]="errorCampo('email') ? 'true' : null" [attr.aria-describedby]="errorCampo('email') ? 'est-email-error' : null" type="email" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('email'); as msg) {<p id="est-email-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Teléfono</label>
-            <input formControlName="tel_contacto" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#155dfc] rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+            <label for="est-tel_contacto" class="block text-xs font-semibold text-slate-600 mb-1.5">Teléfono</label>
+            <input id="est-tel_contacto" formControlName="tel_contacto" [attr.aria-invalid]="errorCampo('tel_contacto') ? 'true' : null" [attr.aria-describedby]="errorCampo('tel_contacto') ? 'est-tel_contacto-error' : null" type="text" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl p-2.5 text-sm text-slate-800 outline-none transition" />
+@if (errorCampo('tel_contacto'); as msg) {<p id="est-tel_contacto-error" role="alert" class="text-xs text-rose-600 mt-1">{{ msg }}</p>}
           </div>
 
           <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <button type="button" (click)="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition cursor-pointer">
               Cancelar
             </button>
-            <button type="submit" [disabled]="form.invalid" class="px-5 py-2 bg-[#155dfc] hover:bg-[#114cc9] disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-sm transition cursor-pointer">
+            <button type="submit" [disabled]="form.invalid" class="px-5 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-sm transition cursor-pointer">
               Guardar
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  }
+  </app-modal>
+}
 </div>
 
 @if (isModalInscribirOpen() && estudianteParaInscribir(); as alumno) {
-  <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-    <div class="bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-      
-      <!-- Cabecera del modal -->
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-        <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-base font-bold text-slate-800">Inscripción a Cátedras</h2>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-              Estudiante
-            </span>
-          </div>
-          <p class="text-xs text-slate-500 mt-0.5">
+  <app-modal titulo="Inscripción a Cátedras" ancho="xl" [relleno]="false" (cerrar)="cerrarModalInscribir()">
+    <p modal-subtitulo class="text-xs text-slate-500 mt-0.5">
             Estudiante: <strong class="text-slate-800 font-semibold">{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
             <span class="font-mono text-slate-400 ml-1.5">(DNI: {{ alumno.dni }})</span>
           </p>
-        </div>
-        <button 
-          type="button"
-          (click)="cerrarModalInscribir()" 
-          class="text-slate-400 hover:text-slate-600 rounded-lg p-1.5 transition text-lg font-bold cursor-pointer">
-          ✕
-        </button>
-      </div>
 
-      <!-- Tabla de selección de materias -->
-      <div class="overflow-y-auto flex-1">
+    <div>
         <table class="w-full text-left border-collapse">
           <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             <tr>
@@ -211,7 +194,7 @@
                   type="checkbox"
                   [checked]="materiasDisponibles().length > 0 && selectedMateriaIds().length === materiasDisponibles().length"
                   (change)="seleccionarTodasMaterias()"
-                  class="w-4 h-4 rounded text-[#155dfc] accent-[#155dfc] border-slate-300 focus:ring-0 cursor-pointer"
+                  class="w-4 h-4 rounded text-primary accent-primary border-slate-300 focus:ring-0 cursor-pointer"
                   title="Marcar / Desmarcar todas"
                 />
               </th>
@@ -226,7 +209,7 @@
               <tr>
                 <td colspan="5" class="py-12 text-center text-slate-400">
                   <div class="inline-flex items-center gap-2">
-                    <div class="w-4 h-4 rounded-full border-2 border-[#155dfc] border-t-transparent animate-spin"></div>
+                    <div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
                     <span>Buscando materias disponibles...</span>
                   </div>
                 </td>
@@ -241,9 +224,9 @@
                     <td class="py-3 px-4 text-center" (click)="$event.stopPropagation()">
                     <input 
                       type="checkbox"
-                      [checked]="isMateriaSelected(materia.id)"
+                      [attr.aria-label]="'Seleccionar ' + materia.titulo" [checked]="isMateriaSelected(materia.id)"
                       (change)="toggleMateria(materia.id)"
-                      class="w-4 h-4 rounded text-[#155dfc] accent-[#155dfc] border-slate-300 focus:ring-0 cursor-pointer"
+                      class="w-4 h-4 rounded text-primary accent-primary border-slate-300 focus:ring-0 cursor-pointer"
                     />
                   </td>
 
@@ -282,10 +265,10 @@
       </div>
 
       <!-- Pie del modal -->
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+      <div modal-pie class="flex items-center justify-between">
         <div class="text-xs text-slate-600 font-medium">
           Materias seleccionadas: 
-          <span class="font-bold text-[#155dfc] bg-blue-100/60 px-2 py-0.5 rounded-md ml-1">
+          <span class="font-bold text-primary bg-blue-100/60 px-2 py-0.5 rounded-md ml-1">
             {{ selectedMateriaIds().length }}
           </span>
         </div>
@@ -301,14 +284,63 @@
             type="button"
             (click)="guardarInscripcion()"
             [disabled]="selectedMateriaIds().length === 0"
-            class="px-5 py-2 bg-[#155dfc] hover:bg-[#114cc9] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition cursor-pointer">
+            class="px-5 py-2 bg-primary hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition cursor-pointer">
             Confirmar Inscripción
           </button>
         </div>
       </div>
+  </app-modal>
+}
 
+@if (estudianteSeleccionado(); as est) {
+<div class="max-w-6xl mx-auto my-6 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">    
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div>
+        <h3 class="text-base font-bold text-slate-800">Materias Inscriptas</h3>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Alumno: <strong class="text-slate-700 font-semibold">{{ est.apellido }}, {{ est.nombre }}</strong>
+        </p>
+      </div>
+
+      <button 
+        type="button"
+        (click)="estudianteSeleccionado.set(null); materiasEstudianteSeleccionado.set([])" 
+        class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+        ✕ Cerrar detalle
+      </button>
     </div>
+
+    <app-tabla-generica 
+      [columnas]="columnasMateriasEstudiante"
+      [datos]="materiasEstudianteSeleccionado()"
+      [isLoading]="isLoadingConsulta()"
+      mensajeVacio="No se encontraron materias inscriptas para este estudiante." 
+      [mostrarAcciones]="true"
+      (eliminar)="desinscribirMateria($event)" />
+
   </div>
 }
 
-<app-toast></app-toast>
+@if (estudianteAEliminar(); as est) {
+  <app-modal titulo="¿Eliminar estudiante?" ancho="sm" (cerrar)="cancelarEliminacion()">
+    <p class="text-sm text-slate-600">
+      Estás a punto de eliminar al alumno <strong class="text-slate-800">{{ est.apellido }}, {{ est.nombre }}</strong>. Esta acción no se puede deshacer.
+    </p>
+
+    <div modal-pie class="flex justify-end space-x-3">
+      <button
+        type="button"
+        (click)="cancelarEliminacion()"
+        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        (click)="confirmarEliminacion()"
+        class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition-colors cursor-pointer">
+        Sí, eliminar
+      </button>
+    </div>
+  </app-modal>
+}
+

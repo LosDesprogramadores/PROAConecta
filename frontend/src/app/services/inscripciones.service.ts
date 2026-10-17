@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { IInscripcion } from '../model/materia.model';
+import { IInscripcion, RespuestaInscripcionEstudiantes, RespuestaInscripcionLote } from '../model/materia.model';
 
 @Injectable({
   providedIn: 'root'
@@ -31,10 +31,21 @@ export class InscripcionesService {
   inscribirEstudiante(
     estudianteId: number,
     materiaIds: number[]
-  ): Observable<any> {
-    return this.http.post(`${this.baseUrl}inscribir/`, {
+  ): Observable<RespuestaInscripcionLote> {
+    return this.http.post<RespuestaInscripcionLote>(`${this.baseUrl}inscribir/`, {
       estudiante_id: estudianteId,
       materia_ids: materiaIds
+    });
+  }
+
+  /** Enrols several students in one subject (admin only). */
+  inscribirEstudiantesEnMateria(
+    materiaId: number,
+    estudianteIds: number[]
+  ): Observable<RespuestaInscripcionEstudiantes> {
+    return this.http.post<RespuestaInscripcionEstudiantes>(`${this.baseUrl}inscribir-estudiantes/`, {
+      materia_id: materiaId,
+      estudiante_ids: estudianteIds
     });
   }
 }

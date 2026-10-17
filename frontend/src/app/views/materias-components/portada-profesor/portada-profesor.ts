@@ -1,0 +1,269 @@
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  UnidadMateria,
+  ContenidoUnidad,
+  MateriaPortada,
+} from '../../../model/unidad-contenido.model';
+import { IMateria } from '../../../model/materia.model';
+import { UnidadesMaterial } from '../portada/unidades-material/unidades-material';
+import { ProximasEntregas } from '../../dashboard-components/estudiante-dashboard/proximas-entregas/proximas-entregas';
+import { MateriaService } from '../../../services/materia.service';
+import { ToastService } from '../../../services/toast.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserRole } from '../../../core/auth/auth.model';
+
+import { Modal } from '../../../shared/modal/modal';
+@Component({
+  selector: 'app-portada-profesor',
+  standalone: true,
+  imports: [Modal, RouterModule, ReactiveFormsModule, UnidadesMaterial, ProximasEntregas],
+  templateUrl: './portada-profesor.html',
+  styleUrls: ['./portada-profesor.css'],
+})
+export class PortadaProfesor implements OnInit {
+  @Input() materia?: MateriaPortada;
+
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private materiaService = inject(MateriaService);
+  private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private fb = inject(NonNullableFormBuilder);
+
+  currentUser = this.authService.currentUser;
+
+  esEstudiante = computed(() =>
+    this.currentUser()?.rolId === UserRole.ESTUDIANTE
+  );
+
+  cargando = signal<boolean>(false);
+  error = signal<string | null>(null);
+
+  materiaId: number | null = null;
+  editandoDescripcion = signal<boolean>(false);
+  readonly descripcionControl = new FormControl('', { nonNullable: true });
+  unidadExpandida = signal<string | null>(null);
+
+  mostrarFormularioUnidad = signal<boolean>(false);
+  readonly formularioUnidad = this.fb.group({
+    nombre: ['', Validators.required],
+    descripcion: '',
+  });
+
+  get datosActuales(): MateriaPortada {
+    return (
+      this.materia || {
+        nombre: 'Cargando...',
+        docente: 'Cargando profesor...',
+        presentacion: 'Cargando información de la materia...',
+        anio: 0,
+        curso: '',
+        unidades: [],
+        recursosClase: [],
+      }
+    );
+  }
+
+  ngOnInit(): void {
+    // Si es estudiante, redirigir a portada
+    if (this.esEstudiante()) {
+      const id = this.route.snapshot.parent?.paramMap.get('id');
+      this.router.navigate([`/view-materia/${id}/portada`]);
+      return;
+    }
+
+    this.cargarMateriaDesdeRuta();
+  }
+
+  private cargarMateriaDesdeRuta(): void {
+    this.route.parent?.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const idParam = params.get('id');
+
+      if (!idParam) {
+        this.error.set('No se encontró el identificador de la materia.');
+        return;
+      }
+
+      const id = Number(idParam);
+
+      if (Number.isNaN(id)) {
+        this.error.set('El identificador de la materia no es válido.');
+        return;
+      }
+
+      this.materiaId = id;
+      this.cargando.set(true);
+      this.error.set(null);
+
+      this.materiaService.obtenerMateriaPorId(id).subscribe({
+        next: (materiaResponse) => {
+          this.materia = this.convertirMateriaPortada(materiaResponse);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          console.error('Error cargando la materia:', err);
+          this.error.set('No se pudo cargar la materia.');
+          this.cargando.set(false);
+        },
+      });
+    });
+  }
+
+  private convertirMateriaPortada(materia: IMateria): MateriaPortada {
+    const nombreMateria = materia.titulo || 'Materia';
+    const nombreProfesor = this.obtenerNombreProfesor(materia.profesor_detalle);
+
+    return {
+      nombre: nombreMateria,
+      presentacion:
+        materia.descripcion ||
+        `Esta materia introduce los conceptos fundamentales de ${nombreMateria}.`,
+      docente: nombreProfesor,
+      anio: materia.anio,
+      curso: materia.curso,
+      unidades: [
+        {
+          id: 'unidad-1',
+          numero: 1,
+          nombre: `Introducción a ${nombreMateria}`,
+          descripcion: 'Conceptos fundamentales y generalidades',
+          contenidos: [],
+        },
+        {
+          id: 'unidad-2',
+          numero: 2,
+          nombre: 'Desarrollo Temático',
+          descripcion: 'Unidad principal de estudio',
+          contenidos: [],
+        },
+        {
+          id: 'unidad-3',
+          numero: 3,
+          nombre: 'Aplicaciones Prácticas',
+          descripcion: 'Ejercicios y casos de estudio',
+          contenidos: [],
+        },
+      ],
+      recursosClase: [],
+    };
+  }
+
+  private obtenerNombreProfesor(profesor: any): string {
+    if (!profesor) {
+      return 'Profesor Titular';
+    }
+    if (profesor.nombre && profesor.apellido) {
+      return `${profesor.nombre} ${profesor.apellido}`;
+    }
+    return (
+      profesor.nombre_completo || profesor.nombre || profesor.apellido_nombre || 'Profesor Titular'
+    );
+  }
+
+  iniciarEdicionDescripcion(): void {
+    this.descripcionControl.setValue(this.datosActuales.presentacion);
+    this.editandoDescripcion.set(true);
+  }
+
+  guardarDescripcion(): void {
+    if (!this.materiaId) return;
+
+    const materiaActualizada: IMateria = {
+      titulo: this.datosActuales.nombre,
+      descripcion: this.descripcionControl.value.trim(),
+      anio: this.datosActuales.anio,
+      curso: this.datosActuales.curso,
+    };
+
+    this.materiaService.actualizarMateria(this.materiaId, materiaActualizada).subscribe({
+      next: (materiaResponse) => {
+        this.materia = this.convertirMateriaPortada(materiaResponse);
+        this.editandoDescripcion.set(false);
+      },
+      error: (err) => {
+        console.error('Error actualizando la descripción de la materia:', err);
+        this.error.set('No se pudo guardar la descripción de la materia.');
+      },
+    });
+  }
+
+  cancelarEdicionDescripcion(): void {
+    this.editandoDescripcion.set(false);
+  }
+
+  toggleUnidad(unidadId: string): void {
+    if (this.unidadExpandida() === unidadId) {
+      this.unidadExpandida.set(null);
+    } else {
+      this.unidadExpandida.set(unidadId);
+    }
+  }
+
+  trackByUnidad(index: number, unidad: UnidadMateria): string {
+    return unidad.id;
+  }
+
+  abrirFormularioUnidad(): void {
+    this.mostrarFormularioUnidad.set(true);
+    this.formularioUnidad.reset();
+  }
+
+  cancelarFormularioUnidad(): void {
+    this.mostrarFormularioUnidad.set(false);
+  }
+
+  guardarUnidad(): void {
+    const { nombre, descripcion } = this.formularioUnidad.getRawValue();
+    if (!nombre.trim()) {
+      this.formularioUnidad.controls.nombre.markAsTouched();
+      this.toastService.warning('El nombre de la unidad es requerido');
+      return;
+    }
+
+    const unidades = this.datosActuales.unidades;
+    const nuevaUnidad: UnidadMateria = {
+      id: `unidad-${Date.now()}`,
+      numero: unidades.length + 1,
+      nombre: nombre.trim(),
+      descripcion: descripcion.trim() || undefined,
+      contenidos: [],
+    };
+
+    unidades.push(nuevaUnidad);
+    this.mostrarFormularioUnidad.set(false);
+  }
+
+  onContenidoGuardado(unidadId: string, contenido: ContenidoUnidad): void {
+    const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
+    if (!unidad) return;
+
+    const index = unidad.contenidos.findIndex((c) => c.id === contenido.id);
+    if (index >= 0) {
+      unidad.contenidos[index] = {
+        ...contenido,
+        fechaCreacion: unidad.contenidos[index].fechaCreacion,
+      };
+    } else {
+      unidad.contenidos.push(contenido);
+    }
+  }
+
+  onContenidoEliminado(unidadId: string, contenidoId: string): void {
+    const unidad = this.datosActuales.unidades.find((u) => u.id === unidadId);
+    if (!unidad) return;
+
+    unidad.contenidos = unidad.contenidos.filter((c) => c.id !== contenidoId);
+  }
+
+  abrirModalActividad(): void {
+    // Intentionally empty: placeholder until the modal is implemented.
+  }
+
+  abrirModalRecurso(): void {
+    // Intentionally empty: placeholder until the modal is implemented.
+  }
+}
