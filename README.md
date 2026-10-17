@@ -1,6 +1,6 @@
 # PROA Conecta 🚀
 
-> **Evidencia de Aprendizaje N°2: Sprint 0**
+> **Evidencia de Aprendizaje: Sprint 4**
 > **Módulos:** Full Stack II, Gestión de Proyectos e Ingeniería de Software
 > **Tecnicatura Superior en Desarrollo de Software — ISPC (2026)**
 
@@ -21,139 +21,130 @@
 
 ## 📝 Descripción General del Proyecto
 
-**PROA Conecta** es una aplicación web Full Stack orientada a la gestión académica e institucional de la escuela **PROA Embalse**. Su objetivo fundamental es centralizar usuarios, roles, cursos, materias, actividades, entregas, archivos, avisos y notificaciones en una única plataforma unificada, reduciendo de forma drástica la dispersión de información generada actualmente por el uso fragmentado de herramientas como WhatsApp, correos electrónicos y documentos compartidos.
+**PROA Conecta** es una aplicación web Full Stack integral orientada a la gestión académica, aula virtual e institucional de la escuela **PROA Embalse**. Centraliza la gestión de usuarios, roles, cursos, materias, actividades, envíos, archivos, avisos y notificaciones en tiempo real en una única plataforma unificada.
 
-### ❓ Problema que Resuelve
-
-Durante el relevamiento institucional inicial se detectaron serias dificultades para coordinar el ecosistema escolar debido a la descentralización comunicativa. Las problemáticas clave que esta solución mitiga son:
-
-- La desorganización del material de estudio por materia.
-- La falta de un canal transparente para el seguimiento de tareas y entregas académicas.
-- La dispersión en la comunicación directa entre docentes, estudiantes y padres (canales informales como WhatsApp/Telegram).
-- La ausencia de un tablero centralizado para avisos oficiales e instantáneos.
-- La dificultad de directivos y tutores para monitorear el progreso pedagógico en tiempo real.
+El sistema emplea una **arquitectura cliente-servidor desacoplada**, separando la aplicación cliente de los servicios backend REST y WebSocket. El backend está estructurado en aplicaciones modulares, mientras que el frontend se basa en componentes independientes y patrones reactivos.
 
 ---
 
-## 🏗️ Alcance del MVP (Mínimo Producto Viable)
+## 🚀 Novedades y Logros del Sprint 4
 
-El desarrollo inicial se focaliza estrictamente en el núcleo de gestión de actividades académicas e institucionales mediante un modelo web multiplataforma responsivo.
+Durante el **Sprint 4**, el ecosistema evolucionó hacia una versión robusta y lista para producción:
 
-### ✅ Incluido en el MVP
-
-- **Gestión de Identidad y Accesos:** Inicio de sesión mediante autenticación externa OAuth (Google).
-- **Control de Permisos por Rol:** Estructuración del sistema bajo 3 roles esenciales: Administrador, Docente y Estudiante.
-- **Módulo Académico:** Altas, bajas, modificaciones y consultas de cursos y asignaturas.
-- **Flujo de Tareas:** Creación y publicación de actividades con carga de archivos adjuntos por docentes, entregas de los estudiantes y posterior revisión/retroalimentación.
-- **Interactividad en Tiempo Real:** Envío e inyección de notificaciones instantáneas de avisos o actualizaciones de estado en el dashboard mediante hilos WebSocket.
-- **Reportes:** Motor de filtrado y búsqueda avanzada para la exportación de métricas de rendimiento escolar.
-
-### 🚫 Fuera de Alcance Inicial (Mejoras Posteriores)
-
-- Calendario académico avanzado interactivo.
-- Foro de discusión institucional completo.
-- Módulo independiente y detallado con interfaz dedicada para Padres y Tutores.
+- **Seguridad y Accesos:** Autorización centralizada, revocación de tokens JWT, límite de intentos en login por DNI y recuperación de contraseñas mediante correos transaccionales en segundo plano (Brevo API).
+- **Interactividad en Tiempo Real:** Canales WebSocket autenticados mediante tickets de un solo uso para mensajería y notificaciones instantáneas segmentadas por grupos.
+- **Exportación Segura de Datos:** Motor de exportación de reportes en **PDF** (ReportLab con fuentes integradas) y **CSV** con protección OWASP contra inyección de fórmulas.
+- **Auditoría e Integridad:** Registro en bitácora (MongoDB) de eventos de dominio, y validación estricta en la carga y descarga de archivos protegidos.
+- **Calidad Continua (CI/CD):** Pipeline automatizado (GitHub Actions) con validaciones de código, escaneo de secretos (Gitleaks), y **pruebas End-to-End (E2E) con Playwright**.
+- **Despliegue en la Nube:** Migración de la infraestructura a **Render**, operando en conjunto con nuestra arquitectura de contenedores.
 
 ---
 
-## 🛠️ Stack Tecnológico Adoptado
+## 🏗️ Arquitectura de Dominio y Backend (Django & DRF)
 
-El sistema adopta una arquitectura cliente-servidor desacoplada que se interconecta eficientemente mediante servicios RESTful y WebSockets.
+El backend impone patrones consistentes de seguridad, control de acceso basado en roles (RBAC) y aislamiento de datos.
 
-| Área | Tecnología | Justificación y Uso |
-|:---|:---|:---|
-| **Frontend** | Angular | Manejo interactivo de vistas de usuario, lógica del cliente y estados rápidos. |
-| **UI Framework** | Bootstrap | Garantiza una interfaz responsive adaptable a cualquier dispositivo móvil o de escritorio. |
-| **Backend** | Django & Django REST Framework | Capa lógica de negocio robusta, control de seguridad y exposición de la API REST. |
-| **BD Relacional** | PostgreSQL | Base de datos relacional principal para persistir usuarios, roles, cursos, materias y calificaciones. |
-| **BD NoSQL** | MongoDB | Almacenamiento flexible para el historial de actividades, logs de auditoría y strings de notificaciones. |
-| **Tiempo Real** | Django Channels (WebSockets) | Inyección y recepción en tiempo real de alertas y notificaciones directamente en la UI. |
-| **Contenedores** | Docker & Docker Compose | Estandarización de ambientes para desplegar la app local con idéntica configuración entre desarrolladores. |
-| **Versionamiento** | GitHub | Control de versiones distribuido y centralización del código base. |
-| **Prototipado** | Figma | Diseño y validación visual de la experiencia de usuario (UX/UI). |
+### Identidad, Autenticación y Seguridad (`usuario`)
+- **Login por DNI y Throttling:** Autenticación personalizada utilizando el DNI en lugar del nombre de usuario. Para evitar fuerza bruta, los intentos de login aplican *throttling* hasheando el DNI con SHA-256 antes de guardarlo en caché.
+- **Flujo de Primer Ingreso:** Las cuentas nuevas se marcan obligando al usuario a cambiar la contraseña temporal generada por el sistema.
+- **Correos Transaccionales (Brevo):** Despacho asíncrono de credenciales y enlaces de recuperación. Si el correo falla, se envía una alerta urgente por MongoDB al administrador.
 
----
+### Núcleo Académico y Aula Virtual (`academico` & `aula_virtual`)
+- **Gestión Académica:** Inscripción transaccional por lotes (con límites de seguridad de 200 alumnos por lote).
+- **Visibilidad Basada en Roles:** Acceso total para administradores (incluyendo "papelera" de registros eliminados), acceso restringido a materias asignadas para docentes, y visibilidad estricta de cursado para estudiantes.
+- **Descargas Protegidas:** Los archivos se sirven a través de rutas relativas autenticadas por JWT, evitando exposición pública de URLs.
 
-## 👥 Matriz de Roles y Responsabilidades (Sprint 0)
-
-Para maximizar el aprendizaje técnico de todos los miembros del ISPC, los roles de gestión y programación son dinámicos y rotativos entre los sprints. Para este ciclo de inicio, la configuración es la siguiente:
-
-| Integrante | Rol |
-|:---|:---|
-| **Carlos Maximiliano Scarpatti Vazquez** | Product Manager (Backlog, Criterios INVEST) / Scrum Master & Líder de Proyecto |
-| **Alan Darel Marini** | Backend Developer — Diseño y codificación de API REST, seguridad y lógica de autenticación |
-| **Marcelo Portillo** | Backend Developer — Modelado relacional SQL/NoSQL, esquemas de endpoints y persistencia |
-| **Tomás Monton** | Frontend Developer — Estructuración de interfaces en Angular, estados y consumo de API |
-| **Emilio Romero** | Frontend Developer — Diseño de componentes UI, validación estricta de formularios y UX |
-| **Julio Martin** | UX/UI + DevOps — Maquetación en Figma, Dockerización multicapa del entorno y documentación técnica |
+### Tiempo Real, Mensajería y Notificaciones (MongoDB & WebSockets)
+- **Autenticación de WebSockets (`Ticket WS`):** Se implementó un sistema de tickets de un solo uso de corta duración emitidos vía REST para autorizar la conexión a Django Channels y Redis.
+- **Mensajería Aislada:** Comunicación directa privada entre un Docente y sus Estudiantes. Incluye una ventana estricta de eliminación lógica de 15 minutos para mensajes enviados y sincronización reactiva de contadores de "no leídos".
+- **Administración de Notificaciones:** Motor de avisos globales o por materia con soporte para **notificaciones programadas**. El sistema evalúa dinámicamente si una notificación está *vigente*, *vencida* o *programada* en base a la zona horaria local.
+- **Bitácora (Auditoría):** Todo evento crítico se asienta en MongoDB, indexada por actor, entidad y fecha, inspeccionable por administradores.
 
 ---
 
-## 📈 Viabilidad y Presupuesto
+## 🎨 Arquitectura Frontend (Angular 21)
 
-**Viabilidad Económica**
+La aplicación cliente (SPA) está optimizada para cargas rápidas, reactividad instantánea y enrutamiento seguro.
 
-El costo inicial estimado de desarrollo es de **$0**. El ecosistema técnico está basado estrictamente en herramientas open-source gratuitas y en capas de servicios en la nube bajo modalidad *free-tier*. El único costo potencial futuro corresponde al dominio institucional web de despliegue final (estimado entre USD 10 y USD 15 anuales).
-
-**Viabilidad Técnica**
-
-Completamente viable dado que no requiere infraestructura externa compleja. El software se desarrolla utilizando las computadoras personales del equipo, aprovechando la portabilidad que proveen los contenedores aislados de Docker.
-
----
-
-## 📈 Sistema de branch
-
-Descripción aplicada en el proyecto:
-
-https://github.com/LosDesprogramadores/PROAConecta/wiki/Sistema-de-branching
+- **Manejo de Estado con Señales:** Adopción profunda de Angular Signals (`signal`, `computed`) para el estado reactivo en `AuthService`, `MensajesEstadoService` (sincronización optimista de contadores) y `ToastService`.
+- **Enrutamiento y Carga Diferida:** Estructurado bajo `MainLayout` (público), `DashboardLayout` (paneles) y `MateriasLayout` (`/view-materia/:id`).
+- **Formularios Dinámicos y Cascada:** Uso de `NonNullableFormBuilder` con selectores en cascada (ej. seleccionar una materia habilita dinámicamente la lista de destinatarios permitidos).
+- **Guardianes de Seguridad (Guards):** `authGuard`, `roleGuard`, y `welcomeRedirectGuard` controlan el acceso evitando la escalada de privilegios.
 
 ---
 
-## 🚀 Comenzando: Guía de Levantamiento Local
+## ⚙️ Infraestructura, Docker y CI/CD
 
-Seguí minuciosamente los pasos detallados a continuación para clonar el proyecto y levantar el ecosistema completo (Frontend, Backend, PostgreSQL y MongoDB) de manera automatizada.
+El ecosistema está completamente automatizado, desde el desarrollo local hasta la validación en la nube.
 
-### 📋 Prerrequisitos
+### Contenedorización y Proxy Inverso (Nginx)
+- **Multi-stage Build:** El frontend utiliza un `Dockerfile` en dos etapas (compilación en Node.js y servido estático en Alpine Nginx).
+- **Enrutamiento Nginx (`nginx.conf`):** Configurado como proxy inverso, redirige el tráfico API (`/api/`) a Django, el tráfico de WebSockets (`/ws/`) a Channels, bloquea el acceso directo a la carpeta `/media/` y maneja el *fallback* del enrutador SPA de Angular (`index.html`).
 
-Asegurate de contar con el siguiente software instalado de forma nativa:
+### Orquestación Local y Pruebas de Humo
+- **Docker Compose:** Orquesta 6 servicios integrados: `db` (PostgreSQL), `mongo` (MongoDB), `redis`, `backend` (Django), `programador` (cron de notificaciones) y `frontend` (Nginx).
+- **Scripts Operativos (`scripts/`):** Utilidades Bash para backups consistentes (`pg_dump` y `mongodump`), parseo seguro de URLs, y un riguroso test de humo (`smoke-compose.sh`) que verifica el handshake de WebSockets.
 
+### Pipeline de Integración Continua (GitHub Actions)
+Definido en `ci.yml`, ejecuta paralelamente:
+- **Backend:** `pytest` con bases de datos en memoria, análisis estático con `Ruff` y auditoría de vulnerabilidades con `pip-audit`.
+- **Frontend:** `Vitest` para pruebas de componentes aislados, validación de linting con `ESLint` y auditoría de NPM.
+- **E2E (Playwright):** Levanta un entorno Docker aislado (`docker-compose.e2e.yml`) con **Mailpit** para interceptar correos. Ejecuta flujos críticos (login, bloqueo por intentos, envío de mensajes, corrección de entregas, descarga de boletines en PDF).
+- **Seguridad:** Escaneo de secretos histórico y diferencial mediante `Gitleaks` y gestión automática de dependencias con `Dependabot`.
+
+---
+
+## 📖 Glosario de Términos (Dominio Core)
+
+Para facilitar la comprensión del código y las reglas de negocio, se definen los siguientes términos:
+
+- **Persona / Usuario:** `Persona` almacena datos reales e identificatorios (DNI, Nombre). `Usuario` maneja las credenciales y el estado de la sesión.
+- **DNI:** Documento Nacional de Identidad, utilizado como identificador principal (username) para el login.
+- **Soft Delete / fecha_baja:** Patrón de eliminación lógica. Los registros críticos no se borran de la base de datos (SQL DELETE), sino que se les asigna una fecha en el campo `fecha_baja`.
+- **Papelera:** Estado de los registros que poseen `fecha_baja`. Los administradores pueden visualizar estos registros enviando el parámetro `papelera=true`.
+- **Inscripción:** Entidad que vincula a un estudiante con una materia, controlando su estado académico (*Cursando, Regular, Promocionado, Libre, Baja*).
+- **Ticket WS:** Token de un solo uso y corta duración generado vía API REST para autenticar de manera segura las conexiones de WebSockets en el frontend sin exponer el JWT en la URL.
+- **Bitácora:** Registro inmutable almacenado en MongoDB que actúa como log de auditoría para rastrear todas las acciones críticas realizadas por los usuarios en el sistema.
+- **Seguimiento:** Tablero de control que agrupa a todos los alumnos de una materia y su estado en las distintas actividades (Entregado, Pendiente, No Entregado, Fuera de Término, Corregido).
+
+---
+
+## 🚀 Empezar y Desarrollo Local
+
+**Prerrequisitos:**
 - [Git CLI](https://git-scm.com/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (debe incluir el binario de `docker-compose`)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) 
 
-### 🔧 Instalación y Despliegue
-
-**1. Clonar el repositorio oficial:**
+### 1. Clonar el repositorio y configurar el entorno
 
 ```bash
-git clone https://github.com/LosDesprogramadores/PROAConecta
-cd proa-conecta
+git clone [https://github.com/LosDesprogramadores/PROAConecta](https://github.com/LosDesprogramadores/PROAConecta)
+cd PROAConecta
+cp backend/.env.example backend/.env
+
+Asegúrate de definir tu variable `SEED_DEMO_PASSWORD` en el `.env` (mínimo 8 caracteres) y verificar que `DJANGO_SETTINGS_MODULE=proa.settings.dev`.
+
 ```
 
-**2. Levantar todos los servicios con Docker Compose:**
+### 2. Levantar la infraestructura
 
 ```bash
-docker-compose up --build
+docker compose up -d --build --wait
 ```
 
-**3. Realizar las migraciones pendientes:**
+### 3. Migraciones y Siembra de Datos
 
 ```bash
-docker compose exec backend python manage.py makemigrations
 docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py seed_demo --actualizar-claves
 ```
+### 4. Accesos Locales
 
-Una vez completado el proceso, los servicios estarán disponibles en sus respectivos puertos locales según la configuración definida en el archivo `docker-compose.yml`.
+- **Frontend:** `http://localhost:4200`
+- **Backend API:** `http://localhost:8000/api/`
+- **Mailpit (Catcher de correos locales):** `http://localhost:8025/` *(si se usa la pila E2E)*
 
-Los usuarios cargados de prueba son:
-
-Rol 1- Administrador Ana Gomez: 
-DNI(username): 12345678
-PASS: 12345678
-
-Rol 2- Docente Alan Profesor:
-DNI(username): 35785659
-PASS: 35785659
-
-Rol 3- Estudiante Julio Estudiante:
-DNI(username): 333111333
-PASS: 333111333
+Las credenciales de prueba utilizan el **DNI** como usuario y la contraseña de `SEED_DEMO_PASSWORD`:
+- **Administrador:** 10000001
+- **Profesor:** 20000001
+- **Estudiante:** 30000001
