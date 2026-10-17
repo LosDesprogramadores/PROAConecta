@@ -122,8 +122,6 @@ git clone [https://github.com/LosDesprogramadores/PROAConecta](https://github.co
 cd PROAConecta
 cp backend/.env.example backend/.env
 
-Asegúrate de definir tu variable `SEED_DEMO_PASSWORD` en el `.env` (mínimo 8 caracteres) y verificar que `DJANGO_SETTINGS_MODULE=proa.settings.dev`.
-
 ```
 
 ### 2. Levantar la infraestructura
@@ -132,19 +130,13 @@ Asegúrate de definir tu variable `SEED_DEMO_PASSWORD` en el `.env` (mínimo 8 c
 docker compose up -d --build --wait
 ```
 
-### 3. Migraciones y Siembra de Datos
-
-```bash
-docker compose exec backend python manage.py migrate
-docker compose exec backend python manage.py seed_demo --actualizar-claves
-```
-### 4. Accesos Locales
+### 3. Accesos Locales
 
 - **Frontend:** `http://localhost:4200`
 - **Backend API:** `http://localhost:8000/api/`
 - **Mailpit (Catcher de correos locales):** `http://localhost:8025/` *(si se usa la pila E2E)*
 
-Las credenciales de prueba utilizan el **DNI** como usuario y la contraseña de `SEED_DEMO_PASSWORD`:
+Las credenciales de prueba utilizan el **DNI** como usuario y la contraseña de `12345678` para cualquier usuario:
 - **Administrador:** 10000001
 - **Profesor:** 20000001
 - **Estudiante:** 30000001
