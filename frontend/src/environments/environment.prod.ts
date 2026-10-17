@@ -3,6 +3,6 @@ const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
 
 export const environment = {
     production: true,
-    apiUrl: 'https://proaconecta-backend.onrender.com/api/',
-    wsUrl: 'ws://proaconecta-backend.onrender.com/ws/notificaciones/',
+    apiUrl: 'http://localhost:8000/api/',
+    wsUrl: 'ws://localhost:8000/ws/notificaciones/',
 };

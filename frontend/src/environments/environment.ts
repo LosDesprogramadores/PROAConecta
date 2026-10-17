@@ -1,5 +1,5 @@
 export const environment = {
     production: false,
-    apiUrl: 'https://proaconecta-backend.onrender.com/api/',
-    wsUrl: 'ws://proaconecta-backend.onrender.com/ws/notificaciones/',
+    apiUrl: 'http://localhost:8000/api/',
+    wsUrl: 'ws://localhost:8000/ws/notificaciones/',
 };
