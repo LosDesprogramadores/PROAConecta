@@ -28,22 +28,49 @@ El formato sigue una estructura basada en [Keep a Changelog](https://keepachange
 
 #### Gestión Académica y Evaluaciones (Docente)
 - **Carga de actividades y material:** Capacidades extendidas para que el docente adjunte material didáctico a las actividades planteadas.
-- **Gestión de entregas:** Módulo de recepción de entregas de alumnos en tiempo real
+- **Gestión de entregas:** Módulo de recepción de entregas de alumnos en tiempo real.
+- **Ciclo de evaluación:** Herramientas para el cierre de actividades, asignación de calificaciones y retroalimentación (*devolución*) individual.
+
+#### Experiencia del Alumno
+- **Panel de inscripciones:** Visualización unificada de las actividades correspondientes a las materias en las que el alumno está inscripto.
+- **Calendario académico interactivo:** Vista de calendario para el seguimiento de fechas límite y recordatorio de entregas pendientes.
+
+#### Despliegue y Calidad de Software (QA)
+- **Deployment:** Despliegue del entorno de Frontend en servidor/plataforma de producción.
+- **Estrategia de testing:** Incorporación y ejecución de suites de pruebas funcionales manuales y pruebas automatizadas (E2E / Unitarias) para validar flujos críticos.
+
+### Changed
+
+- Consolidación de la arquitectura global del sistema permitiendo la integración completa del flujo educativo (Inscripción → Cursada → Entrega → Evaluación).
+- Optimización de los tiempos de respuesta e integración entre las vistas de Angular deployadas y la API del backend.
+
+### Fixed
+
+- Corrección de bugs menores reportados durante la ejecución de las suites de pruebas automatizadas y manuales sobre los módulos de entregas y autenticación.
+- Ajustes en el flujo de envío de correos electrónicos para evitar bloqueos y asegurar la recepción correcta en bandeja de entrada.
+
+### Known Issues & Deuda Técnica
+
+- **Errores residuales:** Existen fallos menores en casos de borde (*edge cases*) y detalles estéticos que quedan identificados y documentados para futuras iteraciones o versiones de mantenimiento.
+- **Optimizaciones de rendimiento:** Se identificaron oportunidades de mejora en la carga inicial de componentes pesados en el frontend y en la consulta de historiales de mensajes largos.
+- **Modelos en MongoDB:** Pendiente profundizar en la migración completa de esquemas dinámicos para auditoría y logs en producciones futuras.
+
+---
 
 ## [0.2.0-alpha] - Septiembre 2026
 
 ### Added
 
 #### Base de datos y arquitectura
-- Configuración de la conexión con MongoDB y verificación exitosa de su funcionamiento dentro del entorno.
+- Configuración de la conexión con **MongoDB** y verificación exitosa de su funcionamiento dentro del entorno.
 
 #### Gestión de materias y contenidos
-- Implementación de endpoints en el backend para la gestión de Unidades.
-- Integración de vistas en Angular para mostrar las materias asignadas según el perfil del usuario.
+- Implementación de endpoints en el backend para la gestión de **Unidades**.
+- Integración de vistas en Angular para mostrar las **materias asignadas** según el perfil del usuario.
 - Visualización detallada de cada materia con sus respectivas unidades, material de estudio asociado y material general.
 
 #### Interfaz de usuario y feedback (UI/UX)
-- Implementación de un sistema centralizado de notificaciones flotantes (Toast) para feedback general en la aplicación.
+- Implementación de un sistema centralizado de **notificaciones flotantes (*Toast*)** para feedback general en la aplicación.
 - Rediseño y actualización estética en el formato de presentación del perfil docente.
 
 ### Changed
@@ -57,8 +84,8 @@ El formato sigue una estructura basada en [Keep a Changelog](https://keepachange
 
 ### Work in Progress / Known Issues
 
-- Modelos en MongoDB: La conexión y pruebas iniciales con MongoDB quedaron listas, pero la definición y migración de modelos queda pendiente para el próximo sprint.
-- Notificaciones del sistema: Se inició el desarrollo de la sección/módulo de Notificaciones, pero su implementación aún no está completa.
+- **Modelos en MongoDB:** La conexión y pruebas iniciales con MongoDB quedaron listas, pero la definición y migración de modelos queda pendiente para el próximo sprint.
+- **Notificaciones del sistema:** Se inició el desarrollo de la sección/módulo de Notificaciones, pero su implementación aún no está completa.
 - Se continúa trabajando en la consolidación de la integración entre los servicios del backend y las vistas dinámicas del frontend.
 
 ---
