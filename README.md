@@ -121,7 +121,7 @@ Para facilitar la comprensión del código y las reglas de negocio, se definen l
 git clone [https://github.com/LosDesprogramadores/PROAConecta](https://github.com/LosDesprogramadores/PROAConecta)
 cd PROAConecta
 cp backend/.env.example backend/.env
-
+Copiar contenido del env enviado a la catedra
 ```
 
 ### 2. Levantar la infraestructura
