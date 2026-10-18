@@ -1,4 +1,4 @@
-# Changelog
+# Changelog Proyecto PROA Conecta
 
 Todos los cambios relevantes de PROA Conecta se documentarán en este archivo.
 
@@ -14,6 +14,21 @@ El formato sigue una estructura basada en [Keep a Changelog](https://keepachange
 ### Removed
 
 ---
+
+## [1.0.0-beta] - Octubre 2026
+
+### Added
+
+#### Comunicación y Notificaciones
+- **Mensajería privada:** Implementación del módulo de mensajes directos para la comunicación entre usuarios.
+- **Anuncios académicos:** Canal de comunicación institucional para la publicación y difusión de avisos generales y por materia.
+- **Servicio de correo electrónico (Mailing):**
+  - Implementación del flujo de recuperación de contraseña vía correo electrónico (*Forgot Password*).
+  - Envío automático de credenciales iniciales (contraseña genérica) al registrar un nuevo usuario para su primer acceso.
+
+#### Gestión Académica y Evaluaciones (Docente)
+- **Carga de actividades y material:** Capacidades extendidas para que el docente adjunte material didáctico a las actividades planteadas.
+- **Gestión de entregas:** Módulo de recepción de entregas de alumnos en tiempo real
 
 ## [0.2.0-alpha] - Septiembre 2026
 
