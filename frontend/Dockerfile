@@ -7,7 +7,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build -- --configuration production
+RUN npm run build -- --configuration development
 
 FROM nginx:stable-alpine
 
