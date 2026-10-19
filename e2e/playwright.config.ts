@@ -17,12 +17,14 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: process.env.CI
     ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
-    : [['list']],
+    : [['list'], ['html', { outputFolder: 'playwright-report' }]], // Habilitado también en local para ver los reportes con evidencias fácilmente
   use: {
     baseURL,
     locale: 'es-AR',
-    trace: 'on-first-retry',
+    // Evidencias configuradas para capturar trazas, screenshots y videos ante fallos
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure', // Añadido para asegurar la grabación de video en caso de fallos
   },
   projects: [
     // Logs in once per role and stores the session (see auth.setup.ts)

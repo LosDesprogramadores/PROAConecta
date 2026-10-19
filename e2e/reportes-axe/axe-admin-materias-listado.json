@@ -1,7 +1,7 @@
 {
   "pantalla": "admin-materias-listado",
   "url": "http://localhost:4200/dashboard-admin/materias",
-  "timestamp": "2026-10-19T07:49:11.809Z",
+  "timestamp": "2026-10-19T08:46:17.377Z",
   "totalViolaciones": 1,
   "violacionesCriticasOSerias": 1,
   "detalleViolaciones": [

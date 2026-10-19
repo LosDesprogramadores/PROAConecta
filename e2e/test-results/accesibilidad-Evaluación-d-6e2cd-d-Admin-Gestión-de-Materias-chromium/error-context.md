@@ -155,7 +155,7 @@ expect(received).toEqual(expected) // deep equality
                 - button "Editar" [ref=e71] [cursor=pointer]
                 - button "Eliminar" [ref=e72] [cursor=pointer]
           - row [ref=e73]:
-            - cell "Materia E2E 1792394925679-277" [ref=e74]
+            - cell "Materia E2E 1792398422574-147" [ref=e74]
             - cell "2do B" [ref=e75]
             - cell "2026" [ref=e77]
             - cell "—" [ref=e78]
@@ -166,8 +166,32 @@ expect(received).toEqual(expected) // deep equality
                 - button "Inscribir" [ref=e83] [cursor=pointer]
                 - button "Editar" [ref=e84] [cursor=pointer]
                 - button "Eliminar" [ref=e85] [cursor=pointer]
-    - button "Información del sitio" [ref=e87]:
-      - generic [ref=e88]: "?"
+          - row [ref=e86]:
+            - cell "Materia E2E 1792398631277-566" [ref=e87]
+            - cell "2do B" [ref=e88]
+            - cell "2026" [ref=e90]
+            - cell "—" [ref=e91]
+            - cell [ref=e92]:
+              - generic [ref=e93]:
+                - button "Consultar" [ref=e94] [cursor=pointer]
+                - button "Asignar" [ref=e95] [cursor=pointer]
+                - button "Inscribir" [ref=e96] [cursor=pointer]
+                - button "Editar" [ref=e97] [cursor=pointer]
+                - button "Eliminar" [ref=e98] [cursor=pointer]
+          - row [ref=e99]:
+            - cell "Materia E2E 1792398978673-766" [ref=e100]
+            - cell "2do B" [ref=e101]
+            - cell "2026" [ref=e103]
+            - cell "—" [ref=e104]
+            - cell [ref=e105]:
+              - generic [ref=e106]:
+                - button "Consultar" [ref=e107] [cursor=pointer]
+                - button "Asignar" [ref=e108] [cursor=pointer]
+                - button "Inscribir" [ref=e109] [cursor=pointer]
+                - button "Editar" [ref=e110] [cursor=pointer]
+                - button "Eliminar" [ref=e111] [cursor=pointer]
+    - button "Información del sitio" [ref=e113]:
+      - generic [ref=e114]: "?"
   - generic:
     - complementary
 ```

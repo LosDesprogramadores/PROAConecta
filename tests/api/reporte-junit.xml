@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="PROAConecta API" tests="7" time="0.292">
-  <testsuite name="0. Autenticación / POST Login" id="9ea0d4bc-7a77-44cc-9990-2e9e98c7c080" timestamp="2026-10-19T07:48:38.234Z" tests="2" failures="0" errors="0" time="0.197">
-    <testcase name="Status code es 200" time="0.197" classname="0AutenticacionPostLogin"/>
-    <testcase name="Guarda el token en variables" time="0.197" classname="0AutenticacionPostLogin"/>
+<testsuites name="PROAConecta API" tests="7" time="0.283">
+  <testsuite name="0. Autenticación / POST Login" id="a795b77f-e11f-4213-a234-a682f9a454fa" timestamp="2026-10-19T08:45:31.202Z" tests="2" failures="0" errors="0" time="0.194">
+    <testcase name="Status code es 200" time="0.194" classname="0AutenticacionPostLogin"/>
+    <testcase name="Guarda el token en variables" time="0.194" classname="0AutenticacionPostLogin"/>
   </testsuite>
-  <testsuite name="1. Notificaciones (Flujo CRUD) / 1. POST Crear Notificacion" id="0dede836-27f3-4fb7-9499-6a25f0edef85" timestamp="2026-10-19T07:48:38.234Z" tests="2" failures="0" errors="0" time="0.020">
-    <testcase name="Status code es 201 Created" time="0.020" classname="1NotificacionesFlujoCrud1PostCrearNotificacion"/>
-    <testcase name="El body tiene id y lo guarda" time="0.020" classname="1NotificacionesFlujoCrud1PostCrearNotificacion"/>
+  <testsuite name="1. Notificaciones (Flujo CRUD) / 1. POST Crear Notificacion" id="6024a040-ea82-4144-9d50-eb0c6d91dfc3" timestamp="2026-10-19T08:45:31.202Z" tests="2" failures="0" errors="0" time="0.018">
+    <testcase name="Status code es 201 Created" time="0.018" classname="1NotificacionesFlujoCrud1PostCrearNotificacion"/>
+    <testcase name="El body tiene id y lo guarda" time="0.018" classname="1NotificacionesFlujoCrud1PostCrearNotificacion"/>
   </testsuite>
-  <testsuite name="1. Notificaciones (Flujo CRUD) / 2. POST Payload Inválido (Negativa 400)" id="15b613fe-d946-4d2e-87dd-689c6dad5b61" timestamp="2026-10-19T07:48:38.234Z" tests="1" failures="0" errors="0" time="0.016">
-    <testcase name="Status code es 400 Bad Request" time="0.016" classname="1NotificacionesFlujoCrud2PostPayloadInvalidoNegativa400"/>
+  <testsuite name="1. Notificaciones (Flujo CRUD) / 2. POST Payload Inválido (Negativa 400)" id="ac468f8e-6485-4755-86e7-2427d12570a4" timestamp="2026-10-19T08:45:31.202Z" tests="1" failures="0" errors="0" time="0.015">
+    <testcase name="Status code es 400 Bad Request" time="0.015" classname="1NotificacionesFlujoCrud2PostPayloadInvalidoNegativa400"/>
   </testsuite>
-  <testsuite name="1. Notificaciones (Flujo CRUD) / 3. GET Listar Notificaciones" id="acd3ffd5-438a-43a8-bbe9-bccbc1a9882b" timestamp="2026-10-19T07:48:38.234Z" tests="2" failures="0" errors="0" time="0.022">
-    <testcase name="Status code es 200" time="0.022" classname="1NotificacionesFlujoCrud3GetListarNotificaciones"/>
-    <testcase name="El listado contiene la notificacion creada" time="0.022" classname="1NotificacionesFlujoCrud3GetListarNotificaciones"/>
+  <testsuite name="1. Notificaciones (Flujo CRUD) / 3. GET Listar Notificaciones" id="04f14c18-d2fe-4806-aa4e-73a75dcc4c7a" timestamp="2026-10-19T08:45:31.202Z" tests="2" failures="0" errors="0" time="0.019">
+    <testcase name="Status code es 200" time="0.019" classname="1NotificacionesFlujoCrud3GetListarNotificaciones"/>
+    <testcase name="El listado contiene la notificacion creada" time="0.019" classname="1NotificacionesFlujoCrud3GetListarNotificaciones"/>
   </testsuite>
-  <testsuite name="1. Notificaciones (Flujo CRUD) / 4. GET Sin Token (Negativa 401)" id="3d15ea66-1679-400d-9db2-b0234320c8a3" timestamp="2026-10-19T07:48:38.234Z" tests="1" failures="0" errors="0" time="0.004">
-    <testcase name="Status code es 401 Unauthorized" time="0.004" classname="1NotificacionesFlujoCrud4GetSinTokenNegativa401"/>
+  <testsuite name="1. Notificaciones (Flujo CRUD) / 4. GET Sin Token (Negativa 401)" id="742948c3-d8ad-4c87-a4df-1462f1b9a3c5" timestamp="2026-10-19T08:45:31.202Z" tests="1" failures="0" errors="0" time="0.005">
+    <testcase name="Status code es 401 Unauthorized" time="0.005" classname="1NotificacionesFlujoCrud4GetSinTokenNegativa401"/>
   </testsuite>
-  <testsuite name="1. Notificaciones (Flujo CRUD) / 5. PUT Actualizar Notificacion" id="8e9f8ac6-4c72-40fd-b966-fe2053c0b2e2" timestamp="2026-10-19T07:48:38.234Z" tests="1" failures="0" errors="0" time="0.017">
-    <testcase name="Status code es 200" time="0.017" classname="1NotificacionesFlujoCrud5PutActualizarNotificacion"/>
+  <testsuite name="1. Notificaciones (Flujo CRUD) / 5. PUT Actualizar Notificacion" id="069f5baf-190f-4182-b8cb-8d8df0a42634" timestamp="2026-10-19T08:45:31.202Z" tests="1" failures="0" errors="0" time="0.016">
+    <testcase name="Status code es 200" time="0.016" classname="1NotificacionesFlujoCrud5PutActualizarNotificacion"/>
   </testsuite>
-  <testsuite name="1. Notificaciones (Flujo CRUD) / 6. DELETE Borrar Notificacion" id="84af459c-bfd1-43a5-98a1-8b45c07f7de6" timestamp="2026-10-19T07:48:38.234Z" tests="1" failures="0" errors="0" time="0.016">
+  <testsuite name="1. Notificaciones (Flujo CRUD) / 6. DELETE Borrar Notificacion" id="cc8b6a9d-ef54-443b-824f-f72716fce399" timestamp="2026-10-19T08:45:31.202Z" tests="1" failures="0" errors="0" time="0.016">
     <testcase name="Status code es 200" time="0.016" classname="1NotificacionesFlujoCrud6DeleteBorrarNotificacion"/>
   </testsuite>
 </testsuites>

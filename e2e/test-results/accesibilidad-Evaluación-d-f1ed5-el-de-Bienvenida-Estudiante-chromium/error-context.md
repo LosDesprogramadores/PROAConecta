@@ -58,7 +58,7 @@ Error: expect(received).toEqual(expected) // deep equality
 +         "impact": "serious",
 +         "none": Array [],
 +         "target": Array [
-+           ".bg-red-300 > .mt-1.text-slate-600.font-medium",
++           ".bg-red-300 > .mt-1.font-medium.text-slate-600",
 +         ],
 +       },
 +       Object {
@@ -93,7 +93,7 @@ Error: expect(received).toEqual(expected) // deep equality
 +         "impact": "serious",
 +         "none": Array [],
 +         "target": Array [
-+           ".bg-blue-300 > .mt-1.text-slate-600.font-medium",
++           ".bg-blue-300 > .mt-1.font-medium.text-slate-600",
 +         ],
 +       },
 +     ],
@@ -132,58 +132,86 @@ Error: expect(received).toEqual(expected) // deep equality
                 - generic:
                   - generic: Mensajes
                   - generic:
-                    - link "Profesor, Pablo Hilo inline E2E 1792394932974-809 19/10/26, 4:28 a. m.":
+                    - link "Profesor, Pablo Hilo inline E2E 1792398987769-4624 19/10/26, 5:36 a. m.":
                       - /url: /dashboard/mensajes
                       - generic [aria-hidden]: P
                       - generic:
                         - paragraph: Profesor, Pablo
-                        - paragraph: Hilo inline E2E 1792394932974-809
-                        - text: 19/10/26, 4:28 a. m.
-                    - link "Profesor, Pablo Hilo E2E 1792394930423-5559 19/10/26, 4:28 a. m.":
+                        - paragraph: Hilo inline E2E 1792398987769-4624
+                        - text: 19/10/26, 5:36 a. m.
+                    - link "Profesor, Pablo Hilo E2E 1792398984806-5716 19/10/26, 5:36 a. m.":
                       - /url: /dashboard/mensajes
                       - generic [aria-hidden]: P
                       - generic:
                         - paragraph: Profesor, Pablo
-                        - paragraph: Hilo E2E 1792394930423-5559
-                        - text: 19/10/26, 4:28 a. m.
-                    - link "Profesor, Pablo Consulta E2E 1792394930817 19/10/26, 4:28 a. m.":
+                        - paragraph: Hilo E2E 1792398984806-5716
+                        - text: 19/10/26, 5:36 a. m.
+                    - link "Profesor, Pablo Consulta E2E 1792398985085 19/10/26, 5:36 a. m.":
                       - /url: /dashboard/mensajes
                       - generic [aria-hidden]: P
                       - generic:
                         - paragraph: Profesor, Pablo
-                        - paragraph: Consulta E2E 1792394930817
-                        - text: 19/10/26, 4:28 a. m.
+                        - paragraph: Consulta E2E 1792398985085
+                        - text: 19/10/26, 5:36 a. m.
+                    - link "Profesor, Pablo Hilo inline E2E 1792398640841-5659 19/10/26, 5:30 a. m.":
+                      - /url: /dashboard/mensajes
+                      - generic [aria-hidden]: P
+                      - generic:
+                        - paragraph: Profesor, Pablo
+                        - paragraph: Hilo inline E2E 1792398640841-5659
+                        - text: 19/10/26, 5:30 a. m.
+                    - link "Profesor, Pablo Hilo E2E 1792398637825-5258 19/10/26, 5:30 a. m.":
+                      - /url: /dashboard/mensajes
+                      - generic [aria-hidden]: P
+                      - generic:
+                        - paragraph: Profesor, Pablo
+                        - paragraph: Hilo E2E 1792398637825-5258
+                        - text: 19/10/26, 5:30 a. m.
                   - generic:
                     - link "Ver todos los mensajes":
                       - /url: /dashboard/mensajes
               - generic [ref=e19]:
-                - button "Notificaciones, 3 sin leer" [ref=e20]:
-                  - generic [ref=e23]: "3"
+                - button "Notificaciones, 9 sin leer" [ref=e20]:
+                  - generic [ref=e23]: "9"
                 - generic:
                   - generic:
                     - generic: Notificaciones
-                    - generic: 3 sin leer
+                    - generic: 9 sin leer
                   - generic:
                     - generic:
                       - generic:
-                        - paragraph: Aviso control E2E 1792394929105-494
+                        - paragraph: Aviso control E2E 1792398983277-1674
                         - paragraph: Aviso creado por la prueba end-to-end.
                         - generic:
-                          - generic: 19/10/26, 7:28 a. m.
+                          - generic: 19/10/26, 8:36 a. m.
                           - button "Marcar como leída"
                     - generic:
                       - generic:
-                        - paragraph: Aviso vigente E2E 1792394927754-8847
+                        - paragraph: Aviso vigente E2E 1792398981704-7401
                         - paragraph: Aviso creado por la prueba end-to-end.
                         - generic:
-                          - generic: 19/10/26, 7:28 a. m.
+                          - generic: 19/10/26, 8:36 a. m.
                           - button "Marcar como leída"
                     - generic:
                       - generic:
-                        - paragraph: Aviso E2E 1792394927387
+                        - paragraph: Aviso E2E 1792398981169
                         - paragraph: Mensaje de prueba end-to-end.
                         - generic:
-                          - generic: 19/10/26, 7:28 a. m.
+                          - generic: 19/10/26, 8:36 a. m.
+                          - button "Marcar como leída"
+                    - generic:
+                      - generic:
+                        - paragraph: Aviso control E2E 1792398635386-6860
+                        - paragraph: Aviso creado por la prueba end-to-end.
+                        - generic:
+                          - generic: 19/10/26, 8:30 a. m.
+                          - button "Marcar como leída"
+                    - generic:
+                      - generic:
+                        - paragraph: Aviso E2E 1792398633938
+                        - paragraph: Mensaje de prueba end-to-end.
+                        - generic:
+                          - generic: 19/10/26, 8:30 a. m.
                           - button "Marcar como leída"
                   - generic:
                     - link "Ver todas las notificaciones":
@@ -238,9 +266,9 @@ Error: expect(received).toEqual(expected) // deep equality
                 - generic [ref=e75]:
                   - generic [ref=e76]: GENERAL
                   - generic [ref=e78]: 19/10/2026
-                - heading "Aviso control E2E 1792394929105-494" [level=4] [ref=e84]
+                - heading "Aviso control E2E 1792398983277-1674" [level=4] [ref=e84]
                 - paragraph [ref=e85]: Aviso creado por la prueba end-to-end.
-              - 'button "Ver novedad: Aviso control E2E 1792394929105-494" [ref=e86]'
+              - 'button "Ver novedad: Aviso control E2E 1792398983277-1674" [ref=e86]'
           - generic [ref=e90]:
             - heading "Próximas entregas" [level=3] [ref=e91]
             - generic [ref=e92]:
@@ -294,18 +322,18 @@ Error: expect(received).toEqual(expected) // deep equality
                   - row [ref=e196]:
                     - gridcell "25" [ref=e197]
                     - gridcell "26" [ref=e200] [cursor=pointer]
-                    - gridcell "27" [ref=e205]
-                    - gridcell "28" [ref=e208]
-                    - gridcell "29" [ref=e211]
-                    - gridcell "30" [ref=e214]
-                    - gridcell "31" [ref=e217]
-              - generic [ref=e220]:
-                - generic [ref=e221]:
-                  - generic [ref=e222]: 19 de octubre
-                  - generic [ref=e223]: 0 entregas
-                - paragraph [ref=e224]: Sin entregas para este día.
-    - button "Información del sitio" [ref=e226]:
-      - generic [ref=e227]: "?"
+                    - gridcell "27" [ref=e207]
+                    - gridcell "28" [ref=e210]
+                    - gridcell "29" [ref=e213]
+                    - gridcell "30" [ref=e216]
+                    - gridcell "31" [ref=e219]
+              - generic [ref=e222]:
+                - generic [ref=e223]:
+                  - generic [ref=e224]: 19 de octubre
+                  - generic [ref=e225]: 0 entregas
+                - paragraph [ref=e226]: Sin entregas para este día.
+    - button "Información del sitio" [ref=e228]:
+      - generic [ref=e229]: "?"
   - generic:
     - complementary
 ```

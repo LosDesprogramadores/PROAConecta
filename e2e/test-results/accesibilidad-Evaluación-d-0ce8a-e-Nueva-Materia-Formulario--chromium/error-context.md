@@ -153,7 +153,7 @@ Error: expect(received).toEqual(expected) // deep equality
                 - button "Editar" [ref=e71] [cursor=pointer]
                 - button "Eliminar" [ref=e72] [cursor=pointer]
           - row [ref=e73]:
-            - cell "Materia E2E 1792394925679-277" [ref=e74]
+            - cell "Materia E2E 1792398422574-147" [ref=e74]
             - cell "2do B" [ref=e75]
             - cell "2026" [ref=e77]
             - cell "—" [ref=e78]
@@ -165,7 +165,7 @@ Error: expect(received).toEqual(expected) // deep equality
                 - button "Editar" [ref=e84] [cursor=pointer]
                 - button "Eliminar" [ref=e85] [cursor=pointer]
           - row [ref=e86]:
-            - cell "Materia E2E 1792396151881-652" [ref=e87]
+            - cell "Materia E2E 1792398631277-566" [ref=e87]
             - cell "2do B" [ref=e88]
             - cell "2026" [ref=e90]
             - cell "—" [ref=e91]
@@ -176,40 +176,64 @@ Error: expect(received).toEqual(expected) // deep equality
                 - button "Inscribir" [ref=e96] [cursor=pointer]
                 - button "Editar" [ref=e97] [cursor=pointer]
                 - button "Eliminar" [ref=e98] [cursor=pointer]
-      - dialog [ref=e101]:
-        - generic [ref=e102]:
-          - heading "Registrar Nueva Materia" [level=2] [ref=e104]
-          - button "Cerrar" [active] [ref=e105] [cursor=pointer]: ✕
-        - generic [ref=e107]:
-          - generic [ref=e108]:
-            - generic [ref=e109]: Título de la materia *
-            - textbox "Título de la materia *" [ref=e110]:
+          - row [ref=e99]:
+            - cell "Materia E2E 1792398978673-766" [ref=e100]
+            - cell "2do B" [ref=e101]
+            - cell "2026" [ref=e103]
+            - cell "—" [ref=e104]
+            - cell [ref=e105]:
+              - generic [ref=e106]:
+                - button "Consultar" [ref=e107] [cursor=pointer]
+                - button "Asignar" [ref=e108] [cursor=pointer]
+                - button "Inscribir" [ref=e109] [cursor=pointer]
+                - button "Editar" [ref=e110] [cursor=pointer]
+                - button "Eliminar" [ref=e111] [cursor=pointer]
+          - row [ref=e112]:
+            - cell "Materia E2E 1792399577401-6" [ref=e113]
+            - cell "2do B" [ref=e114]
+            - cell "2026" [ref=e116]
+            - cell "—" [ref=e117]
+            - cell [ref=e118]:
+              - generic [ref=e119]:
+                - button "Consultar" [ref=e120] [cursor=pointer]
+                - button "Asignar" [ref=e121] [cursor=pointer]
+                - button "Inscribir" [ref=e122] [cursor=pointer]
+                - button "Editar" [ref=e123] [cursor=pointer]
+                - button "Eliminar" [ref=e124] [cursor=pointer]
+      - dialog [ref=e127]:
+        - generic [ref=e128]:
+          - heading "Registrar Nueva Materia" [level=2] [ref=e130]
+          - button "Cerrar" [active] [ref=e131] [cursor=pointer]: ✕
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e135]: Título de la materia *
+            - textbox "Título de la materia *" [ref=e136]:
               - /placeholder: "Ej: Desarrollo de Sistemas"
-          - generic [ref=e111]:
-            - generic [ref=e112]:
-              - generic [ref=e113]: Curso *
-              - textbox "Curso *" [ref=e114]:
+          - generic [ref=e137]:
+            - generic [ref=e138]:
+              - generic [ref=e139]: Curso *
+              - textbox "Curso *" [ref=e140]:
                 - /placeholder: "Ej: 1ro A"
-            - generic [ref=e115]:
-              - generic [ref=e116]: Año Lectivo *
-              - spinbutton "Año Lectivo *" [ref=e117]: "2026"
-          - generic [ref=e118]:
-            - generic [ref=e119]: Descripción
-            - textbox "Descripción" [ref=e120]:
+            - generic [ref=e141]:
+              - generic [ref=e142]: Año Lectivo *
+              - spinbutton "Año Lectivo *" [ref=e143]: "2026"
+          - generic [ref=e144]:
+            - generic [ref=e145]: Descripción
+            - textbox "Descripción" [ref=e146]:
               - /placeholder: Breve descripción de la materia...
-          - generic [ref=e121]:
-            - generic [ref=e122]: Criterios de Evaluación
-            - textbox "Criterios de Evaluación" [ref=e123]:
+          - generic [ref=e147]:
+            - generic [ref=e148]: Criterios de Evaluación
+            - textbox "Criterios de Evaluación" [ref=e149]:
               - /placeholder: Pautas de aprobación, entregas, etc.
-          - generic [ref=e124]:
-            - generic [ref=e125]: Webhook de Discord
-            - textbox "Webhook de Discord" [ref=e126]:
+          - generic [ref=e150]:
+            - generic [ref=e151]: Webhook de Discord
+            - textbox "Webhook de Discord" [ref=e152]:
               - /placeholder: https://discord.com/api/webhooks/...
-          - generic [ref=e127]:
-            - button "Cancelar" [ref=e128] [cursor=pointer]
-            - button "Guardar" [disabled] [ref=e129] [cursor=pointer]
-    - button "Información del sitio" [ref=e131]:
-      - generic [ref=e132]: "?"
+          - generic [ref=e153]:
+            - button "Cancelar" [ref=e154] [cursor=pointer]
+            - button "Guardar" [disabled] [ref=e155] [cursor=pointer]
+    - button "Información del sitio" [ref=e157]:
+      - generic [ref=e158]: "?"
   - generic:
     - complementary
 ```
